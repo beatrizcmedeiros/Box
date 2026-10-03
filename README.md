@@ -30,6 +30,8 @@ npm run dev     # API em http://localhost:3333 e web em http://localhost:5173
 
 Abra http://localhost:5173 e entre com o **treinador de desenvolvimento** criado pelo seed — e-mail e senha estão em `SEED_TREINADOR_EMAIL` / `SEED_TREINADOR_SENHA` no `api/.env`. No primeiro acesso, aceite o termo de consentimento.
 
+Para ver a área do aluno, entre com a **aluna de demonstração** (`SEED_ALUNO_EMAIL` / `SEED_ALUNO_SENHA`), que já tem o histórico de PRs das telas de modelo do relatório.
+
 > Se o `api/.env` foi criado antes da Fase 2, copie as variáveis novas do `.env.example` (`JWT_SECRET`, `SEED_TREINADOR_*`) e gere um `JWT_SECRET` aleatório.
 
 > O banco usa a porta **5433** no host para não conflitar com um PostgreSQL já instalado na 5432.
@@ -56,7 +58,14 @@ Abra http://localhost:5173 e entre com o **treinador de desenvolvimento** criado
 - **Aluno**: criado pelo treinador com uma **senha temporária** (exibida uma única vez). No primeiro acesso, precisa trocar a senha e aceitar o termo de consentimento (LGPD) antes de usar o sistema.
 - Senhas com **scrypt** (`node:crypto`); token de acesso **JWT de 15 min** e **refresh token de 7 dias** em cookies `httpOnly`/`SameSite=Strict`. O refresh token é guardado só como hash e é **rotacionado** a cada uso; logout, troca de senha e redefinição pelo treinador revogam as sessões.
 - Login limitado a 10 tentativas a cada 15 min por IP.
+- Área do aluno em `/api/me/*`: o aluno só vê e altera os próprios dados; resultados importados pelo treinador não podem ser apagados pelo aluno.
 - Em produção, o front deve encaminhar `/api` para a API (rewrite/proxy, mesma origem) para os cookies `SameSite=Strict` funcionarem.
+
+## Regra dos percentuais
+
+- **PR vigente** = teste mais recente de cada exercício (mesmo que a carga seja menor); o histórico nunca é apagado automaticamente.
+- **Cargas** de 35%, 40%, 45%, 50% e 55% do PR, arredondadas para o **múltiplo de 0,5 kg mais próximo** (empates para cima). Ex.: 105 kg × 35% = 36,75 → **37 kg**.
+- Implementação e testes: `api/src/domain/percentuais.ts`.
 
 ## Testes
 
@@ -75,13 +84,17 @@ api/
   src/routes/auth.ts     login, refresh, logout, troca de senha, consentimento
   src/routes/admin/      painel do treinador: turmas, exercícios, alunos
   src/middlewares/       autenticação e controle de perfil
+  src/domain/            regras de negócio (cálculo dos percentuais)
+  src/routes/aluno/      área do aluno: PRs, histórico, exercícios ativos
   src/services/          sessões (cookies e refresh tokens)
   test/                  testes de integração (banco prbox_test)
 web/
   src/rotas.tsx          rotas e guardas por perfil / primeiro acesso
   src/lib/api.ts         cliente HTTP (renova a sessão automaticamente)
   src/auth/              sessão do usuário e proteção de rotas
-  src/pages/             login, primeiro acesso, área do aluno, painel do treinador
+  src/pages/aluno/       dashboard de percentuais, Meus PRs, registrar PR, detalhe, perfil
+  src/pages/treinador/   painel do treinador
+  src/pages/             login e primeiro acesso
 .github/workflows/ci.yml lint, formatação, tipos, testes, migrations e build a cada push/PR
 ```
 
@@ -91,7 +104,7 @@ Ver o plano completo em `PLANO_DE_DESENVOLVIMENTO.md` (pasta do portfólio).
 
 - [ ] **Fase 1 — Fundação:** monorepo, banco, modelo de dados, seed e CI prontos — falta o deploy inicial (Vercel/Netlify + Render + Neon)
 - [x] **Fase 2 — Autenticação e cadastros:** login, primeiro acesso (senha + termo LGPD), painel do treinador (turmas, exercícios, alunos)
-- [ ] **Fase 3 — Área do aluno** (PRs e dashboard de percentuais)
+- [x] **Fase 3 — Área do aluno:** dashboard de percentuais, Meus PRs, registro de PR, detalhe com histórico, perfil
 - [ ] **Fase 4 — Importação de PDF**
 - [ ] **Fase 5 — Consulta com filtros**
 - [ ] **Fase 6 — Camada PWA** (ponto de decisão)
