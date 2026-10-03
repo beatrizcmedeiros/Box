@@ -1,0 +1,122 @@
+// Modelo de dados do PR Box — ver PLANO_DE_DESENVOLVIMENTO.md, seção 4.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Perfil {
+  ALUNO
+  TREINADOR
+}
+
+enum CategoriaExercicio {
+  LEVANTAMENTO
+  OLIMPICO
+  OUTRO
+}
+
+enum OrigemTeste {
+  ALUNO
+  IMPORTACAO
+}
+
+enum StatusImportacao {
+  PREVIA
+  CONFIRMADA
+  CANCELADA
+}
+
+model Usuario {
+  id              Int       @id @default(autoincrement())
+  nome            String
+  email           String    @unique
+  senhaHash       String    @map("senha_hash")
+  perfil          Perfil    @default(ALUNO)
+  turmaId         Int?      @map("turma_id")
+  ativo           Boolean   @default(true)
+  consentimentoEm DateTime? @map("consentimento_em")
+  criadoEm        DateTime  @default(now()) @map("criado_em")
+
+  turma       Turma?       @relation(fields: [turmaId], references: [id], onDelete: SetNull)
+  testesCarga TesteCarga[]
+  importacoes Importacao[]
+
+  @@index([turmaId])
+  @@map("usuarios")
+}
+
+model Turma {
+  id      Int     @id @default(autoincrement())
+  nome    String  @unique
+  horario String?
+
+  alunos      Usuario[]
+  importacoes Importacao[]
+
+  @@map("turmas")
+}
+
+model Exercicio {
+  id        Int                @id @default(autoincrement())
+  nome      String             @unique
+  categoria CategoriaExercicio @default(OUTRO)
+  ativo     Boolean            @default(true)
+
+  aliases     ExercicioAlias[]
+  testesCarga TesteCarga[]
+
+  @@map("exercicios")
+}
+
+// Grafias alternativas usadas no PDF do treinador (ex.: "Push Pres" -> Push Press)
+model ExercicioAlias {
+  id          Int    @id @default(autoincrement())
+  exercicioId Int    @map("exercicio_id")
+  alias       String @unique
+
+  exercicio Exercicio @relation(fields: [exercicioId], references: [id], onDelete: Cascade)
+
+  @@map("exercicio_alias")
+}
+
+// Histórico completo: o PR vigente é o registro mais recente de (usuario, exercicio).
+model TesteCarga {
+  id           Int         @id @default(autoincrement())
+  usuarioId    Int         @map("usuario_id")
+  exercicioId  Int         @map("exercicio_id")
+  dataTeste    DateTime    @map("data_teste") @db.Date
+  cargaKg      Decimal     @map("carga_kg") @db.Decimal(6, 2)
+  origem       OrigemTeste @default(ALUNO)
+  importacaoId Int?        @map("importacao_id")
+  criadoEm     DateTime    @default(now()) @map("criado_em")
+
+  usuario    Usuario     @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  exercicio  Exercicio   @relation(fields: [exercicioId], references: [id], onDelete: Restrict)
+  importacao Importacao? @relation(fields: [importacaoId], references: [id], onDelete: SetNull)
+
+  @@index([usuarioId, exercicioId, dataTeste(sort: Desc)])
+  @@index([exercicioId])
+  @@map("testes_carga")
+}
+
+model Importacao {
+  id          Int              @id @default(autoincrement())
+  treinadorId Int              @map("treinador_id")
+  turmaId     Int?             @map("turma_id")
+  dataTeste   DateTime         @map("data_teste") @db.Date
+  nomeArquivo String           @map("nome_arquivo")
+  status      StatusImportacao @default(PREVIA)
+  totalLinhas Int              @default(0) @map("total_linhas")
+  criadoEm    DateTime         @default(now()) @map("criado_em")
+
+  treinador   Usuario      @relation(fields: [treinadorId], references: [id], onDelete: Restrict)
+  turma       Turma?       @relation(fields: [turmaId], references: [id], onDelete: SetNull)
+  testesCarga TesteCarga[]
+
+  @@map("importacoes")
+}

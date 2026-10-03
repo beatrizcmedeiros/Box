@@ -1,0 +1,23 @@
+# Banco de dados local para desenvolvimento.
+# Porta 5433 no host para não conflitar com um PostgreSQL já instalado na 5432.
+services:
+  db:
+    image: postgres:17-alpine
+    container_name: prbox-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: prbox
+      POSTGRES_PASSWORD: prbox
+      POSTGRES_DB: prbox
+    ports:
+      - '5433:5432'
+    volumes:
+      - prbox-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U prbox -d prbox']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  prbox-data:

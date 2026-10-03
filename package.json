@@ -1,0 +1,39 @@
+{
+  "name": "prbox",
+  "private": true,
+  "version": "0.1.0",
+  "description": "PR Box — registro de PRs e cargas por percentual para boxes de cross training",
+  "type": "module",
+  "engines": {
+    "node": ">=22.12"
+  },
+  "workspaces": [
+    "api",
+    "web"
+  ],
+  "scripts": {
+    "dev": "concurrently -n api,web -c blue,magenta \"npm run dev -w api\" \"npm run dev -w web\"",
+    "build": "npm run build -w api && npm run build -w web",
+    "typecheck": "npm run typecheck -w api && npm run typecheck -w web",
+    "lint": "oxlint api/src web/src",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "npm run test -w api && npm run test -w web",
+    "db:up": "docker compose up -d --wait",
+    "db:down": "docker compose down",
+    "db:migrate": "npm run db:migrate -w api",
+    "db:seed": "npm run db:seed -w api",
+    "db:generate": "npm run db:generate -w api",
+    "setup": "npm run db:up && npm run db:generate && npm run db:migrate && npm run db:seed"
+  },
+  "allowScripts": {
+    "@prisma/engines@7.10.0": true,
+    "esbuild@0.28.2": true,
+    "prisma@7.10.0": true
+  },
+  "devDependencies": {
+    "concurrently": "^10.0.5",
+    "oxlint": "^1.86.0",
+    "prettier": "^3.9.9"
+  }
+}

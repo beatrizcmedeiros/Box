@@ -1,0 +1,14 @@
+@import 'tailwindcss';
+
+/* Identidade visual das telas de modelo do relatório */
+@theme {
+  --color-marca: #ff7a1a;
+  --color-marca-escura: #d45f00;
+  --color-fundo-escuro: #141c28;
+  --color-fundo: #f6f8fb;
+  --font-sans: 'Segoe UI', system-ui, -apple-system, Roboto, Arial, sans-serif;
+}
+
+body {
+  @apply bg-fundo text-slate-800 antialiased;
+}
