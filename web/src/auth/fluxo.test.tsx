@@ -58,11 +58,14 @@ describe('acesso', () => {
   })
 
   it('o aluno não acessa o painel do treinador', async () => {
-    simularApi({ 'GET /api/auth/me': { body: { usuario: usuario() } } })
+    simularApi({
+      'GET /api/auth/me': { body: { usuario: usuario() } },
+      'GET /api/me/prs': { body: [] },
+    })
     const router = renderizar('/treinador/alunos')
 
-    expect(await screen.findByText('Olá, Ana')).toBeInTheDocument()
-    expect(router.state.location.pathname).toBe('/aluno')
+    expect(await screen.findByRole('heading', { name: 'Percentuais de carga' })).toBeInTheDocument()
+    expect(router.state.location.pathname).toBe('/aluno/percentuais')
   })
 
   it('sair encerra a sessão e volta ao login', async () => {
@@ -93,6 +96,7 @@ describe('primeiro acesso', () => {
         body: { usuario: usuario({ consentimentoPendente: true }) },
       },
       'POST /api/auth/consentimento': { body: { usuario: usuario() } },
+      'GET /api/me/prs': { body: [] },
     })
     const router = renderizar('/aluno')
     const pessoa = userEvent.setup()
@@ -110,8 +114,8 @@ describe('primeiro acesso', () => {
 
     await pessoa.click(await screen.findByRole('button', { name: 'Li e aceito' }))
 
-    expect(await screen.findByText('Olá, Ana')).toBeInTheDocument()
-    expect(router.state.location.pathname).toBe('/aluno')
+    expect(await screen.findByRole('heading', { name: 'Percentuais de carga' })).toBeInTheDocument()
+    expect(router.state.location.pathname).toBe('/aluno/percentuais')
     expect(chamadas.find((c) => c.url === '/api/auth/trocar-senha')?.corpo).toEqual({
       senhaAtual: 'Temp1234ab',
       novaSenha: 'minha-senha-nova',

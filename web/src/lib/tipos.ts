@@ -40,3 +40,24 @@ export type Aluno = {
   criadoEm: string
   turma: TurmaResumo | null
 }
+
+export type ExercicioResumo = { id: number; nome: string; categoria: CategoriaExercicio }
+
+export type Lancamento = {
+  id: number
+  dataTeste: string
+  cargaKg: number
+  origem: 'ALUNO' | 'IMPORTACAO'
+}
+
+export type CargaPercentual = { percentual: number; cargaKg: number }
+
+export type ResumoPr = {
+  exercicio: ExercicioResumo
+  pr: Lancamento
+  percentuais: CargaPercentual[]
+  novoRecorde: boolean
+  diferencaKg: number | null
+}
+
+export type DetalhePr = ResumoPr & { historico: Lancamento[] }

@@ -1,7 +1,12 @@
 import { Navigate, type RouteObject } from 'react-router'
 import { RotaProtegida } from './auth/RotaProtegida.tsx'
 import { RedirecionarInicio } from './auth/RedirecionarInicio.tsx'
-import { InicioAluno } from './pages/aluno/InicioAluno.tsx'
+import { DetalheExercicio } from './pages/aluno/DetalheExercicio.tsx'
+import { LayoutAluno } from './pages/aluno/LayoutAluno.tsx'
+import { MeusPrs } from './pages/aluno/MeusPrs.tsx'
+import { Percentuais } from './pages/aluno/Percentuais.tsx'
+import { Perfil } from './pages/aluno/Perfil.tsx'
+import { RegistrarPr } from './pages/aluno/RegistrarPr.tsx'
 import { Login } from './pages/Login.tsx'
 import { Termo, TrocarSenha } from './pages/PrimeiroAcesso.tsx'
 import { Alunos } from './pages/treinador/Alunos.tsx'
@@ -31,9 +36,18 @@ export const rotas: RouteObject[] = [
     path: '/aluno',
     element: (
       <RotaProtegida perfil="ALUNO">
-        <InicioAluno />
+        <LayoutAluno />
       </RotaProtegida>
     ),
+    children: [
+      // O aluno já entra vendo as cargas de 35% a 55% (critério da Fase 3)
+      { index: true, element: <Navigate to="percentuais" replace /> },
+      { path: 'percentuais', element: <Percentuais /> },
+      { path: 'prs', element: <MeusPrs /> },
+      { path: 'prs/novo', element: <RegistrarPr /> },
+      { path: 'exercicios/:id', element: <DetalheExercicio /> },
+      { path: 'perfil', element: <Perfil /> },
+    ],
   },
   {
     path: '/treinador',

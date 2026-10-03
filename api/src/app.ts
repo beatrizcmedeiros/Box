@@ -5,6 +5,7 @@ import { rateLimit } from 'express-rate-limit'
 import helmet from 'helmet'
 import { tratarErros } from './lib/erros.ts'
 import { adminRouter } from './routes/admin/index.ts'
+import { alunoRouter } from './routes/aluno/index.ts'
 import { authRouter } from './routes/auth.ts'
 import { healthRouter, type VerificarBanco } from './routes/health.ts'
 
@@ -36,6 +37,7 @@ export function criarApp({ verificarBanco, webOrigin, limitarLogin }: Dependenci
   app.use('/api/health', healthRouter(verificarBanco))
   app.use('/api/auth', authRouter({ limitarLogin: limitarLogin ?? limitePadraoLogin() }))
   app.use('/api/admin', adminRouter())
+  app.use('/api/me', alunoRouter())
 
   app.use('/api', (_req, res) => {
     res.status(404).json({ erro: 'Rota não encontrada' })

@@ -61,6 +61,7 @@ async function main() {
   console.log(`Seed concluído: ${exercicios.length} exercícios e ${turmas.length} turmas.`)
 
   await criarTreinadorDeDesenvolvimento()
+  await criarAlunaDeDemonstracao()
 }
 
 /** Treinador para testar localmente, com as credenciais do api/.env. Nunca roda em produção. */
@@ -84,6 +85,54 @@ async function criarTreinadorDeDesenvolvimento() {
     },
   })
   console.log(`Treinador de desenvolvimento criado: ${email} (senha em api/.env)`)
+}
+
+// Histórico usado nas telas de modelo do relatório (Figuras 1 e 2)
+const historicoDemonstracao: [exercicio: string, data: string, cargaKg: number][] = [
+  ['Back Squat', '2025-03-14', 92.5],
+  ['Back Squat', '2025-09-12', 100],
+  ['Back Squat', '2026-03-15', 105],
+  ['Deadlift', '2026-03-15', 120],
+  ['Front Squat', '2026-03-16', 85],
+  ['Clean', '2026-03-17', 70],
+  ['Snatch', '2026-03-17', 55],
+  ['Push Press', '2026-03-18', 60],
+]
+
+/** Aluna com PRs de exemplo, para testar e demonstrar a área do aluno. Nunca roda em produção. */
+async function criarAlunaDeDemonstracao() {
+  const email = process.env.SEED_ALUNO_EMAIL?.trim().toLowerCase()
+  const senha = process.env.SEED_ALUNO_SENHA
+  if (process.env.NODE_ENV === 'production' || !email || !senha) return
+
+  if (await prisma.usuario.findUnique({ where: { email } })) {
+    console.log(`Aluna de demonstração já existe: ${email}`)
+    return
+  }
+  const turma = await prisma.turma.findUnique({ where: { nome: 'Turma 18h' } })
+  const aluna = await prisma.usuario.create({
+    data: {
+      nome: 'Ana Souza (demonstração)',
+      email,
+      senhaHash: await gerarHashSenha(senha),
+      perfil: 'ALUNO',
+      turmaId: turma?.id,
+      trocarSenha: false,
+      consentimentoEm: new Date(),
+    },
+  })
+  for (const [nome, data, cargaKg] of historicoDemonstracao) {
+    const exercicio = await prisma.exercicio.findUniqueOrThrow({ where: { nome } })
+    await prisma.testeCarga.create({
+      data: {
+        usuarioId: aluna.id,
+        exercicioId: exercicio.id,
+        dataTeste: new Date(`${data}T00:00:00.000Z`),
+        cargaKg,
+      },
+    })
+  }
+  console.log(`Aluna de demonstração criada: ${email} (senha em api/.env)`)
 }
 
 main()
