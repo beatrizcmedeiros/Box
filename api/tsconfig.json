@@ -16,5 +16,5 @@
     "noFallthroughCasesInSwitch": true,
     "noEmit": true
   },
-  "include": ["src", "prisma", "prisma.config.ts", "vitest.config.ts"]
+  "include": ["src", "prisma", "scripts", "test", "prisma.config.ts", "vitest.config.ts"]
 }

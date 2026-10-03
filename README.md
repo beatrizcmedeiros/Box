@@ -28,24 +28,40 @@ npm run setup   # sobe o banco, gera o Prisma Client, aplica as migrations e o s
 npm run dev     # API em http://localhost:3333 e web em http://localhost:5173
 ```
 
-Abra http://localhost:5173 — o card "Status do sistema" deve mostrar **API e banco de dados funcionando**.
+Abra http://localhost:5173 e entre com o **treinador de desenvolvimento** criado pelo seed — e-mail e senha estão em `SEED_TREINADOR_EMAIL` / `SEED_TREINADOR_SENHA` no `api/.env`. No primeiro acesso, aceite o termo de consentimento.
+
+> Se o `api/.env` foi criado antes da Fase 2, copie as variáveis novas do `.env.example` (`JWT_SECRET`, `SEED_TREINADOR_*`) e gere um `JWT_SECRET` aleatório.
 
 > O banco usa a porta **5433** no host para não conflitar com um PostgreSQL já instalado na 5432.
 
 ## Scripts (na raiz)
 
-| Comando                     | O que faz                                                     |
-| --------------------------- | ------------------------------------------------------------- |
-| `npm run dev`               | API e web em modo desenvolvimento                             |
-| `npm test`                  | Testes da API e do front                                      |
-| `npm run lint`              | Lint com oxlint                                               |
-| `npm run format`            | Formata o código com Prettier                                 |
-| `npm run typecheck`         | Checagem de tipos dos dois projetos                           |
-| `npm run build`             | Build de produção da API (`api/dist`) e do front (`web/dist`) |
-| `npm run db:up` / `db:down` | Sobe / para o PostgreSQL no Docker                            |
-| `npm run db:migrate`        | Cria e aplica migrations (após mudar o `schema.prisma`)       |
-| `npm run db:seed`           | Popula exercícios e turmas de exemplo (idempotente)           |
-| `npm run db:studio -w api`  | Abre o Prisma Studio para ver os dados                        |
+| Comando                                          | O que faz                                                     |
+| ------------------------------------------------ | ------------------------------------------------------------- |
+| `npm run dev`                                    | API e web em modo desenvolvimento                             |
+| `npm test`                                       | Testes da API e do front                                      |
+| `npm run lint`                                   | Lint com oxlint                                               |
+| `npm run format`                                 | Formata o código com Prettier                                 |
+| `npm run typecheck`                              | Checagem de tipos dos dois projetos                           |
+| `npm run build`                                  | Build de produção da API (`api/dist`) e do front (`web/dist`) |
+| `npm run db:up` / `db:down`                      | Sobe / para o PostgreSQL no Docker                            |
+| `npm run db:migrate`                             | Cria e aplica migrations (após mudar o `schema.prisma`)       |
+| `npm run db:seed`                                | Popula exercícios e turmas de exemplo (idempotente)           |
+| `npm run db:studio -w api`                       | Abre o Prisma Studio para ver os dados                        |
+| `npm run criar-treinador -w api -- "Nome" email` | Cria um treinador com senha temporária (uso em produção)      |
+
+## Autenticação e perfis
+
+- **Treinador** (administrador): cadastra turmas, exercícios (com nomes alternativos usados no PDF) e alunos.
+- **Aluno**: criado pelo treinador com uma **senha temporária** (exibida uma única vez). No primeiro acesso, precisa trocar a senha e aceitar o termo de consentimento (LGPD) antes de usar o sistema.
+- Senhas com **scrypt** (`node:crypto`); token de acesso **JWT de 15 min** e **refresh token de 7 dias** em cookies `httpOnly`/`SameSite=Strict`. O refresh token é guardado só como hash e é **rotacionado** a cada uso; logout, troca de senha e redefinição pelo treinador revogam as sessões.
+- Login limitado a 10 tentativas a cada 15 min por IP.
+- Em produção, o front deve encaminhar `/api` para a API (rewrite/proxy, mesma origem) para os cookies `SameSite=Strict` funcionarem.
+
+## Testes
+
+- `api/test/`: testes de integração contra um banco **`prbox_test`**, criado e migrado automaticamente (o banco de desenvolvimento não é tocado).
+- `api/src/**/*.test.ts` e `web/src/**/*.test.ts(x)`: testes unitários e de componentes (API simulada no front).
 
 ## Estrutura
 
@@ -54,11 +70,18 @@ api/
   prisma/schema.prisma   modelo de dados (usuários, turmas, exercícios, testes de carga, importações)
   prisma/migrations/     histórico de migrations
   prisma/seed.ts         dados iniciais de exemplo
+  scripts/               utilitários de linha de comando (criar-treinador)
   src/app.ts             app Express (rotas montadas aqui)
-  src/server.ts          inicialização do servidor
-  src/routes/            rotas da API
+  src/routes/auth.ts     login, refresh, logout, troca de senha, consentimento
+  src/routes/admin/      painel do treinador: turmas, exercícios, alunos
+  src/middlewares/       autenticação e controle de perfil
+  src/services/          sessões (cookies e refresh tokens)
+  test/                  testes de integração (banco prbox_test)
 web/
-  src/App.tsx            página inicial (status do sistema)
+  src/rotas.tsx          rotas e guardas por perfil / primeiro acesso
+  src/lib/api.ts         cliente HTTP (renova a sessão automaticamente)
+  src/auth/              sessão do usuário e proteção de rotas
+  src/pages/             login, primeiro acesso, área do aluno, painel do treinador
 .github/workflows/ci.yml lint, formatação, tipos, testes, migrations e build a cada push/PR
 ```
 
@@ -67,7 +90,7 @@ web/
 Ver o plano completo em `PLANO_DE_DESENVOLVIMENTO.md` (pasta do portfólio).
 
 - [ ] **Fase 1 — Fundação:** monorepo, banco, modelo de dados, seed e CI prontos — falta o deploy inicial (Vercel/Netlify + Render + Neon)
-- [ ] **Fase 2 — Autenticação e cadastros**
+- [x] **Fase 2 — Autenticação e cadastros:** login, primeiro acesso (senha + termo LGPD), painel do treinador (turmas, exercícios, alunos)
 - [ ] **Fase 3 — Área do aluno** (PRs e dashboard de percentuais)
 - [ ] **Fase 4 — Importação de PDF**
 - [ ] **Fase 5 — Consulta com filtros**

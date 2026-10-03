@@ -39,15 +39,33 @@ model Usuario {
   perfil          Perfil    @default(ALUNO)
   turmaId         Int?      @map("turma_id")
   ativo           Boolean   @default(true)
+  // Senha temporária definida pelo treinador: obriga a troca no primeiro acesso
+  trocarSenha     Boolean   @default(true) @map("trocar_senha")
   consentimentoEm DateTime? @map("consentimento_em")
   criadoEm        DateTime  @default(now()) @map("criado_em")
 
   turma       Turma?       @relation(fields: [turmaId], references: [id], onDelete: SetNull)
   testesCarga TesteCarga[]
   importacoes Importacao[]
+  sessoes     Sessao[]
 
   @@index([turmaId])
   @@map("usuarios")
+}
+
+// Refresh tokens (guardados apenas como hash SHA-256). Rotacionados a cada uso.
+model Sessao {
+  id         Int       @id @default(autoincrement())
+  usuarioId  Int       @map("usuario_id")
+  tokenHash  String    @unique @map("token_hash")
+  expiraEm   DateTime  @map("expira_em")
+  revogadaEm DateTime? @map("revogada_em")
+  criadoEm   DateTime  @default(now()) @map("criado_em")
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@index([usuarioId])
+  @@map("sessoes")
 }
 
 model Turma {

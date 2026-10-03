@@ -2,6 +2,8 @@
 // confirmada com o treinador do box (Fase 0 do plano).
 import { PrismaPg } from '@prisma/adapter-pg'
 import { type CategoriaExercicio, PrismaClient } from '../src/generated/prisma/client.ts'
+import { gerarHashSenha } from '../src/lib/senha.ts'
+import { normalizarTexto } from '../src/lib/texto.ts'
 
 try {
   process.loadEnvFile()
@@ -43,7 +45,7 @@ async function main() {
       update: { categoria },
       create: { nome, categoria },
     })
-    for (const alias of aliases) {
+    for (const alias of aliases.map(normalizarTexto)) {
       await prisma.exercicioAlias.upsert({
         where: { alias },
         update: { exercicioId: exercicio.id },
@@ -57,6 +59,31 @@ async function main() {
   }
 
   console.log(`Seed concluído: ${exercicios.length} exercícios e ${turmas.length} turmas.`)
+
+  await criarTreinadorDeDesenvolvimento()
+}
+
+/** Treinador para testar localmente, com as credenciais do api/.env. Nunca roda em produção. */
+async function criarTreinadorDeDesenvolvimento() {
+  const email = process.env.SEED_TREINADOR_EMAIL?.trim().toLowerCase()
+  const senha = process.env.SEED_TREINADOR_SENHA
+  if (process.env.NODE_ENV === 'production' || !email || !senha) return
+
+  const existente = await prisma.usuario.findUnique({ where: { email } })
+  if (existente) {
+    console.log(`Treinador de desenvolvimento já existe: ${email}`)
+    return
+  }
+  await prisma.usuario.create({
+    data: {
+      nome: 'Treinador (desenvolvimento)',
+      email,
+      senhaHash: await gerarHashSenha(senha),
+      perfil: 'TREINADOR',
+      trocarSenha: false,
+    },
+  })
+  console.log(`Treinador de desenvolvimento criado: ${email} (senha em api/.env)`)
 }
 
 main()
