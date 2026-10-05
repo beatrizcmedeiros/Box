@@ -38,19 +38,20 @@ Para ver a área do aluno, entre com a **aluna de demonstração** (`SEED_ALUNO_
 
 ## Scripts (na raiz)
 
-| Comando                                          | O que faz                                                     |
-| ------------------------------------------------ | ------------------------------------------------------------- |
-| `npm run dev`                                    | API e web em modo desenvolvimento                             |
-| `npm test`                                       | Testes da API e do front                                      |
-| `npm run lint`                                   | Lint com oxlint                                               |
-| `npm run format`                                 | Formata o código com Prettier                                 |
-| `npm run typecheck`                              | Checagem de tipos dos dois projetos                           |
-| `npm run build`                                  | Build de produção da API (`api/dist`) e do front (`web/dist`) |
-| `npm run db:up` / `db:down`                      | Sobe / para o PostgreSQL no Docker                            |
-| `npm run db:migrate`                             | Cria e aplica migrations (após mudar o `schema.prisma`)       |
-| `npm run db:seed`                                | Popula exercícios e turmas de exemplo (idempotente)           |
-| `npm run db:studio -w api`                       | Abre o Prisma Studio para ver os dados                        |
-| `npm run criar-treinador -w api -- "Nome" email` | Cria um treinador com senha temporária (uso em produção)      |
+| Comando                                          | O que faz                                                                                     |
+| ------------------------------------------------ | --------------------------------------------------------------------------------------------- |
+| `npm run dev`                                    | API e web em modo desenvolvimento                                                             |
+| `npm test`                                       | Testes da API e do front                                                                      |
+| `npm run lint`                                   | Lint com oxlint                                                                               |
+| `npm run format`                                 | Formata o código com Prettier                                                                 |
+| `npm run typecheck`                              | Checagem de tipos dos dois projetos                                                           |
+| `npm run build`                                  | Build de produção da API (`api/dist`) e do front (`web/dist`)                                 |
+| `npm run db:up` / `db:down`                      | Sobe / para o PostgreSQL no Docker                                                            |
+| `npm run db:migrate`                             | Cria e aplica migrations (após mudar o `schema.prisma`)                                       |
+| `npm run db:seed`                                | Popula exercícios e turmas de exemplo (idempotente)                                           |
+| `npm run db:studio -w api`                       | Abre o Prisma Studio para ver os dados                                                        |
+| `npm run demo -w api`                            | Cria 36 alunos **fictícios** com testes semestrais (consulta de cargas); `-- --remover` apaga |
+| `npm run criar-treinador -w api -- "Nome" email` | Cria um treinador com senha temporária (uso em produção)                                      |
 
 ## Autenticação e perfis
 
@@ -78,6 +79,13 @@ Lucas 110 kg
 - Reimportar a mesma data **corrige** a carga em vez de duplicar; cada importação pode ser **desfeita** pelo histórico.
 - Exemplo fictício para testar: `docs/exemplos/teste-forca-exemplo.pdf` (PDF só com imagem, como a nota real).
 
+## Consulta de cargas (treinador)
+
+- PR vigente de cada aluno ativo em cada exercício, com a **variação** em relação ao teste anterior e a indicação de resultados **informados pelo próprio aluno**.
+- Filtros combináveis por **aluno** (nome ou apelido, sem diferenciar acentos — extensão `unaccent` do PostgreSQL), **exercício** e **turma**; ficam na URL (o link pode ser compartilhado).
+- Totais do filtro: alunos, maior carga e média (só com um exercício escolhido); ordenação por aluno, data, carga ou variação; paginação.
+- Uma única consulta SQL com `ROW_NUMBER()` por aluno/exercício: ~10–20 ms com 1.000 registros (meta do plano: < 500 ms; há um teste automatizado).
+
 ## Regra dos percentuais
 
 - **PR vigente** = teste mais recente de cada exercício (mesmo que a carga seja menor); o histórico nunca é apagado automaticamente.
@@ -96,10 +104,10 @@ api/
   prisma/schema.prisma   modelo de dados (usuários, turmas, exercícios, testes de carga, importações)
   prisma/migrations/     histórico de migrations
   prisma/seed.ts         dados iniciais de exemplo
-  scripts/               utilitários de linha de comando (criar-treinador)
   src/app.ts             app Express (rotas montadas aqui)
   src/routes/auth.ts     login, refresh, logout, troca de senha, consentimento
-  src/routes/admin/      painel do treinador: turmas, exercícios, alunos, importações
+  src/routes/admin/      painel do treinador: turmas, exercícios, alunos, importações, consulta de cargas
+  scripts/               criar-treinador, dados de demonstração
   src/middlewares/       autenticação e controle de perfil
   src/domain/            regras de negócio (percentuais; leitura e associação da lista importada)
   src/routes/aluno/      área do aluno: PRs, histórico, exercícios ativos
@@ -124,7 +132,7 @@ Ver o plano completo em `PLANO_DE_DESENVOLVIMENTO.md` (pasta do portfólio).
 - [x] **Fase 2 — Autenticação e cadastros:** login, primeiro acesso (senha + termo LGPD), painel do treinador (turmas, exercícios, alunos)
 - [x] **Fase 3 — Área do aluno:** dashboard de percentuais, Meus PRs, registro de PR, detalhe com histórico, perfil
 - [x] **Fase 4 — Importação de PDF:** leitura no navegador com OCR, revisão com associação de nomes/apelidos, histórico e desfazer
-- [ ] **Fase 5 — Consulta com filtros**
+- [x] **Fase 5 — Consulta com filtros:** filtros combináveis na URL, totais, variação, ordenação e paginação
 - [ ] **Fase 6 — Camada PWA** (ponto de decisão)
 - [ ] **Fase 7 — Piloto e lançamento**
 

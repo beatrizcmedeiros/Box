@@ -3,13 +3,11 @@ import { useLogout, useUsuario } from '../../auth/sessao.ts'
 
 const itens = [
   { para: '/treinador/importar', rotulo: 'Importar cargas (PDF)' },
+  { para: '/treinador/consultar', rotulo: 'Consultar cargas' },
   { para: '/treinador/alunos', rotulo: 'Alunos' },
   { para: '/treinador/turmas', rotulo: 'Turmas' },
   { para: '/treinador/exercicios', rotulo: 'Exercícios' },
 ]
-
-// Chega na Fase 5 (Figura 4 do relatório)
-const emBreve = ['Consultar cargas']
 
 export function LayoutTreinador() {
   const { data: usuario } = useUsuario()
@@ -46,15 +44,6 @@ export function LayoutTreinador() {
             >
               {rotulo}
             </NavLink>
-          ))}
-          {emBreve.map((rotulo) => (
-            <span
-              key={rotulo}
-              className="hidden shrink-0 cursor-default px-3 py-2 text-sm text-slate-500 md:block"
-              title="Disponível em breve"
-            >
-              {rotulo} <span className="text-[10px] uppercase">· em breve</span>
-            </span>
           ))}
         </nav>
 
