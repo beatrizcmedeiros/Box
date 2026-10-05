@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api, ErroApi } from '../lib/api.ts'
+import { limparDadosOffline } from '../lib/pwa.ts'
 import type { Usuario } from '../lib/tipos.ts'
 
 export const CHAVE_USUARIO = ['usuario'] as const
@@ -56,14 +57,25 @@ export function useAceitarTermo() {
 
 export function useLogout() {
   const cliente = useQueryClient()
+
+  async function encerrarNoAparelho() {
+    // Dados guardados para uso offline não podem ficar para a próxima pessoa do aparelho
+    await limparDadosOffline()
+    // Grava "sem usuário" (as rotas protegidas redirecionam ao login) e descarta os
+    // demais dados em cache. Não usar clear(): ele removeria a própria query do usuário
+    // e a tela não seria avisada da saída.
+    cliente.setQueryData(CHAVE_USUARIO, null)
+    cliente.removeQueries({ predicate: (query) => query.queryKey[0] !== CHAVE_USUARIO[0] })
+  }
+
   return useMutation({
     mutationFn: () => api<void>('/auth/logout', { method: 'POST' }),
-    onSettled: () => {
-      // Grava "sem usuário" (as rotas protegidas redirecionam ao login) e descarta os
-      // demais dados em cache. Não usar clear(): ele removeria a própria query do usuário
-      // e a tela não seria avisada da saída.
-      cliente.setQueryData(CHAVE_USUARIO, null)
-      cliente.removeQueries({ predicate: (query) => query.queryKey[0] !== CHAVE_USUARIO[0] })
+    onSuccess: encerrarNoAparelho,
+    onError: async (erro) => {
+      // Sem conexão a sessão continuaria válida no servidor (o cookie só é apagado por ele):
+      // a pessoa precisa saber que ainda não saiu. Outros erros (ex.: sessão já expirada) encerram.
+      if (erro instanceof ErroApi && erro.codigo === 'SEM_CONEXAO') return
+      await encerrarNoAparelho()
     },
   })
 }

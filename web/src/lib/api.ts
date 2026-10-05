@@ -1,3 +1,5 @@
+import { registrarOrigemDaResposta } from './estadoConexao.ts'
+
 export type CampoInvalido = { campo: string; mensagem: string }
 
 export class ErroApi extends Error {
@@ -36,12 +38,23 @@ function renovarSessao(): Promise<boolean> {
 }
 
 async function executar(caminho: string, { method = 'GET', body }: Opcoes) {
-  return fetch(`/api${caminho}`, {
-    method,
-    credentials: 'include',
-    headers: body !== undefined ? { 'Content-Type': 'application/json' } : undefined,
-    body: body !== undefined ? JSON.stringify(body) : undefined,
-  })
+  try {
+    const resposta = await fetch(`/api${caminho}`, {
+      method,
+      credentials: 'include',
+      headers: body !== undefined ? { 'Content-Type': 'application/json' } : undefined,
+      body: body !== undefined ? JSON.stringify(body) : undefined,
+    })
+    if (method === 'GET' && resposta.ok) registrarOrigemDaResposta(resposta)
+    return resposta
+  } catch {
+    // fetch só falha assim quando não há conexão (ou o servidor está fora do ar)
+    throw new ErroApi(
+      0,
+      'Sem conexão com a internet. Tente de novo quando o sinal voltar.',
+      'SEM_CONEXAO',
+    )
+  }
 }
 
 /** Chama a API; se o token de acesso expirou, renova a sessão e tenta de novo uma vez. */

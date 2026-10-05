@@ -1,5 +1,7 @@
 import type { ReactNode } from 'react'
 import { Link, NavLink, Outlet } from 'react-router'
+import { useDadosSalvosEm } from '../../lib/estadoConexao.ts'
+import { useOnline } from '../../lib/pwaHooks.ts'
 
 const abas = [
   {
@@ -26,8 +28,20 @@ const abas = [
 
 /** Estrutura das telas do aluno: conteúdo + barra de abas inferior (Figuras 1 e 2). */
 export function LayoutAluno() {
+  const online = useOnline()
+  const dadosSalvosEm = useDadosSalvosEm()
   return (
     <div className="mx-auto flex min-h-dvh max-w-lg flex-col bg-fundo">
+      {(!online || dadosSalvosEm) && (
+        <p
+          role="status"
+          className="sticky top-0 z-40 bg-amber-400 px-4 py-1.5 text-center text-xs font-semibold text-amber-950"
+        >
+          Sem conexão — mostrando seus dados salvos
+          {dadosSalvosEm &&
+            ` de ${new Date(dadosSalvosEm).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}`}
+        </p>
+      )}
       <div className="flex-1 pb-20">
         <Outlet />
       </div>

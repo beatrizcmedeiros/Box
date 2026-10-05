@@ -24,7 +24,8 @@
     "db:migrate": "npm run db:migrate -w api",
     "db:seed": "npm run db:seed -w api",
     "db:generate": "npm run db:generate -w api",
-    "setup": "npm run db:up && npm run db:generate && npm run db:migrate && npm run db:seed"
+    "setup": "npm run db:up && npm run db:generate && npm run db:migrate && npm run db:seed",
+    "preview": "npm run build -w web && concurrently -n api,web -c blue,magenta \"npm run dev -w api\" \"npm run preview -w web\""
   },
   "allowScripts": {
     "@prisma/engines@7.10.0": true,
