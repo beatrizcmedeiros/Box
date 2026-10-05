@@ -6,12 +6,12 @@ Projeto originado no Projeto de Extensão II — CST em Sistemas para Internet.
 
 ## Stack
 
-| Parte     | Tecnologias                                            |
-| --------- | ------------------------------------------------------ |
-| `web/`    | React 19, Vite 8, TypeScript, Tailwind CSS 4, Vitest   |
-| `api/`    | Node.js 24, Express 5, Prisma 7 (PostgreSQL), Vitest   |
-| Banco     | PostgreSQL 17 via Docker Compose                       |
-| Qualidade | oxlint, Prettier, GitHub Actions (lint, testes, build) |
+| Parte     | Tecnologias                                                         |
+| --------- | ------------------------------------------------------------------- |
+| `web/`    | React 19, Vite 8, TypeScript, Tailwind CSS 4, PWA (Workbox), Vitest |
+| `api/`    | Node.js 24, Express 5, Prisma 7 (PostgreSQL), Vitest                |
+| Banco     | PostgreSQL 17 via Docker Compose                                    |
+| Qualidade | oxlint, Prettier, GitHub Actions (lint, testes, build)              |
 
 ## Pré-requisitos
 
@@ -86,6 +86,16 @@ Lucas 110 kg
 - Totais do filtro: alunos, maior carga e média (só com um exercício escolhido); ordenação por aluno, data, carga ou variação; paginação.
 - Uma única consulta SQL com `ROW_NUMBER()` por aluno/exercício: ~10–20 ms com 1.000 registros (meta do plano: < 500 ms; há um teste automatizado).
 
+## PWA (app instalável e uso offline)
+
+- **Instalável**: manifest com ícones (inclusive _maskable_) e `display: standalone`. No Android/Chrome aparece o botão **Instalar** (dashboard e Perfil); no iPhone, o Perfil mostra o passo a passo (Safari → Compartilhar → Adicionar à Tela de Início).
+- **Offline**: o service worker (Workbox, via `vite-plugin-pwa`) guarda o app e os **dados do aluno** (`/api/auth/me`, `/api/me/*`) com estratégia _network first_ — tenta a rede por até 4 s e, sem sinal, mostra a última cópia com o aviso “Sem conexão — mostrando seus dados salvos de …”.
+- O painel do treinador e a leitura de PDF/OCR **não** entram no pacote offline (são usados com internet).
+- **Privacidade**: o logout apaga os dados guardados no aparelho; sem conexão, o app avisa que é preciso internet para sair (a sessão só é encerrada pelo servidor).
+- **Atualizações**: quando há versão nova, aparece “Nova versão disponível — Atualizar” (não recarrega no meio do uso).
+- Para testar: `npm run preview` (o `npm run dev` não registra o service worker).
+- Limitações do iOS: instalação manual pelo Safari; o sistema pode limpar os dados offline se o app ficar semanas sem uso.
+
 ## Regra dos percentuais
 
 - **PR vigente** = teste mais recente de cada exercício (mesmo que a carga seja menor); o histórico nunca é apagado automaticamente.
@@ -120,6 +130,8 @@ web/
   src/pages/aluno/       dashboard de percentuais, Meus PRs, registrar PR, detalhe, perfil
   src/pages/treinador/   painel do treinador (importacao/: leitura do PDF, revisão e histórico)
   src/lib/extrairTextoPdf.ts  leitura do PDF no navegador (pdf.js + OCR), carregada sob demanda
+  src/lib/pwa*.ts, components/AvisosPwa.tsx, components/Instalacao.tsx  PWA: cache, instalação, atualização
+  public/icones/         ícones do app (192, 512, maskable, apple-touch-icon)
   src/pages/             login e primeiro acesso
 .github/workflows/ci.yml lint, formatação, tipos, testes, migrations e build a cada push/PR
 ```
@@ -133,7 +145,7 @@ Ver o plano completo em `PLANO_DE_DESENVOLVIMENTO.md` (pasta do portfólio).
 - [x] **Fase 3 — Área do aluno:** dashboard de percentuais, Meus PRs, registro de PR, detalhe com histórico, perfil
 - [x] **Fase 4 — Importação de PDF:** leitura no navegador com OCR, revisão com associação de nomes/apelidos, histórico e desfazer
 - [x] **Fase 5 — Consulta com filtros:** filtros combináveis na URL, totais, variação, ordenação e paginação
-- [ ] **Fase 6 — Camada PWA** (ponto de decisão)
+- [x] **Fase 6 — Camada PWA:** decisão = PWA. Instalável, dashboard offline, aviso de atualização, cache limpo no logout
 - [ ] **Fase 7 — Piloto e lançamento**
 
 ## Observações

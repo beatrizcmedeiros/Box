@@ -1,5 +1,6 @@
 import { type FormEvent, useState } from 'react'
 import { useLogout, useTrocarSenha, useUsuario } from '../../auth/sessao.ts'
+import { SecaoInstalacao } from '../../components/Instalacao.tsx'
 import { Alerta, Botao, Campo } from '../../components/ui.tsx'
 import { ErroApi } from '../../lib/api.ts'
 import { CabecalhoAluno } from './LayoutAluno.tsx'
@@ -26,10 +27,12 @@ export function Perfil() {
             <dd>{usuario?.turma?.nome ?? 'Sem turma definida'}</dd>
           </div>
         </dl>
+        <SecaoInstalacao />
         <TrocarSenha />
         <p className="px-1 text-xs text-slate-500">
           Para corrigir seus dados ou excluir sua conta, fale com o seu treinador.
         </p>
+        {logout.error && <Alerta>Sem conexão: para sair da conta, conecte-se à internet.</Alerta>}
         <Botao
           variante="secundario"
           className="w-full"

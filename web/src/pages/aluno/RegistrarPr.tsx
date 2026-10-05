@@ -4,6 +4,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router'
 import { Alerta, Botao, Campo, Selecao } from '../../components/ui.tsx'
 import { api, ErroApi } from '../../lib/api.ts'
 import { useExerciciosAtivos, usePrs } from '../../lib/consultasAluno.ts'
+import { useOnline } from '../../lib/pwaHooks.ts'
 import { formatarKg, hojeIso, lerNumero } from '../../lib/formato.ts'
 import type { Lancamento } from '../../lib/tipos.ts'
 import { CabecalhoAluno } from './LayoutAluno.tsx'
@@ -19,6 +20,7 @@ export function RegistrarPr() {
   const [dataTeste, setDataTeste] = useState(hojeIso())
   const [carga, setCarga] = useState('')
 
+  const online = useOnline()
   const cargaKg = lerNumero(carga)
   const prAtual = prs.data?.find((r) => r.exercicio.id === Number(exercicioId))?.pr.cargaKg
   const novoRecorde = prAtual !== undefined && cargaKg > prAtual
@@ -94,12 +96,15 @@ export function RegistrarPr() {
           </Alerta>
         )}
         {erro && erro.campos.length === 0 && <Alerta>{erro.message}</Alerta>}
+        {!online && (
+          <Alerta tipo="info">Sem internet: o PR poderá ser salvo quando a conexão voltar.</Alerta>
+        )}
 
         <Botao
           type="submit"
           className="w-full"
           carregando={salvar.isPending}
-          disabled={!exercicioId}
+          disabled={!exercicioId || !online}
         >
           Salvar PR
         </Botao>

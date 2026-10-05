@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router'
 import { useUsuario } from '../../auth/sessao.ts'
+import { ConviteInstalacao } from '../../components/Instalacao.tsx'
 import { Alerta, Carregando } from '../../components/ui.tsx'
 import { usePrs } from '../../lib/consultasAluno.ts'
 import { formatarKg } from '../../lib/formato.ts'
@@ -29,6 +30,7 @@ export function Percentuais() {
         subtitulo={`${usuario?.nome.split(' ')[0]} · calculados a partir dos seus PRs`}
       />
       <section className="space-y-3 p-4">
+        <ConviteInstalacao />
         {prs.isPending ? (
           <Carregando />
         ) : prs.error ? (
