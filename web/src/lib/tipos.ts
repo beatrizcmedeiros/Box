@@ -39,6 +39,7 @@ export type Aluno = {
   consentimentoEm: string | null
   criadoEm: string
   turma: TurmaResumo | null
+  apelidos: string[]
 }
 
 export type ExercicioResumo = { id: number; nome: string; categoria: CategoriaExercicio }
@@ -61,3 +62,59 @@ export type ResumoPr = {
 }
 
 export type DetalhePr = ResumoPr & { historico: Lancamento[] }
+
+// Importação da lista do treinador (Fase 4)
+
+export type AlunoAssociado = { id: number; nome: string }
+
+export type ResultadoAluno =
+  | { status: 'encontrado'; aluno: AlunoAssociado; por: 'apelido' | 'nome' | 'primeiro_nome' }
+  | { status: 'sugestao'; aluno: AlunoAssociado; candidatos: AlunoAssociado[]; motivo: string }
+  | { status: 'nao_encontrado'; candidatos: AlunoAssociado[] }
+
+export type ResultadoExercicio =
+  | { status: 'encontrado'; exercicioId: number }
+  | { status: 'ambiguo'; candidatos: number[] }
+  | { status: 'nao_encontrado' }
+
+export type LinhaPrevia = {
+  numero: number
+  texto: string
+  nome: string | null
+  cargaKg: number | null
+  problema: string | null
+  aluno: ResultadoAluno | null
+  duplicado: boolean
+}
+
+export type SecaoPrevia = {
+  titulo: string | null
+  tituloLimpo: string
+  exercicio: ResultadoExercicio
+  linhas: LinhaPrevia[]
+}
+
+export type Previa = {
+  secoes: SecaoPrevia[]
+  resumo: {
+    linhas: number
+    encontrados: number
+    sugestoes: number
+    naoEncontrados: number
+    comProblema: number
+  }
+  alunos: { id: number; nome: string; turma: string | null }[]
+  exercicios: { id: number; nome: string }[]
+}
+
+export type Importacao = {
+  id: number
+  dataTeste: string
+  nomeArquivo: string
+  status: 'PREVIA' | 'CONFIRMADA' | 'CANCELADA'
+  totalLinhas: number
+  resultadosAtuais: number
+  turma: TurmaResumo | null
+  treinador: string
+  criadoEm: string
+}

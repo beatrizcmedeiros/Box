@@ -44,13 +44,26 @@ model Usuario {
   consentimentoEm DateTime? @map("consentimento_em")
   criadoEm        DateTime  @default(now()) @map("criado_em")
 
-  turma       Turma?       @relation(fields: [turmaId], references: [id], onDelete: SetNull)
+  turma       Turma?         @relation(fields: [turmaId], references: [id], onDelete: SetNull)
   testesCarga TesteCarga[]
   importacoes Importacao[]
   sessoes     Sessao[]
+  apelidos    AlunoApelido[]
 
   @@index([turmaId])
   @@map("usuarios")
+}
+
+// Como o aluno aparece na lista do treinador (ex.: "Lurdinha"). Guardado normalizado.
+model AlunoApelido {
+  id        Int    @id @default(autoincrement())
+  usuarioId Int    @map("usuario_id")
+  apelido   String @unique
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@index([usuarioId])
+  @@map("aluno_apelido")
 }
 
 // Refresh tokens (guardados apenas como hash SHA-256). Rotacionados a cada uso.

@@ -2,13 +2,14 @@ import { NavLink, Outlet } from 'react-router'
 import { useLogout, useUsuario } from '../../auth/sessao.ts'
 
 const itens = [
+  { para: '/treinador/importar', rotulo: 'Importar cargas (PDF)' },
   { para: '/treinador/alunos', rotulo: 'Alunos' },
   { para: '/treinador/turmas', rotulo: 'Turmas' },
   { para: '/treinador/exercicios', rotulo: 'Exercícios' },
 ]
 
-// Chegam nas próximas fases (Figuras 3 e 4 do relatório)
-const emBreve = ['Importar cargas (PDF)', 'Consultar cargas']
+// Chega na Fase 5 (Figura 4 do relatório)
+const emBreve = ['Consultar cargas']
 
 export function LayoutTreinador() {
   const { data: usuario } = useUsuario()

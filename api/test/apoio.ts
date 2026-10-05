@@ -16,7 +16,7 @@ export function criarAppDeTeste() {
 
 export async function limparBanco() {
   await prisma.$executeRawUnsafe(
-    'TRUNCATE TABLE sessoes, testes_carga, importacoes, exercicio_alias, exercicios, usuarios, turmas RESTART IDENTITY CASCADE',
+    'TRUNCATE TABLE aluno_apelido, sessoes, testes_carga, importacoes, exercicio_alias, exercicios, usuarios, turmas RESTART IDENTITY CASCADE',
   )
 }
 

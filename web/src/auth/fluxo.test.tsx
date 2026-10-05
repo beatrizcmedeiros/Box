@@ -166,6 +166,7 @@ describe('cadastro de aluno', () => {
         email: 'bruno@teste.com',
         turmaId: 3,
         ativo: true,
+        apelidos: [],
       }),
     )
   })

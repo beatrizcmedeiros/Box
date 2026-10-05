@@ -61,6 +61,23 @@ Para ver a área do aluno, entre com a **aluna de demonstração** (`SEED_ALUNO_
 - Área do aluno em `/api/me/*`: o aluno só vê e altera os próprios dados; resultados importados pelo treinador não podem ser apagados pelo aluno.
 - Em produção, o front deve encaminhar `/api` para a API (rewrite/proxy, mesma origem) para os cookies `SameSite=Strict` funcionarem.
 
+## Importação do teste de força (treinador)
+
+Formato esperado — o mesmo da nota que o treinador já usa (ex.: Samsung Notes exportado em PDF):
+
+```
+Teste agachamento        ← título: define o exercício das linhas seguintes (pode haver várias seções)
+Ana 55kg                 ← nome ou apelido + carga, com ou sem "kg"
+Lurdinha 85
+Lucas 110 kg
+```
+
+- O **PDF é lido no navegador do treinador** e **não é enviado ao servidor**: se tiver texto, usa o texto; se for imagem, aplica **OCR** (`tesseract.js`, português). Na primeira vez o navegador baixa o modelo de OCR (alguns MB, depois fica em cache). Também é possível **colar o texto**.
+- A API (`/api/admin/importacoes/previa`) interpreta o texto e associa cada nome a um aluno: apelido memorizado → nome completo → primeiro nome (a turma desempata) → nome parecido. **Sugestões por semelhança nunca são aplicadas sozinhas**: o treinador confirma.
+- Os nomes que o treinador associa manualmente viram **apelidos** do aluno, e o título da seção pode virar **nome alternativo do exercício** — a próxima importação já reconhece.
+- Reimportar a mesma data **corrige** a carga em vez de duplicar; cada importação pode ser **desfeita** pelo histórico.
+- Exemplo fictício para testar: `docs/exemplos/teste-forca-exemplo.pdf` (PDF só com imagem, como a nota real).
+
 ## Regra dos percentuais
 
 - **PR vigente** = teste mais recente de cada exercício (mesmo que a carga seja menor); o histórico nunca é apagado automaticamente.
@@ -82,9 +99,9 @@ api/
   scripts/               utilitários de linha de comando (criar-treinador)
   src/app.ts             app Express (rotas montadas aqui)
   src/routes/auth.ts     login, refresh, logout, troca de senha, consentimento
-  src/routes/admin/      painel do treinador: turmas, exercícios, alunos
+  src/routes/admin/      painel do treinador: turmas, exercícios, alunos, importações
   src/middlewares/       autenticação e controle de perfil
-  src/domain/            regras de negócio (cálculo dos percentuais)
+  src/domain/            regras de negócio (percentuais; leitura e associação da lista importada)
   src/routes/aluno/      área do aluno: PRs, histórico, exercícios ativos
   src/services/          sessões (cookies e refresh tokens)
   test/                  testes de integração (banco prbox_test)
@@ -93,7 +110,8 @@ web/
   src/lib/api.ts         cliente HTTP (renova a sessão automaticamente)
   src/auth/              sessão do usuário e proteção de rotas
   src/pages/aluno/       dashboard de percentuais, Meus PRs, registrar PR, detalhe, perfil
-  src/pages/treinador/   painel do treinador
+  src/pages/treinador/   painel do treinador (importacao/: leitura do PDF, revisão e histórico)
+  src/lib/extrairTextoPdf.ts  leitura do PDF no navegador (pdf.js + OCR), carregada sob demanda
   src/pages/             login e primeiro acesso
 .github/workflows/ci.yml lint, formatação, tipos, testes, migrations e build a cada push/PR
 ```
@@ -105,7 +123,7 @@ Ver o plano completo em `PLANO_DE_DESENVOLVIMENTO.md` (pasta do portfólio).
 - [ ] **Fase 1 — Fundação:** monorepo, banco, modelo de dados, seed e CI prontos — falta o deploy inicial (Vercel/Netlify + Render + Neon)
 - [x] **Fase 2 — Autenticação e cadastros:** login, primeiro acesso (senha + termo LGPD), painel do treinador (turmas, exercícios, alunos)
 - [x] **Fase 3 — Área do aluno:** dashboard de percentuais, Meus PRs, registro de PR, detalhe com histórico, perfil
-- [ ] **Fase 4 — Importação de PDF**
+- [x] **Fase 4 — Importação de PDF:** leitura no navegador com OCR, revisão com associação de nomes/apelidos, histórico e desfazer
 - [ ] **Fase 5 — Consulta com filtros**
 - [ ] **Fase 6 — Camada PWA** (ponto de decisão)
 - [ ] **Fase 7 — Piloto e lançamento**
