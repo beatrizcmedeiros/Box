@@ -1,0 +1,32 @@
+# Blueprint do Render para a API do PR Box (https://render.com/docs/blueprint-spec)
+# O banco PostgreSQL fica no Neon (plano gratuito sem expiração) — ver docs/deploy.md.
+services:
+  - type: web
+    name: prbox-api
+    runtime: node
+    plan: free
+    # Mesma região do banco no Neon (us-east) para reduzir a latência API ↔ banco
+    region: virginia
+    branch: main
+    # O Prisma CLI é dependência de desenvolvimento: precisa ser instalado no build
+    buildCommand: npm ci --include=dev && npm run build -w api
+    # Aplica as migrations pendentes a cada deploy antes de subir o servidor
+    startCommand: npm run db:deploy -w api && npm run start -w api
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: '24'
+      # Connection string do Neon (com ?sslmode=require)
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      # URL do front na Vercel, ex.: https://prbox.vercel.app
+      - key: WEB_ORIGIN
+        sync: false
+      # Vercel (rewrite de /api) + balanceador do Render
+      - key: PROXIES_CONFIAVEIS
+        value: '2'

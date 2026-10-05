@@ -1,7 +1,7 @@
 import cookieParser from 'cookie-parser'
 import cors from 'cors'
 import express, { type RequestHandler } from 'express'
-import { rateLimit } from 'express-rate-limit'
+import { ipKeyGenerator, rateLimit } from 'express-rate-limit'
 import helmet from 'helmet'
 import { tratarErros } from './lib/erros.ts'
 import { adminRouter } from './routes/admin/index.ts'
@@ -16,19 +16,44 @@ type Dependencias = {
   limitarLogin?: RequestHandler
 }
 
-const limitePadraoLogin = () =>
-  rateLimit({
-    windowMs: 15 * 60 * 1000,
-    limit: 10,
+const QUINZE_MINUTOS = 15 * 60 * 1000
+const mensagemLimite = { erro: 'Muitas tentativas de login. Tente novamente em alguns minutos.' }
+
+/**
+ * No box, os alunos costumam usar o mesmo Wi-Fi (mesmo IP público). Por isso o limite principal
+ * é por conta + IP (10 tentativas/15 min), com um teto mais alto por IP (100/15 min) contra
+ * tentativas em massa. LIMITE_LOGIN aumenta ambos (usado nos testes de ponta a ponta).
+ */
+function limitePadraoLogin(): RequestHandler {
+  const multiplicador = Number(process.env.LIMITE_LOGIN ?? 1)
+  const porConta = rateLimit({
+    windowMs: QUINZE_MINUTOS,
+    limit: 10 * multiplicador,
     standardHeaders: 'draft-8',
     legacyHeaders: false,
-    message: { erro: 'Muitas tentativas de login. Tente novamente em alguns minutos.' },
+    message: mensagemLimite,
+    keyGenerator: (req) => {
+      const email = typeof req.body?.email === 'string' ? req.body.email.trim().toLowerCase() : ''
+      return `${ipKeyGenerator(req.ip ?? '')}:${email}`
+    },
   })
+  const porIp = rateLimit({
+    windowMs: QUINZE_MINUTOS,
+    limit: 100 * multiplicador,
+    standardHeaders: false,
+    legacyHeaders: false,
+    message: mensagemLimite,
+  })
+  return (req, res, next) =>
+    porIp(req, res, (erro) => (erro ? next(erro) : porConta(req, res, next)))
+}
 
 export function criarApp({ verificarBanco, webOrigin, limitarLogin }: Dependencias) {
   const app = express()
 
-  app.set('trust proxy', 1)
+  // Quantos proxies à frente da API são confiáveis para descobrir o IP real do aluno
+  // (Render = 1; Vercel encaminhando /api para o Render = 2)
+  app.set('trust proxy', Number(process.env.PROXIES_CONFIAVEIS ?? 1))
   app.use(helmet())
   app.use(cors({ origin: webOrigin, credentials: true }))
   app.use(express.json({ limit: '100kb' }))

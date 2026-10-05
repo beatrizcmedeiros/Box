@@ -19,13 +19,19 @@ describe('acesso', () => {
     expect(router.state.location.pathname).toBe('/login')
   })
 
-  it('o treinador entra e vai para a lista de alunos', async () => {
+  it('o treinador entra e vai para a visão geral', async () => {
     simularApi({
       'GET /api/auth/me': semSessao,
       'POST /api/auth/refresh': semSessao,
       'POST /api/auth/login': { body: { usuario: treinador } },
-      'GET /api/admin/alunos': { body: [] },
-      'GET /api/admin/turmas': { body: [] },
+      'GET /api/admin/visao-geral': {
+        body: {
+          alunos: { ativos: 0, primeiroAcessoConcluido: 0, comPr: 0, percentualComPr: 0 },
+          ultimos30Dias: { registradosPeloAluno: 0, importados: 0 },
+          ultimaImportacao: null,
+          alunosSemPr: [],
+        },
+      },
     })
     const router = renderizar('/login')
     const pessoa = userEvent.setup()
@@ -34,8 +40,9 @@ describe('acesso', () => {
     await pessoa.type(screen.getByLabelText('Senha'), 'senha-123')
     await pessoa.click(screen.getByRole('button', { name: 'Entrar' }))
 
-    expect(await screen.findByRole('heading', { name: 'Alunos' })).toBeInTheDocument()
-    expect(router.state.location.pathname).toBe('/treinador/alunos')
+    expect(await screen.findByRole('heading', { name: 'Olá, Carlos' })).toBeInTheDocument()
+    expect(await screen.findByText('Comece cadastrando os alunos do box.')).toBeInTheDocument()
+    expect(router.state.location.pathname).toBe('/treinador/visao-geral')
   })
 
   it('mostra a mensagem de credenciais inválidas', async () => {

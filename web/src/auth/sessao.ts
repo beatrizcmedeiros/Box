@@ -82,4 +82,4 @@ export function useLogout() {
 
 /** Rota inicial de cada perfil. */
 export const rotaInicial = (usuario: Usuario) =>
-  usuario.perfil === 'TREINADOR' ? '/treinador/alunos' : '/aluno'
+  usuario.perfil === 'TREINADOR' ? '/treinador/visao-geral' : '/aluno'

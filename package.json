@@ -25,7 +25,8 @@
     "db:seed": "npm run db:seed -w api",
     "db:generate": "npm run db:generate -w api",
     "setup": "npm run db:up && npm run db:generate && npm run db:migrate && npm run db:seed",
-    "preview": "npm run build -w web && concurrently -n api,web -c blue,magenta \"npm run dev -w api\" \"npm run preview -w web\""
+    "preview": "npm run build -w web && concurrently -n api,web -c blue,magenta \"npm run dev -w api\" \"npm run preview -w web\"",
+    "test:e2e": "playwright test"
   },
   "allowScripts": {
     "@prisma/engines@7.10.0": true,
@@ -34,6 +35,7 @@
     "tesseract.js": false
   },
   "devDependencies": {
+    "@playwright/test": "^1.63.0",
     "concurrently": "^10.0.5",
     "oxlint": "^1.86.0",
     "prettier": "^3.9.9"

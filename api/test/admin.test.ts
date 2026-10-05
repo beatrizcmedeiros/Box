@@ -216,3 +216,49 @@ describe('alunos', () => {
     expect(await prisma.usuario.findUnique({ where: { id: ana.id } })).toBeNull()
   })
 })
+
+describe('visão geral (indicadores do piloto)', () => {
+  it('conta adesão dos alunos ativos e lista quem ainda não tem PR', async () => {
+    const treinador = await logarComoTreinador(app)
+    const turma = await prisma.turma.create({ data: { nome: 'Turma 18h' } })
+    const exercicio = await prisma.exercicio.create({ data: { nome: 'Back Squat' } })
+    const ana = await criarUsuario({ nome: 'Ana Souza', email: 'ana@t.com', turmaId: turma.id })
+    await criarUsuario({
+      nome: 'Bruno Lima',
+      email: 'bruno@t.com',
+      trocarSenha: true,
+      consentido: false,
+    })
+    await criarUsuario({ nome: 'Carla Mendes', email: 'carla@t.com' })
+    await criarUsuario({ nome: 'Inativo', email: 'inativo@t.com', ativo: false })
+    await prisma.testeCarga.create({
+      data: {
+        usuarioId: ana.id,
+        exercicioId: exercicio.id,
+        dataTeste: new Date('2026-03-15'),
+        cargaKg: 80,
+      },
+    })
+
+    const res = await treinador.get('/api/admin/visao-geral')
+
+    expect(res.status).toBe(200)
+    expect(res.body.alunos).toEqual({
+      ativos: 3,
+      primeiroAcessoConcluido: 2,
+      comPr: 1,
+      percentualComPr: 33,
+    })
+    expect(res.body.ultimos30Dias).toEqual({ registradosPeloAluno: 1, importados: 0 })
+    expect(res.body.ultimaImportacao).toBeNull()
+    expect(res.body.alunosSemPr).toEqual([
+      { id: expect.any(Number), nome: 'Bruno Lima', turma: null, aguardandoPrimeiroAcesso: true },
+      {
+        id: expect.any(Number),
+        nome: 'Carla Mendes',
+        turma: null,
+        aguardandoPrimeiroAcesso: false,
+      },
+    ])
+  })
+})
