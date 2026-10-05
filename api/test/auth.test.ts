@@ -164,3 +164,32 @@ describe('primeiro acesso', () => {
     expect((await celular.post('/api/auth/refresh')).status).toBe(200)
   })
 })
+
+describe('limite de tentativas de login', () => {
+  it('bloqueia a conta após 10 tentativas, sem bloquear colegas no mesmo Wi-Fi', async () => {
+    const { criarApp } = await import('../src/app.ts')
+    const appComLimite = criarApp({
+      verificarBanco: async () => true,
+      webOrigin: 'http://localhost:5173',
+    })
+    await criarUsuario({ email: 'ana@teste.com' })
+    await criarUsuario({ email: 'bruno@teste.com' })
+
+    for (let i = 0; i < 10; i++) {
+      await request(appComLimite)
+        .post('/api/auth/login')
+        .send({ email: 'ana@teste.com', senha: 'errada' })
+    }
+    const bloqueada = await request(appComLimite)
+      .post('/api/auth/login')
+      .send({ email: 'ana@teste.com', senha: SENHA })
+    expect(bloqueada.status).toBe(429)
+    expect(bloqueada.body.erro).toContain('Muitas tentativas')
+
+    // Mesmo IP (mesmo Wi-Fi do box), outra conta: continua entrando
+    const colega = await request(appComLimite)
+      .post('/api/auth/login')
+      .send({ email: 'bruno@teste.com', senha: SENHA })
+    expect(colega.status).toBe(200)
+  })
+})

@@ -5,7 +5,7 @@ export function LayoutPublico({ subtitulo, children }: { subtitulo: string; chil
   return (
     <main className="flex min-h-dvh flex-col">
       <header className="bg-fundo-escuro px-6 pt-12 pb-9 text-center text-white">
-        <div className="mx-auto mb-4 flex size-16 items-center justify-center rounded-2xl bg-marca text-2xl font-extrabold">
+        <div className="mx-auto mb-4 flex size-16 items-center justify-center rounded-2xl bg-marca-forte text-2xl font-extrabold">
           PR
         </div>
         <h1 className="text-2xl font-bold">PR Box</h1>

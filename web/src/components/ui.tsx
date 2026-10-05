@@ -11,7 +11,7 @@ export function Carregando({ texto = 'Carregando…' }: { texto?: string }) {
 type VarianteBotao = 'primario' | 'secundario' | 'perigo' | 'link'
 
 const estilosBotao: Record<VarianteBotao, string> = {
-  primario: 'bg-marca text-white hover:bg-marca-escura',
+  primario: 'bg-marca-forte text-white hover:bg-marca-escura',
   secundario: 'border border-fundo-escuro bg-white text-fundo-escuro hover:bg-slate-50',
   perigo: 'bg-red-600 text-white hover:bg-red-700',
   link: 'text-marca-escura underline-offset-2 hover:underline',

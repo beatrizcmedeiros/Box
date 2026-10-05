@@ -2,6 +2,7 @@ import { NavLink, Outlet } from 'react-router'
 import { useLogout, useUsuario } from '../../auth/sessao.ts'
 
 const itens = [
+  { para: '/treinador/visao-geral', rotulo: 'Visão geral' },
   { para: '/treinador/importar', rotulo: 'Importar cargas (PDF)' },
   { para: '/treinador/consultar', rotulo: 'Consultar cargas' },
   { para: '/treinador/alunos', rotulo: 'Alunos' },
@@ -39,7 +40,7 @@ export function LayoutTreinador() {
               key={para}
               to={para}
               className={({ isActive }) =>
-                `shrink-0 rounded-lg px-3 py-2 text-sm ${isActive ? 'bg-marca font-semibold text-white' : 'hover:bg-white/10'}`
+                `shrink-0 rounded-lg px-3 py-2 text-sm ${isActive ? 'bg-marca-forte font-semibold text-white' : 'hover:bg-white/10'}`
               }
             >
               {rotulo}

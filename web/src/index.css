@@ -2,8 +2,14 @@
 
 /* Identidade visual das telas de modelo do relatório */
 @theme {
+  /* Laranja da marca: realces sobre o fundo escuro (contraste 6,6:1) */
   --color-marca: #ff7a1a;
-  --color-marca-escura: #d45f00;
+  /* Fundo de botões com texto branco (contraste 4,7:1 — WCAG AA) */
+  --color-marca-forte: #c84b0c;
+  /* Texto laranja sobre fundo claro (5,5:1) e hover dos botões */
+  --color-marca-escura: #a84300;
+  /* Cinza de textos secundários um pouco mais escuro que o padrão (4,47 → 5:1) */
+  --color-slate-500: #5a6b84;
   --color-fundo-escuro: #141c28;
   --color-fundo: #f6f8fb;
   --font-sans: 'Segoe UI', system-ui, -apple-system, Roboto, Arial, sans-serif;

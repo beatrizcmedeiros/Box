@@ -5,7 +5,8 @@ import { VitePWA } from 'vite-plugin-pwa'
 import { defineConfig } from 'vitest/config'
 import { CACHE_DADOS_ALUNO } from './src/lib/pwaConstantes.ts'
 
-const proxyApi = { '/api': 'http://localhost:3333' }
+// Endereço da API local (os testes de ponta a ponta usam outra porta)
+const proxyApi = { '/api': process.env.API_PROXY ?? 'http://localhost:3333' }
 
 // https://vite.dev/config/
 export default defineConfig({

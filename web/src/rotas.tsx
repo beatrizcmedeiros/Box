@@ -15,6 +15,7 @@ import { Exercicios } from './pages/treinador/Exercicios.tsx'
 import { ImportarCargas } from './pages/treinador/importacao/ImportarCargas.tsx'
 import { LayoutTreinador } from './pages/treinador/LayoutTreinador.tsx'
 import { Turmas } from './pages/treinador/Turmas.tsx'
+import { VisaoGeral } from './pages/treinador/VisaoGeral.tsx'
 
 export const rotas: RouteObject[] = [
   { path: '/login', element: <Login /> },
@@ -59,7 +60,8 @@ export const rotas: RouteObject[] = [
       </RotaProtegida>
     ),
     children: [
-      { index: true, element: <Navigate to="alunos" replace /> },
+      { index: true, element: <Navigate to="visao-geral" replace /> },
+      { path: 'visao-geral', element: <VisaoGeral /> },
       { path: 'alunos', element: <Alunos /> },
       { path: 'turmas', element: <Turmas /> },
       { path: 'exercicios', element: <Exercicios /> },

@@ -140,3 +140,20 @@ export type ConsultaCargas = {
   porPagina: number
   totalPaginas: number
 }
+
+export type VisaoGeral = {
+  alunos: {
+    ativos: number
+    primeiroAcessoConcluido: number
+    comPr: number
+    percentualComPr: number
+  }
+  ultimos30Dias: { registradosPeloAluno: number; importados: number }
+  ultimaImportacao: { dataTeste: string; criadoEm: string; resultados: number } | null
+  alunosSemPr: {
+    id: number
+    nome: string
+    turma: string | null
+    aguardandoPrimeiroAcesso: boolean
+  }[]
+}

@@ -35,7 +35,7 @@ export function AvisosPwa() {
           <p className="flex-1">Nova versão do PR Box disponível.</p>
           <button
             type="button"
-            className="rounded-lg bg-marca px-3 py-1.5 font-bold"
+            className="rounded-lg bg-marca-forte px-3 py-1.5 font-bold"
             onClick={() => updateServiceWorker(true)}
           >
             Atualizar

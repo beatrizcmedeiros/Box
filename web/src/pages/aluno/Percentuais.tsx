@@ -79,7 +79,6 @@ function CartaoPercentuais({ resumo }: { resumo: ResumoPr }) {
     <Link
       to={`/aluno/exercicios/${exercicio.id}`}
       className="block rounded-2xl bg-white p-4 shadow-sm transition active:scale-[0.99]"
-      aria-label={`${exercicio.nome}, PR ${formatarKg(pr.cargaKg)} kg`}
     >
       <div className="mb-2.5 flex items-baseline justify-between">
         <h2 className="text-base font-bold">{exercicio.nome}</h2>

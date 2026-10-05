@@ -41,6 +41,7 @@ Para ver a área do aluno, entre com a **aluna de demonstração** (`SEED_ALUNO_
 | Comando                                          | O que faz                                                                                     |
 | ------------------------------------------------ | --------------------------------------------------------------------------------------------- |
 | `npm run dev`                                    | API e web em modo desenvolvimento                                                             |
+| `npm run test:e2e`                               | Testes de ponta a ponta (Playwright, Chrome instalado, banco `prbox_e2e`)                     |
 | `npm test`                                       | Testes da API e do front                                                                      |
 | `npm run lint`                                   | Lint com oxlint                                                                               |
 | `npm run format`                                 | Formata o código com Prettier                                                                 |
@@ -58,7 +59,7 @@ Para ver a área do aluno, entre com a **aluna de demonstração** (`SEED_ALUNO_
 - **Treinador** (administrador): cadastra turmas, exercícios (com nomes alternativos usados no PDF) e alunos.
 - **Aluno**: criado pelo treinador com uma **senha temporária** (exibida uma única vez). No primeiro acesso, precisa trocar a senha e aceitar o termo de consentimento (LGPD) antes de usar o sistema.
 - Senhas com **scrypt** (`node:crypto`); token de acesso **JWT de 15 min** e **refresh token de 7 dias** em cookies `httpOnly`/`SameSite=Strict`. O refresh token é guardado só como hash e é **rotacionado** a cada uso; logout, troca de senha e redefinição pelo treinador revogam as sessões.
-- Login limitado a 10 tentativas a cada 15 min por IP.
+- Login limitado a 10 tentativas a cada 15 min **por conta e IP** (colegas no mesmo Wi-Fi do box não se bloqueiam) e 100 por IP. `PROXIES_CONFIAVEIS` define quantos proxies à frente da API são confiáveis para identificar o IP (Render + Vercel = 2).
 - Área do aluno em `/api/me/*`: o aluno só vê e altera os próprios dados; resultados importados pelo treinador não podem ser apagados pelo aluno.
 - Em produção, o front deve encaminhar `/api` para a API (rewrite/proxy, mesma origem) para os cookies `SameSite=Strict` funcionarem.
 
@@ -104,6 +105,9 @@ Lucas 110 kg
 
 ## Testes
 
+- **Ponta a ponta** (`e2e/`, Playwright): treinador cadastra aluno → primeiro acesso no celular → registro de PR e percentuais; importação e desfazer; consulta com filtros; PWA (manifest, service worker, cache e limpeza no logout). Sobe a API e o build do front sozinho, num banco `prbox_e2e` recriado a cada execução.
+- **Lighthouse** (build de produção): Desempenho 98–100, Acessibilidade 100, Boas práticas 96–100, SEO 100 (login, dashboard do aluno e consulta do treinador).
+
 - `api/test/`: testes de integração contra um banco **`prbox_test`**, criado e migrado automaticamente (o banco de desenvolvimento não é tocado).
 - `api/src/**/*.test.ts` e `web/src/**/*.test.ts(x)`: testes unitários e de componentes (API simulada no front).
 
@@ -146,7 +150,13 @@ Ver o plano completo em `PLANO_DE_DESENVOLVIMENTO.md` (pasta do portfólio).
 - [x] **Fase 4 — Importação de PDF:** leitura no navegador com OCR, revisão com associação de nomes/apelidos, histórico e desfazer
 - [x] **Fase 5 — Consulta com filtros:** filtros combináveis na URL, totais, variação, ordenação e paginação
 - [x] **Fase 6 — Camada PWA:** decisão = PWA. Instalável, dashboard offline, aviso de atualização, cache limpo no logout
-- [ ] **Fase 7 — Piloto e lançamento**
+- [ ] **Fase 7 — Piloto e lançamento:** testes E2E, Lighthouse, configuração de deploy, Visão geral e material do piloto prontos — faltam o deploy (contas Neon/Render/Vercel) e a execução do piloto
+
+## Deploy e piloto
+
+- Passo a passo de produção (Neon + Render + Vercel): [`docs/deploy.md`](docs/deploy.md) — `render.yaml` e `web/vercel.json` já estão no repositório.
+- Guias rápidos: [`docs/guia-treinador.md`](docs/guia-treinador.md) e [`docs/guia-aluno.md`](docs/guia-aluno.md).
+- Piloto com uma turma: [`docs/piloto/roteiro.md`](docs/piloto/roteiro.md), [`questionario.md`](docs/piloto/questionario.md) e [`relatorio-modelo.md`](docs/piloto/relatorio-modelo.md). A tela **Visão geral** do treinador acompanha as metas de adesão.
 
 ## Observações
 

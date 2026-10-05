@@ -30,7 +30,7 @@ export function ConviteInstalacao() {
 
   return (
     <div className="flex items-center gap-3 rounded-2xl border border-orange-200 bg-orange-50 p-3 text-sm">
-      <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-marca font-extrabold text-white">
+      <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-marca-forte font-extrabold text-white">
         PR
       </div>
       <p className="flex-1">

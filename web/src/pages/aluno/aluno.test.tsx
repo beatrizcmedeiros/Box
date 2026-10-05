@@ -39,7 +39,7 @@ describe('dashboard de percentuais', () => {
     simularApi({ ...sessaoAluno, 'GET /api/me/prs': { body: [backSquat, snatch] } })
     renderizar('/aluno')
 
-    const cartao = await screen.findByRole('link', { name: 'Back Squat, PR 105 kg' })
+    const cartao = await screen.findByRole('link', { name: /^Back Squat PR 105 kg/ })
     expect(
       within(cartao)
         .getAllByRole('listitem')

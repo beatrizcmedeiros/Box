@@ -42,9 +42,9 @@ export function LayoutAluno() {
             ` de ${new Date(dadosSalvosEm).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}`}
         </p>
       )}
-      <div className="flex-1 pb-20">
+      <main className="flex-1 pb-20">
         <Outlet />
-      </div>
+      </main>
       <nav
         aria-label="Navegação do aluno"
         className="fixed inset-x-0 bottom-0 z-40 mx-auto flex max-w-lg border-t border-slate-200 bg-white pb-[env(safe-area-inset-bottom)]"
@@ -56,7 +56,7 @@ export function LayoutAluno() {
             end={para === '/aluno/prs'}
             className={({ isActive }) =>
               `flex flex-1 flex-col items-center gap-0.5 py-2.5 text-xs ${
-                isActive ? 'font-bold text-marca' : 'text-slate-500'
+                isActive ? 'font-bold text-marca-escura' : 'text-slate-500'
               }`
             }
           >
@@ -122,7 +122,7 @@ export function BotaoFlutuante({ para, children }: { para: string; children: Rea
   return (
     <Link
       to={para}
-      className="block rounded-xl bg-marca px-4 py-3 text-center font-bold text-white transition hover:bg-marca-escura"
+      className="block rounded-xl bg-marca-forte px-4 py-3 text-center font-bold text-white transition hover:bg-marca-escura"
     >
       {children}
     </Link>
