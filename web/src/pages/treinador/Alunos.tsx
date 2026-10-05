@@ -116,6 +116,11 @@ export function Alunos() {
                   <td className="px-4 py-3">
                     <p className="font-semibold">{aluno.nome}</p>
                     <p className="text-slate-500">{aluno.email}</p>
+                    {aluno.apelidos.length > 0 && (
+                      <p className="text-xs text-slate-500">
+                        Na lista: {aluno.apelidos.join(', ')}
+                      </p>
+                    )}
                   </td>
                   <td className="px-4 py-3">{aluno.turma?.nome ?? '—'}</td>
                   <td className="px-4 py-3">{situacao(aluno)}</td>
@@ -187,14 +192,22 @@ function FormularioAluno({
     turmaId: aluno?.turma?.id ?? null,
     ativo: aluno?.ativo ?? true,
   })
+  const [apelidos, setApelidos] = useState(aluno?.apelidos.join(', ') ?? '')
+  const corpo = () => ({
+    ...dados,
+    apelidos: apelidos
+      .split(',')
+      .map((a) => a.trim())
+      .filter(Boolean),
+  })
 
   const salvar = useMutation({
     mutationFn: (): Promise<Aluno | { aluno: Aluno; senhaTemporaria: string }> =>
       aluno
-        ? api<Aluno>(`/admin/alunos/${aluno.id}`, { method: 'PUT', body: dados })
+        ? api<Aluno>(`/admin/alunos/${aluno.id}`, { method: 'PUT', body: corpo() })
         : api<{ aluno: Aluno; senhaTemporaria: string }>('/admin/alunos', {
             method: 'POST',
-            body: dados,
+            body: corpo(),
           }),
     onSuccess: (resposta) => {
       if ('senhaTemporaria' in resposta) {
@@ -246,6 +259,13 @@ function FormularioAluno({
             </option>
           ))}
         </Selecao>
+        <Campo
+          rotulo="Apelidos (opcional)"
+          value={apelidos}
+          onChange={(e) => setApelidos(e.target.value)}
+          erro={erro?.doCampo('apelidos')}
+          dica="Como o aluno aparece na lista do teste de força, separados por vírgula. Ex.: Lurdinha, Lu"
+        />
         {aluno && (
           <label className="flex items-center gap-2 text-sm">
             <input

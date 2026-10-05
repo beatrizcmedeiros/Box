@@ -2,28 +2,17 @@ import { Router } from 'express'
 import { z } from 'zod'
 import { calcularPercentuais } from '../../domain/percentuais.ts'
 import type { Exercicio, TesteCarga } from '../../generated/prisma/client.ts'
+import { dataDoTesteSchema, formatarData, paraData } from '../../lib/datas.ts'
 import { ErroHttp, naoEncontrado } from '../../lib/erros.ts'
 import { prisma } from '../../lib/prisma.ts'
+import { cargaKgSchema } from '../../lib/validacao.ts'
 import { parseId } from '../admin/comum.ts'
-
-/** Data de hoje no fuso do box (o servidor pode estar em UTC). */
-const hojeNoBrasil = () =>
-  new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(new Date())
 
 const novoPrSchema = z.object({
   exercicioId: z.coerce.number().int().positive('Escolha o exercício'),
-  dataTeste: z.iso
-    .date('Data inválida')
-    .refine((data) => data <= hojeNoBrasil(), 'A data do teste não pode ser no futuro'),
-  cargaKg: z.coerce
-    .number('Informe a carga')
-    .min(1, 'A carga deve ser de pelo menos 1 kg')
-    .max(500, 'A carga deve ser de no máximo 500 kg')
-    .refine((v) => Number.isInteger(v * 100), 'Use no máximo duas casas decimais'),
+  dataTeste: dataDoTesteSchema,
+  cargaKg: cargaKgSchema,
 })
-
-const paraData = (iso: string) => new Date(`${iso}T00:00:00.000Z`)
-const formatarData = (data: Date) => data.toISOString().slice(0, 10)
 
 type TesteComExercicio = TesteCarga & { exercicio: Exercicio }
 
