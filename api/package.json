@@ -14,7 +14,8 @@
     "db:seed": "prisma db seed",
     "db:studio": "prisma studio",
     "db:generate": "prisma generate",
-    "criar-treinador": "tsx scripts/criar-treinador.ts"
+    "criar-treinador": "tsx scripts/criar-treinador.ts",
+    "demo": "tsx scripts/dados-demonstracao.ts"
   },
   "dependencies": {
     "@prisma/adapter-pg": "7.10.0",

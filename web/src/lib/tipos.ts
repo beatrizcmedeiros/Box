@@ -118,3 +118,25 @@ export type Importacao = {
   treinador: string
   criadoEm: string
 }
+
+// Consulta de cargas (Fase 5)
+
+export type OrdenacaoCargas = 'carga' | 'aluno' | 'data' | 'variacao'
+
+export type ResultadoCarga = {
+  aluno: { id: number; nome: string }
+  turma: TurmaResumo | null
+  exercicio: { id: number; nome: string }
+  dataTeste: string
+  cargaKg: number
+  origem: 'ALUNO' | 'IMPORTACAO'
+  variacaoKg: number | null
+}
+
+export type ConsultaCargas = {
+  resultados: ResultadoCarga[]
+  totais: { registros: number; alunos: number; maiorCargaKg: number | null; mediaKg: number | null }
+  pagina: number
+  porPagina: number
+  totalPaginas: number
+}

@@ -10,6 +10,7 @@ import { RegistrarPr } from './pages/aluno/RegistrarPr.tsx'
 import { Login } from './pages/Login.tsx'
 import { Termo, TrocarSenha } from './pages/PrimeiroAcesso.tsx'
 import { Alunos } from './pages/treinador/Alunos.tsx'
+import { ConsultarCargas } from './pages/treinador/ConsultarCargas.tsx'
 import { Exercicios } from './pages/treinador/Exercicios.tsx'
 import { ImportarCargas } from './pages/treinador/importacao/ImportarCargas.tsx'
 import { LayoutTreinador } from './pages/treinador/LayoutTreinador.tsx'
@@ -63,6 +64,7 @@ export const rotas: RouteObject[] = [
       { path: 'turmas', element: <Turmas /> },
       { path: 'exercicios', element: <Exercicios /> },
       { path: 'importar', element: <ImportarCargas /> },
+      { path: 'consultar', element: <ConsultarCargas /> },
     ],
   },
   // Raiz e endereços desconhecidos: leva cada perfil para a sua tela inicial
