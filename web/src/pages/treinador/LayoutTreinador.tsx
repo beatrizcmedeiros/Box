@@ -5,6 +5,7 @@ const itens = [
   { para: '/treinador/visao-geral', rotulo: 'Visão geral' },
   { para: '/treinador/importar', rotulo: 'Importar cargas (PDF)' },
   { para: '/treinador/consultar', rotulo: 'Consultar cargas' },
+  { para: '/treinador/evolucao', rotulo: 'Evolução' },
   { para: '/treinador/alunos', rotulo: 'Alunos' },
   { para: '/treinador/turmas', rotulo: 'Turmas' },
   { para: '/treinador/exercicios', rotulo: 'Exercícios' },

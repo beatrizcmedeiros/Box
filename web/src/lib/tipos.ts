@@ -157,3 +157,51 @@ export type VisaoGeral = {
     aguardandoPrimeiroAcesso: boolean
   }[]
 }
+
+// Evolução (dashboards do aluno e do treinador)
+
+export type SerieExercicio = {
+  exercicio: ExercicioResumo
+  pontos: { data: string; cargaKg: number }[]
+  primeiroKg: number
+  atualKg: number
+  melhorKg: number
+  variacaoKg: number
+  variacaoPct: number | null
+}
+
+export type Ciclo = { chave: string; rotulo: string; semana: string }
+
+export type EvolucaoTurmas = {
+  exercicios: { id: number; nome: string }[]
+  exercicio: { id: number; nome: string } | null
+  ciclos: Ciclo[]
+  turmas: {
+    turma: TurmaResumo | null
+    porCiclo: { ciclo: string; mediaKg: number | null; alunos: number }[]
+  }[]
+  alunos: {
+    aluno: { id: number; nome: string }
+    turma: TurmaResumo | null
+    porCiclo: Record<string, number>
+    ultimoCiclo: string | null
+    ultimoKg: number | null
+    anteriorKg: number | null
+    variacaoKg: number | null
+    variacaoPct: number | null
+  }[]
+  resumo: {
+    cicloAtual: string
+    cicloAnterior: string | null
+    alunosAvaliados: number
+    mediaAtualKg: number | null
+    medianaAtualKg: number | null
+    mediaAnteriorKg: number | null
+    evolucaoMediaKg: number | null
+    evolucaoMediaPct: number | null
+    comparaveis: number
+    evoluiram: number
+    mantiveram: number
+    cairam: number
+  } | null
+}

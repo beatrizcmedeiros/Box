@@ -148,6 +148,12 @@ export function DetalheExercicio() {
           + Registrar novo PR
         </BotaoFlutuante>
         <Link
+          to={`/aluno/evolucao?exercicio=${exercicio.id}`}
+          className="block text-center text-sm font-semibold text-marca-escura"
+        >
+          Ver gráfico de evolução
+        </Link>
+        <Link
           to="/aluno/percentuais"
           className="block text-center text-sm font-semibold text-slate-600"
         >

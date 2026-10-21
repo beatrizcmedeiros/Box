@@ -1,6 +1,7 @@
 import { Router } from 'express'
 import { prisma } from '../../lib/prisma.ts'
 import { autenticar, exigirCadastroCompleto, exigirPerfil } from '../../middlewares/autenticacao.ts'
+import { evolucaoDoAluno } from '../../services/evolucao.ts'
 import { prsRouter } from './prs.ts'
 
 export function alunoRouter() {
@@ -8,6 +9,11 @@ export function alunoRouter() {
 
   router.use(autenticar, exigirCadastroCompleto, exigirPerfil('ALUNO'))
   router.use('/prs', prsRouter())
+
+  /** Evolução do PR em cada exercício (dashboard de evolução do aluno). */
+  router.get('/evolucao', async (req, res) => {
+    res.json({ exercicios: await evolucaoDoAluno(req.usuario!.id) })
+  })
 
   /** Exercícios ativos, para o aluno escolher ao registrar um PR. */
   router.get('/exercicios', async (_req, res) => {
