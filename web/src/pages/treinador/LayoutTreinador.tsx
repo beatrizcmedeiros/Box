@@ -3,6 +3,7 @@ import { useLogout, useUsuario } from '../../auth/sessao.ts'
 
 const itens = [
   { para: '/treinador/visao-geral', rotulo: 'Visão geral' },
+  { para: '/treinador/teste-de-carga', rotulo: 'Teste de carga' },
   { para: '/treinador/importar', rotulo: 'Importar cargas (PDF)' },
   { para: '/treinador/consultar', rotulo: 'Consultar cargas' },
   { para: '/treinador/evolucao', rotulo: 'Evolução' },

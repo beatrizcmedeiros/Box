@@ -118,7 +118,7 @@ export function DetalheExercicio() {
               >
                 <span>
                   {formatarData(lancamento.dataTeste)}
-                  {lancamento.origem === 'IMPORTACAO' && (
+                  {lancamento.origem !== 'ALUNO' && (
                     <span className="ml-2 text-xs text-slate-500">(treinador)</span>
                   )}
                 </span>

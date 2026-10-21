@@ -42,13 +42,16 @@ export type Aluno = {
   apelidos: string[]
 }
 
+/** ALUNO = registrado pelo aluno; IMPORTACAO = lista (PDF) do treinador; TREINADOR = lançado na tela Teste de carga */
+export type OrigemTeste = 'ALUNO' | 'IMPORTACAO' | 'TREINADOR'
+
 export type ExercicioResumo = { id: number; nome: string; categoria: CategoriaExercicio }
 
 export type Lancamento = {
   id: number
   dataTeste: string
   cargaKg: number
-  origem: 'ALUNO' | 'IMPORTACAO'
+  origem: OrigemTeste
 }
 
 export type CargaPercentual = { percentual: number; cargaKg: number }
@@ -129,7 +132,7 @@ export type ResultadoCarga = {
   exercicio: { id: number; nome: string }
   dataTeste: string
   cargaKg: number
-  origem: 'ALUNO' | 'IMPORTACAO'
+  origem: OrigemTeste
   variacaoKg: number | null
 }
 
@@ -204,4 +207,20 @@ export type EvolucaoTurmas = {
     mantiveram: number
     cairam: number
   } | null
+}
+
+// Teste de carga (lançamento pelo treinador)
+
+export type AlunoParaLancar = {
+  aluno: { id: number; nome: string }
+  turma: TurmaResumo | null
+  prAtual: { cargaKg: number; dataTeste: string } | null
+  melhorAnteriorKg: number | null
+  lancamento: { id: number; cargaKg: number; origem: OrigemTeste } | null
+}
+
+export type ResultadoLancamento = {
+  criados: number
+  atualizados: number
+  novosRecordes: { usuarioId: number; nome: string; cargaKg: number; anteriorKg: number }[]
 }

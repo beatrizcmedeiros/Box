@@ -97,6 +97,14 @@ Lucas 110 kg
 - Para testar: `npm run preview` (o `npm run dev` não registra o service worker).
 - Limitações do iOS: instalação manual pelo Safari; o sistema pode limpar os dados offline se o app ficar semanas sem uso.
 
+## Teste de carga (lançamento pelo treinador)
+
+- Tela **Teste de carga**: data (hoje por padrão, editável) e exercício no topo.
+  - **Por turma**: escolhe a turma (ou todas), pesquisa por nome/apelido e digita a carga de cada aluno na mesma tela (Enter passa ao próximo); o PR anterior aparece como referência e o novo recorde é sinalizado. Salva tudo de uma vez.
+  - **Por aluno**: pesquisa o aluno pelo nome e lança a carga individualmente.
+- Origem **TREINADOR**: o aluno vê como “(treinador)” e não pode apagar; lançar de novo o mesmo aluno/exercício/data corrige a carga; o treinador pode excluir um lançamento feito por engano.
+- O aluno continua registrando os próprios PRs em **Registrar PR**.
+
 ## Evolução (dashboards)
 
 - **Aluno** (aba _Evolução_): para cada exercício, gráfico de linha do PR em cada teste registrado, com PR atual, primeiro registro, evolução (kg e %) e melhor marca; cartões com minigráfico de todos os exercícios; alternativa em tabela.
