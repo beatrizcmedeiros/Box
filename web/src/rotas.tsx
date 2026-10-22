@@ -9,7 +9,9 @@ import { Percentuais } from './pages/aluno/Percentuais.tsx'
 import { Perfil } from './pages/aluno/Perfil.tsx'
 import { RegistrarPr } from './pages/aluno/RegistrarPr.tsx'
 import { Login } from './pages/Login.tsx'
-import { Termo, TrocarSenha } from './pages/PrimeiroAcesso.tsx'
+import { Cadastro } from './pages/Cadastro.tsx'
+import { EsqueciSenha } from './pages/EsqueciSenha.tsx'
+import { ConfirmarEmail, Termo } from './pages/PrimeiroAcesso.tsx'
 import { Alunos } from './pages/treinador/Alunos.tsx'
 import { ConsultarCargas } from './pages/treinador/ConsultarCargas.tsx'
 import { EvolucaoTurmas } from './pages/treinador/EvolucaoTurmas.tsx'
@@ -20,14 +22,19 @@ import { PercentuaisAlunos } from './pages/treinador/PercentuaisAlunos.tsx'
 import { TesteDeCarga } from './pages/treinador/TesteDeCarga.tsx'
 import { Turmas } from './pages/treinador/Turmas.tsx'
 import { VisaoGeral } from './pages/treinador/VisaoGeral.tsx'
+import { Codigos } from './pages/treinador/Codigos.tsx'
+import { Professores } from './pages/treinador/Professores.tsx'
+import { MeusVinculos } from './pages/aluno/MeusVinculos.tsx'
 
 export const rotas: RouteObject[] = [
   { path: '/login', element: <Login /> },
+  { path: '/cadastro', element: <Cadastro /> },
+  { path: '/esqueci-senha', element: <EsqueciSenha /> },
   {
-    path: '/primeiro-acesso/senha',
+    path: '/primeiro-acesso/email',
     element: (
-      <RotaProtegida etapa="senha">
-        <TrocarSenha />
+      <RotaProtegida etapa="email">
+        <ConfirmarEmail />
       </RotaProtegida>
     ),
   },
@@ -42,7 +49,7 @@ export const rotas: RouteObject[] = [
   {
     path: '/aluno',
     element: (
-      <RotaProtegida perfil="ALUNO">
+      <RotaProtegida area="aluno">
         <LayoutAluno />
       </RotaProtegida>
     ),
@@ -55,12 +62,13 @@ export const rotas: RouteObject[] = [
       { path: 'prs/novo', element: <RegistrarPr /> },
       { path: 'exercicios/:id', element: <DetalheExercicio /> },
       { path: 'perfil', element: <Perfil /> },
+      { path: 'vinculos', element: <MeusVinculos /> },
     ],
   },
   {
     path: '/treinador',
     element: (
-      <RotaProtegida perfil="TREINADOR">
+      <RotaProtegida area="gestao">
         <LayoutTreinador />
       </RotaProtegida>
     ),
@@ -75,6 +83,8 @@ export const rotas: RouteObject[] = [
       { path: 'importar', element: <ImportarCargas /> },
       { path: 'consultar', element: <ConsultarCargas /> },
       { path: 'evolucao', element: <EvolucaoTurmas /> },
+      { path: 'codigos', element: <Codigos /> },
+      { path: 'professores', element: <Professores /> },
     ],
   },
   // Raiz e endereços desconhecidos: leva cada perfil para a sua tela inicial

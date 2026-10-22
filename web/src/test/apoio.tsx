@@ -17,7 +17,11 @@ export function simularApi(rotasApi: Record<string, Resposta | Manipulador>) {
       const corpo = init?.body ? JSON.parse(String(init.body)) : undefined
       chamadas.push({ metodo, url, corpo })
       const caminho = url.split('?')[0]
-      const definido = rotasApi[`${metodo} ${url}`] ?? rotasApi[`${metodo} ${caminho}`]
+      const definido =
+        rotasApi[`${metodo} ${url}`] ??
+        rotasApi[`${metodo} ${caminho}`] ??
+        // Área de gestão: por padrão, a pessoa trabalha na academia de id 1 (rotas /api/c/1/...)
+        (`${metodo} ${caminho}` === 'GET /api/contextos' ? { body: CONTEXTOS_PADRAO } : undefined)
       const { status = 200, body } =
         typeof definido === 'function'
           ? definido(corpo)
@@ -42,13 +46,16 @@ export function renderizar(rotaInicial: string) {
   return router
 }
 
+export const CONTEXTOS_PADRAO = [{ id: '1', tipo: 'academia', nome: 'Box Teste' }]
+
 export const usuario = (dados: Partial<Usuario> = {}): Usuario => ({
   id: 1,
   nome: 'Ana Souza',
   email: 'ana@teste.com',
-  perfil: 'ALUNO',
-  turma: null,
-  trocarSenha: false,
+  tipo: 'PESSOA',
+  ehProfessor: false,
+  academia: null,
+  emailConfirmado: true,
   consentimentoPendente: false,
   ...dados,
 })

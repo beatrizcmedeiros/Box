@@ -32,19 +32,19 @@ const alunos: AlunoParaLancar[] = [
 function simular() {
   return simularApi({
     'GET /api/auth/me': {
-      body: { usuario: usuario({ id: 9, nome: 'Carlos', perfil: 'TREINADOR' }) },
+      body: { usuario: usuario({ id: 9, nome: 'Carlos', ehProfessor: true }) },
     },
-    'GET /api/admin/turmas': {
+    'GET /api/c/1/turmas': {
       body: [{ id: 3, nome: 'Turma 18h', horario: '18:00', totalAlunos: 3 }],
     },
-    'GET /api/admin/exercicios': {
+    'GET /api/c/1/exercicios': {
       body: [
         { id: 1, nome: 'Back Squat', categoria: 'LEVANTAMENTO', ativo: true, aliases: [] },
         { id: 2, nome: 'Thruster', categoria: 'OUTRO', ativo: false, aliases: [] },
       ],
     },
-    'GET /api/admin/lancamentos': { body: { alunos } },
-    'POST /api/admin/lancamentos': {
+    'GET /api/c/1/lancamentos': { body: { alunos } },
+    'POST /api/c/1/lancamentos': {
       status: 201,
       body: {
         criados: 2,
@@ -65,8 +65,8 @@ describe('teste de carga — por turma', () => {
     expect(await screen.findByLabelText('Data do teste')).toHaveValue(hojeIso())
     expect(screen.queryByRole('option', { name: 'Thruster' })).not.toBeInTheDocument()
     await waitFor(() =>
-      expect(chamadas.find((c) => c.url.startsWith('/api/admin/lancamentos'))?.url).toBe(
-        `/api/admin/lancamentos?data=${hojeIso()}&exercicioId=1&turmaId=3`,
+      expect(chamadas.find((c) => c.url.startsWith('/api/c/1/lancamentos'))?.url).toBe(
+        `/api/c/1/lancamentos?data=${hojeIso()}&exercicioId=1&turmaId=3`,
       ),
     )
 

@@ -1,6 +1,14 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { prisma } from '../src/lib/prisma.ts'
-import { criarAppDeTeste, criarUsuario, limparBanco, logar, logarComoTreinador } from './apoio.ts'
+import {
+  admin,
+  criarAppDeTeste,
+  criarTurma,
+  criarUsuario,
+  limparBanco,
+  logar,
+  logarComoTreinador,
+} from './apoio.ts'
 
 const app = criarAppDeTeste()
 
@@ -16,8 +24,8 @@ Fulano 1100 kg
 `
 
 async function cenario() {
-  const t18 = await prisma.turma.create({ data: { nome: 'Turma 18h' } })
-  const t07 = await prisma.turma.create({ data: { nome: 'Turma 07h' } })
+  const t18 = await criarTurma('Turma 18h')
+  const t07 = await criarTurma('Turma 07h')
   const carla = await criarUsuario({
     nome: 'Carla Mendes',
     email: 'carla@teste.com',
@@ -53,12 +61,12 @@ async function cenario() {
   return { t18, t07, carla, antonio, anaLima, anaSouza, patricia, backSquat, frontSquat, treinador }
 }
 
-describe('POST /api/admin/importacoes/previa', () => {
+describe('POST /api/c/:contexto/importacoes/previa', () => {
   it('interpreta a lista e associa os nomes aos alunos', async () => {
     const { treinador, carla, anaLima, patricia, t18, backSquat, frontSquat } = await cenario()
 
     const res = await treinador
-      .post('/api/admin/importacoes/previa')
+      .post(admin('/importacoes/previa'))
       .send({ texto: LISTA, turmaId: t18.id })
 
     expect(res.status).toBe(200)
@@ -98,7 +106,7 @@ describe('POST /api/admin/importacoes/previa', () => {
 
   it('não grava nada', async () => {
     const { treinador } = await cenario()
-    await treinador.post('/api/admin/importacoes/previa').send({ texto: LISTA })
+    await treinador.post(admin('/importacoes/previa')).send({ texto: LISTA })
     expect(await prisma.importacao.count()).toBe(0)
     expect(await prisma.testeCarga.count()).toBe(0)
   })
@@ -106,7 +114,7 @@ describe('POST /api/admin/importacoes/previa', () => {
   it('avisa quando não há nenhum resultado no texto', async () => {
     const { treinador } = await cenario()
     const res = await treinador
-      .post('/api/admin/importacoes/previa')
+      .post(admin('/importacoes/previa'))
       .send({ texto: 'Teste agachamento\n\n' })
     expect(res.status).toBe(400)
     expect(res.body.erro).toContain('Nenhum resultado')
@@ -115,17 +123,15 @@ describe('POST /api/admin/importacoes/previa', () => {
   it('é exclusiva do treinador', async () => {
     await criarUsuario({ email: 'aluno@teste.com' })
     const aluno = await logar(app, 'aluno@teste.com')
-    expect((await aluno.post('/api/admin/importacoes/previa').send({ texto: LISTA })).status).toBe(
-      403,
-    )
+    expect((await aluno.post(admin('/importacoes/previa')).send({ texto: LISTA })).status).toBe(403)
   })
 })
 
-describe('POST /api/admin/importacoes', () => {
+describe('POST /api/c/:contexto/importacoes', () => {
   it('grava os resultados, aprende apelidos e o nome do exercício', async () => {
     const { treinador, carla, antonio, backSquat, t18 } = await cenario()
 
-    const res = await treinador.post('/api/admin/importacoes').send({
+    const res = await treinador.post(admin('/importacoes')).send({
       dataTeste: '2026-09-20',
       turmaId: t18.id,
       nomeArquivo: 'Notes_teste.pdf',
@@ -152,7 +158,7 @@ describe('POST /api/admin/importacoes', () => {
     ])
 
     // Na próxima prévia, "Toninho" e "agachamento" já são reconhecidos
-    const previa = await treinador.post('/api/admin/importacoes/previa').send({ texto: LISTA })
+    const previa = await treinador.post(admin('/importacoes/previa')).send({ texto: LISTA })
     const [secao] = previa.body.secoes
     expect(secao.exercicio).toEqual({ status: 'encontrado', exercicioId: backSquat.id })
     expect(secao.linhas[1].aluno).toMatchObject({
@@ -164,7 +170,7 @@ describe('POST /api/admin/importacoes', () => {
 
   it('o aluno vê o resultado importado como PR, marcado como do treinador', async () => {
     const { treinador, carla, backSquat } = await cenario()
-    await treinador.post('/api/admin/importacoes').send({
+    await treinador.post(admin('/importacoes')).send({
       dataTeste: '2026-09-20',
       resultados: [{ usuarioId: carla.id, exercicioId: backSquat.id, cargaKg: 55 }],
     })
@@ -181,7 +187,7 @@ describe('POST /api/admin/importacoes', () => {
   it('reimportar a mesma data corrige a carga em vez de duplicar', async () => {
     const { treinador, carla, backSquat } = await cenario()
     const enviar = (cargaKg: number) =>
-      treinador.post('/api/admin/importacoes').send({
+      treinador.post(admin('/importacoes')).send({
         dataTeste: '2026-09-20',
         resultados: [{ usuarioId: carla.id, exercicioId: backSquat.id, cargaKg }],
       })
@@ -221,7 +227,7 @@ describe('POST /api/admin/importacoes', () => {
   ])('recusa %s', async (_caso, montar, mensagem) => {
     const c = await cenario()
     const res = await c.treinador
-      .post('/api/admin/importacoes')
+      .post(admin('/importacoes'))
       .send({ dataTeste: '2026-09-20', resultados: montar(c) })
     expect(res.status).toBe(400)
     expect(res.body.erro).toContain(mensagem)
@@ -230,7 +236,7 @@ describe('POST /api/admin/importacoes', () => {
 
   it('não permite apelido que já é de outro aluno no cadastro manual', async () => {
     const { treinador, carla, antonio, backSquat } = await cenario()
-    await treinador.post('/api/admin/importacoes').send({
+    await treinador.post(admin('/importacoes')).send({
       dataTeste: '2026-09-20',
       resultados: [
         { usuarioId: antonio.id, exercicioId: backSquat.id, cargaKg: 85, apelido: 'Toninho' },
@@ -238,12 +244,12 @@ describe('POST /api/admin/importacoes', () => {
     })
 
     const res = await treinador
-      .put(`/api/admin/alunos/${carla.id}`)
+      .put(admin(`/alunos/${carla.id}`))
       .send({ nome: 'Carla Mendes', email: 'carla@teste.com', apelidos: ['toninho'] })
     expect(res.status).toBe(409)
     expect(res.body.erro).toContain('Antônio Pereira')
 
-    const lista = await treinador.get('/api/admin/alunos?busca=antonio')
+    const lista = await treinador.get(admin('/alunos?busca=antonio'))
     expect(lista.body[0].apelidos).toEqual(['toninho'])
   })
 })
@@ -259,7 +265,7 @@ describe('histórico e desfazer', () => {
         cargaKg: 50,
       },
     })
-    const { body } = await treinador.post('/api/admin/importacoes').send({
+    const { body } = await treinador.post(admin('/importacoes')).send({
       dataTeste: '2026-09-20',
       turmaId: t18.id,
       nomeArquivo: 'lista.pdf',
@@ -269,7 +275,7 @@ describe('histórico e desfazer', () => {
       ],
     })
 
-    const lista = await treinador.get('/api/admin/importacoes')
+    const lista = await treinador.get(admin('/importacoes'))
     expect(lista.body[0]).toMatchObject({
       id: body.importacaoId,
       dataTeste: '2026-09-20',
@@ -281,10 +287,10 @@ describe('histórico e desfazer', () => {
       treinador: 'Treinador',
     })
 
-    const desfeita = await treinador.delete(`/api/admin/importacoes/${body.importacaoId}`)
+    const desfeita = await treinador.delete(admin(`/importacoes/${body.importacaoId}`))
     expect(desfeita.body).toEqual({ removidos: 2 })
     expect(await prisma.testeCarga.count()).toBe(1) // o lançamento do próprio aluno continua
-    expect((await treinador.get('/api/admin/importacoes')).body[0].status).toBe('CANCELADA')
-    expect((await treinador.delete(`/api/admin/importacoes/${body.importacaoId}`)).status).toBe(409)
+    expect((await treinador.get(admin('/importacoes'))).body[0].status).toBe('CANCELADA')
+    expect((await treinador.delete(admin(`/importacoes/${body.importacaoId}`))).status).toBe(409)
   })
 })

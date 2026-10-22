@@ -26,11 +26,10 @@ O front encaminha `/api` para a API. Para o navegador tudo é um único site, en
    - `WEB_ORIGIN`: a URL do front na Vercel (passo 3; pode voltar e ajustar depois).
    - `JWT_SECRET` é gerado automaticamente.
 4. Após o deploy, teste `https://prbox-api.onrender.com/api/health` → `{"status":"ok","banco":"ok",...}`.
-5. Crie a conta do treinador (no _Shell_ do serviço no Render):
-   ```bash
-   npm run criar-treinador -w api -- "Nome do Treinador" email@dominio.com
-   ```
-   A senha temporária aparece no terminal; o treinador a troca no primeiro acesso.
+5. Configure o envio de e-mails (cadastro e recuperação de senha usam códigos por e-mail):
+   - Crie uma conta no [Resend](https://resend.com) e uma chave de API: variável `RESEND_API_KEY`.
+   - Verifique um domínio seu no Resend e defina `EMAIL_REMETENTE` (ex.: `PR Box <nao-responda@seudominio.com.br>`). Sem domínio verificado, o Resend só entrega e-mails para o endereço da própria conta Resend.
+6. As contas são criadas pelo próprio app ou pela web: a academia, os professores e os alunos se cadastram e se vinculam pelos códigos.
 
 > Se o nome do serviço no Render for diferente de `prbox-api`, ajuste a URL em `web/vercel.json`.
 

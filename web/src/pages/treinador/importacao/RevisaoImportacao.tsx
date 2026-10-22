@@ -1,7 +1,7 @@
 import { useMutation } from '@tanstack/react-query'
 import { useMemo, useState } from 'react'
 import { Alerta, Botao, Etiqueta } from '../../../components/ui.tsx'
-import { api } from '../../../lib/api.ts'
+import { api, gestao } from '../../../lib/api.ts'
 import { formatarData } from '../../../lib/formato.ts'
 import type { Previa } from '../../../lib/tipos.ts'
 import {
@@ -51,7 +51,7 @@ export function RevisaoImportacao({
 
   const confirmar = useMutation({
     mutationFn: () =>
-      api<Resposta>('/admin/importacoes', {
+      api<Resposta>(gestao('/importacoes'), {
         method: 'POST',
         body: {
           dataTeste: dados.dataTeste,

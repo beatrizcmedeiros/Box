@@ -143,16 +143,16 @@ describe('evolução no painel do treinador', () => {
   function simularTreinador() {
     return simularApi({
       'GET /api/auth/me': {
-        body: { usuario: usuario({ id: 9, nome: 'Carlos', perfil: 'TREINADOR' }) },
+        body: { usuario: usuario({ id: 9, nome: 'Carlos', ehProfessor: true }) },
       },
-      'GET /api/admin/turmas': {
+      'GET /api/c/1/turmas': {
         body: [
           { id: 2, nome: 'Turma 07h', horario: '07:00', totalAlunos: 2 },
           { id: 3, nome: 'Turma 18h', horario: '18:00', totalAlunos: 2 },
         ],
       },
-      'GET /api/admin/evolucao': { body: evolucaoTurmas },
-      'GET /api/admin/evolucao/alunos/11': {
+      'GET /api/c/1/evolucao': { body: evolucaoTurmas },
+      'GET /api/c/1/evolucao/alunos/11': {
         body: {
           aluno: { id: 11, nome: 'Bruno Lima', turma: { id: 3, nome: 'Turma 18h' } },
           exercicios: [backSquat],
@@ -195,7 +195,7 @@ describe('evolução no painel do treinador', () => {
     await screen.findByText('2 de 3')
     await pessoa.selectOptions(screen.getByLabelText('Turma'), '3')
     await waitFor(() => expect(router.state.location.search).toBe('?turmaId=3'))
-    expect(chamadas.some((c) => c.url === '/api/admin/evolucao?turmaId=3')).toBe(true)
+    expect(chamadas.some((c) => c.url === '/api/c/1/evolucao?turmaId=3')).toBe(true)
 
     await pessoa.click(screen.getByRole('button', { name: /Bruno Lima: de 120 kg para 130 kg/ }))
     const dialogo = await screen.findByRole('dialog', { name: 'Evolução de Bruno Lima' })

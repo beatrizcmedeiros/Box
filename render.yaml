@@ -30,3 +30,9 @@ services:
       # Vercel (rewrite de /api) + balanceador do Render
       - key: PROXIES_CONFIAVEIS
         value: '2'
+      # Envio de e-mails (cadastro e recuperação de senha) pelo Resend — ver docs/deploy.md
+      - key: RESEND_API_KEY
+        sync: false
+      # Ex.: PR Box <nao-responda@seudominio.com.br> (domínio verificado no Resend)
+      - key: EMAIL_REMETENTE
+        sync: false

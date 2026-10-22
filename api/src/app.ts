@@ -4,10 +4,13 @@ import express, { type RequestHandler } from 'express'
 import { ipKeyGenerator, rateLimit } from 'express-rate-limit'
 import helmet from 'helmet'
 import { tratarErros } from './lib/erros.ts'
-import { adminRouter } from './routes/admin/index.ts'
+import { academiaRouter } from './routes/academia.ts'
+import { contextoRouter, contextosRouter } from './routes/admin/index.ts'
 import { alunoRouter } from './routes/aluno/index.ts'
 import { authRouter } from './routes/auth.ts'
 import { healthRouter, type VerificarBanco } from './routes/health.ts'
+import { professorRouter } from './routes/professor.ts'
+import { vinculosRouter } from './routes/vinculos.ts'
 
 type Dependencias = {
   verificarBanco: VerificarBanco
@@ -61,8 +64,15 @@ export function criarApp({ verificarBanco, webOrigin, limitarLogin }: Dependenci
 
   app.use('/api/health', healthRouter(verificarBanco))
   app.use('/api/auth', authRouter({ limitarLogin: limitarLogin ?? limitePadraoLogin() }))
-  app.use('/api/admin', adminRouter())
+  // Área "Meus PRs" (toda pessoa) e vínculos por código
   app.use('/api/me', alunoRouter())
+  app.use('/api/vinculos', vinculosRouter())
+  // Professor (código, locais) e conta da academia (códigos, professores)
+  app.use('/api/professor', professorRouter())
+  app.use('/api/academia', academiaRouter())
+  // Gestão por contexto: /api/c/<id da academia | pessoal>/...
+  app.use('/api/contextos', contextosRouter())
+  app.use('/api/c/:contexto', contextoRouter())
 
   app.use('/api', (_req, res) => {
     res.status(404).json({ erro: 'Rota não encontrada' })

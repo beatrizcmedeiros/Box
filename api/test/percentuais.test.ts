@@ -1,6 +1,15 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { prisma } from '../src/lib/prisma.ts'
-import { criarAppDeTeste, criarUsuario, limparBanco, logar, logarComoTreinador } from './apoio.ts'
+import {
+  admin,
+  apelidar,
+  criarAppDeTeste,
+  criarTurma,
+  criarUsuario,
+  limparBanco,
+  logar,
+  logarComoTreinador,
+} from './apoio.ts'
 
 const app = criarAppDeTeste()
 
@@ -9,14 +18,14 @@ beforeEach(limparBanco)
 const d = (iso: string) => new Date(`${iso}T00:00:00Z`)
 
 async function cenario() {
-  const t18 = await prisma.turma.create({ data: { nome: 'Turma 18h' } })
-  const t07 = await prisma.turma.create({ data: { nome: 'Turma 07h' } })
+  const t18 = await criarTurma('Turma 18h')
+  const t07 = await criarTurma('Turma 07h')
   const backSquat = await prisma.exercicio.create({ data: { nome: 'Back Squat' } })
   const clean = await prisma.exercicio.create({ data: { nome: 'Clean' } })
   const ana = await criarUsuario({ nome: 'Ana Souza', email: 'ana@t.com', turmaId: t18.id })
   const bruno = await criarUsuario({ nome: 'Bruno Lima', email: 'bruno@t.com', turmaId: t18.id })
   const carla = await criarUsuario({ nome: 'Carla Mendes', email: 'carla@t.com', turmaId: t07.id })
-  await prisma.alunoApelido.create({ data: { usuarioId: carla.id, apelido: 'carlinha' } })
+  await apelidar(carla.id, 'carlinha')
 
   const teste = (usuarioId: number, exercicioId: number, data: string, cargaKg: number) =>
     prisma.testeCarga.create({ data: { usuarioId, exercicioId, dataTeste: d(data), cargaKg } })
@@ -31,12 +40,12 @@ async function cenario() {
   return { t18, t07, backSquat, clean, treinador }
 }
 
-describe('GET /api/admin/percentuais', () => {
+describe('GET /api/c/:contexto/percentuais', () => {
   it('lista as cargas de todos os percentuais para a turma e o exercício', async () => {
     const { treinador, t18, backSquat } = await cenario()
 
     const res = await treinador.get(
-      `/api/admin/percentuais?turmaId=${t18.id}&exercicioId=${backSquat.id}`,
+      admin(`/percentuais?turmaId=${t18.id}&exercicioId=${backSquat.id}`),
     )
 
     expect(res.status).toBe(200)
@@ -69,7 +78,7 @@ describe('GET /api/admin/percentuais', () => {
     const { treinador, backSquat } = await cenario()
 
     const res = await treinador.get(
-      `/api/admin/percentuais?exercicioId=${backSquat.id}&percentuais=45,35,45`,
+      admin(`/percentuais?exercicioId=${backSquat.id}&percentuais=45,35,45`),
     )
 
     expect(res.body.percentuais).toEqual([35, 45])
@@ -92,12 +101,12 @@ describe('GET /api/admin/percentuais', () => {
   it('pesquisa um aluno pelo apelido e traz todos os exercícios dele', async () => {
     const { treinador } = await cenario()
 
-    const carla = await treinador.get('/api/admin/percentuais?busca=CARLINHA')
+    const carla = await treinador.get(admin('/percentuais?busca=CARLINHA'))
     expect(carla.body.resultados.map((r: { aluno: { nome: string } }) => r.aluno.nome)).toEqual([
       'Carla Mendes',
     ])
 
-    const ana = await treinador.get('/api/admin/percentuais?busca=ana')
+    const ana = await treinador.get(admin('/percentuais?busca=ana'))
     expect(
       ana.body.resultados.map((r: { exercicio: { nome: string } }) => r.exercicio.nome),
     ).toEqual(['Back Squat', 'Clean'])
@@ -106,13 +115,13 @@ describe('GET /api/admin/percentuais', () => {
   it('exige algum filtro e percentuais válidos', async () => {
     const { treinador, backSquat } = await cenario()
 
-    const semFiltro = await treinador.get('/api/admin/percentuais')
+    const semFiltro = await treinador.get(admin('/percentuais'))
     expect(semFiltro.status).toBe(400)
     expect(semFiltro.body.erro).toContain('Escolha uma turma')
 
     for (const invalido of ['0', '101', '40.5', 'abc']) {
       const res = await treinador.get(
-        `/api/admin/percentuais?exercicioId=${backSquat.id}&percentuais=${invalido}`,
+        admin(`/percentuais?exercicioId=${backSquat.id}&percentuais=${invalido}`),
       )
       expect(res.status).toBe(400)
     }
@@ -121,6 +130,6 @@ describe('GET /api/admin/percentuais', () => {
   it('é exclusivo do treinador', async () => {
     const { backSquat } = await cenario()
     const aluna = await logar(app, 'ana@t.com')
-    expect((await aluna.get(`/api/admin/percentuais?exercicioId=${backSquat.id}`)).status).toBe(403)
+    expect((await aluna.get(admin(`/percentuais?exercicioId=${backSquat.id}`))).status).toBe(403)
   })
 })

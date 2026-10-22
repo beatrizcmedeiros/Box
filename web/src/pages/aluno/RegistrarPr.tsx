@@ -67,10 +67,11 @@ export function RegistrarPr() {
           </option>
           {exercicios.data?.map((e) => (
             <option key={e.id} value={e.id}>
-              {e.nome}
+              {e.origem ? `${e.nome} · ${e.origem}` : e.nome}
             </option>
           ))}
         </Selecao>
+        <NovoExercicioPessoal aoCriar={(id) => setExercicioId(String(id))} />
         {exercicios.data?.length === 0 && (
           <Alerta tipo="info">
             Nenhum exercício disponível ainda. Peça ao seu treinador para cadastrar os exercícios do
@@ -130,4 +131,47 @@ function useNavegarAposSalvar() {
     cliente.invalidateQueries({ queryKey: ['prs'] })
     navegar(`/aluno/exercicios/${exercicioId}`, { replace: true, state: { salvo: true } })
   }
+}
+
+/** Exercício que não está na lista: o aluno cria um pessoal (só ele usa). */
+function NovoExercicioPessoal({ aoCriar }: { aoCriar: (id: number) => void }) {
+  const cliente = useQueryClient()
+  const [aberto, setAberto] = useState(false)
+  const [nome, setNome] = useState('')
+  const criar = useMutation({
+    mutationFn: () => api<{ id: number }>('/me/exercicios', { method: 'POST', body: { nome } }),
+    onSuccess: async ({ id }) => {
+      await cliente.invalidateQueries({ queryKey: ['exercicios-ativos'] })
+      aoCriar(id)
+      setNome('')
+      setAberto(false)
+    },
+  })
+
+  if (!aberto) {
+    return (
+      <Botao variante="link" onClick={() => setAberto(true)}>
+        + Exercício que não está na lista
+      </Botao>
+    )
+  }
+  return (
+    <div className="space-y-2 rounded-xl bg-slate-50 p-3">
+      <Campo
+        rotulo="Nome do exercício pessoal"
+        value={nome}
+        onChange={(e) => setNome(e.target.value)}
+        dica="Só você usa este exercício."
+      />
+      {criar.error && <Alerta>{criar.error.message}</Alerta>}
+      <div className="flex justify-end gap-3">
+        <Botao variante="secundario" onClick={() => setAberto(false)}>
+          Cancelar
+        </Botao>
+        <Botao carregando={criar.isPending} disabled={!nome.trim()} onClick={() => criar.mutate()}>
+          Criar
+        </Botao>
+      </div>
+    </div>
+  )
 }

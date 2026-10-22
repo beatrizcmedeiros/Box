@@ -1,37 +1,56 @@
 import { Router } from 'express'
 import { formatarData } from '../../lib/datas.ts'
 import { prisma } from '../../lib/prisma.ts'
+import {
+  alunosDoContexto,
+  importacoesDoContexto,
+  vinculoDoContexto,
+} from '../../services/contexto.ts'
 
 const DIAS_RECENTES = 30
 
-/** Indicadores de adesão para acompanhar o piloto (seção 11 do plano). */
+/** Indicadores de adesão dos alunos do contexto. */
 export function visaoGeralRouter() {
   const router = Router()
 
-  router.get('/', async (_req, res) => {
+  router.get('/', async (req, res) => {
+    const ctx = req.contexto!
     const desde = new Date(Date.now() - DIAS_RECENTES * 24 * 60 * 60 * 1000)
-    const alunoAtivo = { perfil: 'ALUNO' as const, ativo: true }
+    const doContexto = alunosDoContexto(ctx)
 
     const [ativos, primeiroAcessoConcluido, comPr, registrosRecentes, ultimaImportacao, semPr] =
       await Promise.all([
-        prisma.usuario.count({ where: alunoAtivo }),
+        prisma.usuario.count({ where: doContexto }),
         prisma.usuario.count({
-          where: { ...alunoAtivo, trocarSenha: false, consentimentoEm: { not: null } },
+          where: {
+            ...doContexto,
+            emailVerificadoEm: { not: null },
+            consentimentoEm: { not: null },
+          },
         }),
-        prisma.usuario.count({ where: { ...alunoAtivo, testesCarga: { some: {} } } }),
+        prisma.usuario.count({ where: { ...doContexto, testesCarga: { some: {} } } }),
         prisma.testeCarga.groupBy({
           by: ['origem'],
-          where: { criadoEm: { gte: desde }, usuario: alunoAtivo },
+          where: { criadoEm: { gte: desde }, usuario: doContexto },
           _count: { _all: true },
         }),
         prisma.importacao.findFirst({
-          where: { status: 'CONFIRMADA' },
+          where: { status: 'CONFIRMADA', ...importacoesDoContexto(ctx) },
           orderBy: { criadoEm: 'desc' },
           include: { _count: { select: { testesCarga: true } } },
         }),
         prisma.usuario.findMany({
-          where: { ...alunoAtivo, testesCarga: { none: {} } },
-          select: { id: true, nome: true, turma: { select: { nome: true } }, trocarSenha: true },
+          where: { ...doContexto, testesCarga: { none: {} } },
+          select: {
+            id: true,
+            nome: true,
+            emailVerificadoEm: true,
+            consentimentoEm: true,
+            vinculosComoAluno: {
+              where: vinculoDoContexto(ctx),
+              select: { turma: { select: { nome: true } } },
+            },
+          },
           orderBy: { nome: 'asc' },
           take: 10,
         }),
@@ -60,8 +79,8 @@ export function visaoGeralRouter() {
       alunosSemPr: semPr.map((a) => ({
         id: a.id,
         nome: a.nome,
-        turma: a.turma?.nome ?? null,
-        aguardandoPrimeiroAcesso: a.trocarSenha,
+        turma: a.vinculosComoAluno[0]?.turma?.nome ?? null,
+        aguardandoPrimeiroAcesso: !a.emailVerificadoEm || !a.consentimentoEm,
       })),
     })
   })

@@ -104,7 +104,7 @@ describe('refresh e logout pelo app', () => {
   })
 
   it('trocar a senha devolve tokens novos ao app', async () => {
-    await criarUsuario({ email: 'ana@teste.com', trocarSenha: true })
+    await criarUsuario({ email: 'ana@teste.com' })
     const { acesso } = await logarNoApp()
 
     const res = await request(app)
@@ -114,7 +114,7 @@ describe('refresh e logout pelo app', () => {
       .send({ senhaAtual: SENHA, novaSenha: 'nova-senha-123' })
 
     expect(res.status).toBe(200)
-    expect(res.body.usuario.trocarSenha).toBe(false)
+    expect(res.body.usuario.email).toBe('ana@teste.com')
     expect(res.body.tokens.refresh).toEqual(expect.any(String))
   })
 })
@@ -150,12 +150,27 @@ describe('POST /api/auth/excluir-conta', () => {
 
     expect(res.status).toBe(400)
     expect(res.body.codigo).toBe('SENHA_INCORRETA')
-    expect(await prisma.usuario.count()).toBe(1)
+    expect(await prisma.usuario.count({ where: { email: 'ana@teste.com' } })).toBe(1)
   })
 
-  it('não permite que o treinador exclua a própria conta pelo app', async () => {
-    const treinador = await logarComoTreinador(app)
-    const res = await treinador.post('/api/auth/excluir-conta').send({ senha: SENHA })
-    expect(res.status).toBe(403)
+  it('o professor exclui a própria conta; exercícios usados por alunos ficam como histórico', async () => {
+    const professor = await logarComoTreinador(app)
+    const prof = await prisma.usuario.findUniqueOrThrow({ where: { email: 'treinador@teste.com' } })
+    const ana = await criarUsuario({ email: 'ana@teste.com' })
+    const exercicio = await prisma.exercicio.create({
+      data: { nome: 'Wall Ball', escopo: 'PROFESSOR', donoId: prof.id },
+    })
+    await prisma.testeCarga.create({
+      data: { usuarioId: ana.id, exercicioId: exercicio.id, dataTeste: new Date(), cargaKg: 9 },
+    })
+
+    const res = await professor.post('/api/auth/excluir-conta').send({ senha: SENHA })
+
+    expect(res.status).toBe(204)
+    expect(await prisma.usuario.findUnique({ where: { id: prof.id } })).toBeNull()
+    expect(await prisma.exercicio.findUnique({ where: { id: exercicio.id } })).toMatchObject({
+      donoId: null,
+    })
+    expect(await prisma.testeCarga.count({ where: { usuarioId: ana.id } })).toBe(1)
   })
 })

@@ -3,6 +3,7 @@ import { defineConfig, devices } from '@playwright/test'
 // Testes de ponta a ponta: API real + build do front (com service worker) + banco prbox_e2e.
 // Credenciais fictícias, usadas só neste banco de testes.
 export const E2E = {
+  academia: { email: 'academia@e2e.local', senha: 'academia-e2e-2026' },
   treinador: { email: 'treinador@e2e.local', senha: 'treinador-e2e-2026' },
   aluna: { email: 'aluna@e2e.local', senha: 'aluna-e2e-2026' },
 }
@@ -11,7 +12,8 @@ const PORTA_API = 3334
 const PORTA_WEB = 4174
 const bancoBase =
   process.env.DATABASE_URL ?? 'postgresql://prbox:prbox@localhost:5433/prbox?schema=public'
-const bancoE2e = (() => {
+/** Banco dos testes de ponta a ponta (os testes também o acessam, ex.: confirmar e-mail). */
+export const bancoE2e = (() => {
   const url = new URL(bancoBase)
   url.pathname = '/prbox_e2e'
   return url.toString()
@@ -23,6 +25,11 @@ const ambienteApi = {
   WEB_ORIGIN: `http://localhost:${PORTA_WEB}`,
   JWT_SECRET: process.env.JWT_SECRET ?? 'segredo-somente-para-testes-e2e-0123456789-abcdef',
   LIMITE_LOGIN: '1000',
+  LIMITE_CADASTRO: '1000',
+  LIMITE_CODIGOS: '1000',
+  // O seed cria a academia de demonstração; o professor e a aluna ficam vinculados a ela
+  SEED_ACADEMIA_EMAIL: E2E.academia.email,
+  SEED_ACADEMIA_SENHA: E2E.academia.senha,
   SEED_TREINADOR_EMAIL: E2E.treinador.email,
   SEED_TREINADOR_SENHA: E2E.treinador.senha,
   SEED_ALUNO_EMAIL: E2E.aluna.email,

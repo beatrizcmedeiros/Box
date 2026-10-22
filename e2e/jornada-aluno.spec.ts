@@ -1,39 +1,46 @@
 import { expect, test } from '@playwright/test'
-import { abrirCelular, entrar, entrarComoTreinador } from './apoio.ts'
+import { abrirCelular, confirmarEmailNoBanco, E2E, entrar } from './apoio.ts'
 
-test('treinador cadastra o aluno; aluno faz o primeiro acesso, registra o PR e vê os percentuais', async ({
+test('a academia gera o código; o aluno cria a conta, se vincula, registra o PR e a academia vê', async ({
   page,
   browser,
 }) => {
-  // Treinador (computador): cadastra o aluno e anota a senha temporária
-  await entrarComoTreinador(page)
-  await page.getByRole('link', { name: 'Alunos' }).click()
-  await page.getByRole('button', { name: '+ Novo aluno' }).click()
-  const dialogo = page.getByRole('dialog', { name: 'Novo aluno' })
-  await dialogo.getByLabel('Nome completo').fill('Bruno Lima')
-  await dialogo.getByLabel('E-mail').fill('bruno@e2e.local')
-  await dialogo.getByLabel('Turma').selectOption({ label: 'Turma 18h' })
-  await dialogo.getByRole('button', { name: 'Cadastrar aluno' }).click()
-  const senhaTemporaria = (await page.getByTestId('senha-temporaria').textContent())!.trim()
-  expect(senhaTemporaria).toHaveLength(10)
-  await page.getByRole('button', { name: 'Concluir' }).click()
-  await expect(page.getByRole('row', { name: /Bruno Lima/ })).toContainText('Aguardando 1º acesso')
+  // Academia (computador): gera o código para os alunos
+  await entrar(page, E2E.academia.email, E2E.academia.senha)
+  await expect(page).toHaveURL(/\/treinador\//)
+  await page.getByRole('link', { name: 'Códigos de vínculo' }).click()
+  const cartao = page.locator('section', { hasText: 'Código para alunos' })
+  await cartao.getByRole('button', { name: 'Gerar código' }).click()
+  const rotulo = await cartao.locator('[aria-label^="Código "]').getAttribute('aria-label')
+  const codigo = rotulo!.replace(/\D/g, '')
+  expect(codigo).toHaveLength(6)
 
-  // Aluno (celular): primeiro acesso
+  // Aluno (celular): cria a conta pelo app web
   const { contexto, page: celular } = await abrirCelular(browser)
-  await entrar(celular, 'bruno@e2e.local', senhaTemporaria)
-  await expect(celular).toHaveURL(/primeiro-acesso\/senha/)
-  await celular.getByLabel('Senha temporária').fill(senhaTemporaria)
-  await celular.getByLabel('Nova senha', { exact: true }).fill('bruno-senha-forte')
-  await celular.getByLabel('Confirme a nova senha').fill('bruno-senha-forte')
-  await celular.getByRole('button', { name: 'Salvar nova senha' }).click()
-  await celular.getByRole('button', { name: 'Li e aceito' }).click()
+  await celular.goto('/login')
+  await celular.getByRole('link', { name: 'Criar conta' }).click()
+  await celular.getByLabel('Seu nome').fill('Bruno Lima')
+  await celular.getByLabel('E-mail').fill('bruno@e2e.local')
+  await celular.getByLabel('Senha', { exact: true }).fill('bruno-senha-forte')
+  await celular.getByLabel('Confirme a senha').fill('bruno-senha-forte')
+  await celular.getByRole('button', { name: 'Criar conta' }).click()
 
-  // Cai direto no dashboard: ainda sem PRs
+  // Confirmação do e-mail (o código chegaria por e-mail) e termo
+  await expect(celular).toHaveURL(/primeiro-acesso\/email/)
+  await confirmarEmailNoBanco('bruno@e2e.local')
+  await celular.reload()
+  await celular.getByRole('button', { name: 'Li e aceito' }).click()
   await expect(celular.getByRole('heading', { name: 'Percentuais de carga' })).toBeVisible()
   await expect(celular.getByText('Nenhum PR registrado ainda')).toBeVisible()
 
-  // 1º toque: registrar; preenche e salva
+  // Vincula-se ao box com o código
+  await celular.getByRole('link', { name: 'Vínculos' }).click()
+  await celular.getByLabel('Código de vínculo').fill(codigo)
+  await celular.getByRole('button', { name: 'Vincular' }).click()
+  await expect(celular.getByText('Pronto! Você está vinculado a Box Demonstração.')).toBeVisible()
+
+  // Registra o PR
+  await celular.getByRole('link', { name: 'Percentuais', exact: true }).click()
   await celular.getByRole('link', { name: '+ Registrar meu primeiro PR' }).click()
   await celular.getByLabel('Exercício').selectOption({ label: 'Back Squat' })
   await celular.getByLabel('Carga máxima (PR) em kg').fill('105')
@@ -51,12 +58,8 @@ test('treinador cadastra o aluno; aluno faz o primeiro acesso, registra o PR e v
     await expect(celular.getByRole('listitem').filter({ hasText: percentual })).toContainText(carga)
   }
 
-  // Dashboard já mostra o exercício
-  await celular.getByRole('link', { name: 'Percentuais', exact: true }).click()
-  await expect(celular.getByRole('link', { name: /^Back Squat PR 105 kg/ })).toBeVisible()
-
-  // Treinador vê o aluno ativo e o PR na consulta
-  await page.reload()
+  // A academia vê o aluno vinculado e o PR na consulta
+  await page.getByRole('link', { name: 'Alunos' }).click()
   await expect(page.getByRole('row', { name: /Bruno Lima/ })).toContainText('Ativo')
   await page.getByRole('link', { name: 'Consultar cargas' }).click()
   await page.getByLabel('Aluno').fill('bruno')
@@ -68,7 +71,7 @@ test('treinador cadastra o aluno; aluno faz o primeiro acesso, registra o PR e v
 
 test('aluno não acessa o painel do treinador', async ({ browser }) => {
   const { contexto, page } = await abrirCelular(browser)
-  await entrar(page, 'aluna@e2e.local', 'aluna-e2e-2026')
+  await entrar(page, E2E.aluna.email, E2E.aluna.senha)
   await page.goto('/treinador/alunos')
   await expect(page).toHaveURL(/\/aluno\/percentuais/)
   await contexto.close()

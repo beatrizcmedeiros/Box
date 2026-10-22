@@ -38,6 +38,53 @@ export function useLogin() {
   })
 }
 
+export type DadosCadastro = {
+  nome: string
+  email: string
+  senha: string
+  tipo: 'PESSOA' | 'ACADEMIA'
+  ehProfessor: boolean
+}
+
+/** Cria a conta e já entra; o próximo passo é confirmar o e-mail. */
+export function useCadastro() {
+  const atualizar = useAtualizarUsuario()
+  return useMutation({
+    mutationFn: (dados: DadosCadastro) =>
+      api<RespostaUsuario>('/auth/cadastro', { method: 'POST', body: dados }),
+    onSuccess: atualizar,
+  })
+}
+
+export function useConfirmarEmail() {
+  const atualizar = useAtualizarUsuario()
+  return useMutation({
+    mutationFn: (codigo: string) =>
+      api<RespostaUsuario>('/auth/confirmar-email', { method: 'POST', body: { codigo } }),
+    onSuccess: atualizar,
+  })
+}
+
+export function useReenviarConfirmacao() {
+  return useMutation({
+    mutationFn: () => api<void>('/auth/reenviar-confirmacao', { method: 'POST' }),
+  })
+}
+
+export function useEsqueciSenha() {
+  return useMutation({
+    mutationFn: (email: string) =>
+      api<void>('/auth/esqueci-senha', { method: 'POST', body: { email } }),
+  })
+}
+
+export function useRedefinirSenha() {
+  return useMutation({
+    mutationFn: (dados: { email: string; codigo: string; novaSenha: string }) =>
+      api<void>('/auth/redefinir-senha', { method: 'POST', body: dados }),
+  })
+}
+
 export function useTrocarSenha() {
   const atualizar = useAtualizarUsuario()
   return useMutation({
@@ -80,6 +127,37 @@ export function useLogout() {
   })
 }
 
-/** Rota inicial de cada perfil. */
+/** Pode usar a área de gestão (alunos, turmas, teste de carga...): academia ou professor. */
+export const fazGestao = (usuario: Usuario) => usuario.tipo === 'ACADEMIA' || usuario.ehProfessor
+
+/** Rota inicial: professores e academias começam na gestão; os demais, nos próprios PRs. */
 export const rotaInicial = (usuario: Usuario) =>
-  usuario.perfil === 'TREINADOR' ? '/treinador/visao-geral' : '/aluno'
+  fazGestao(usuario) ? '/treinador/visao-geral' : '/aluno'
+
+/** Liga ou desliga a área do professor na conta da pessoa. */
+export function useSouProfessor() {
+  const atualizar = useAtualizarUsuario()
+  const cliente = useQueryClient()
+  return useMutation({
+    mutationFn: (ativo: boolean) =>
+      api<RespostaUsuario>('/professor/perfil', { method: 'PUT', body: { ativo } }),
+    onSuccess: (resposta) => {
+      atualizar(resposta)
+      cliente.invalidateQueries({ queryKey: ['contextos'] })
+    },
+  })
+}
+
+/** Exclusão definitiva da própria conta. */
+export function useExcluirConta() {
+  const cliente = useQueryClient()
+  return useMutation({
+    mutationFn: (senha: string) =>
+      api<void>('/auth/excluir-conta', { method: 'POST', body: { senha } }),
+    onSuccess: async () => {
+      await limparDadosOffline()
+      cliente.setQueryData(CHAVE_USUARIO, null)
+      cliente.removeQueries({ predicate: (query) => query.queryKey[0] !== CHAVE_USUARIO[0] })
+    },
+  })
+}

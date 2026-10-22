@@ -1,6 +1,14 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { prisma } from '../src/lib/prisma.ts'
-import { criarAppDeTeste, criarUsuario, limparBanco, logar, logarComoTreinador } from './apoio.ts'
+import {
+  admin,
+  criarAppDeTeste,
+  criarTurma,
+  criarUsuario,
+  limparBanco,
+  logar,
+  logarComoTreinador,
+} from './apoio.ts'
 
 const app = criarAppDeTeste()
 
@@ -14,8 +22,8 @@ async function teste(usuarioId: number, exercicioId: number, data: string, carga
 
 /** Duas semanas de teste (set/2025 e mar/2026) em duas turmas. */
 async function cenario() {
-  const t18 = await prisma.turma.create({ data: { nome: 'Turma 18h' } })
-  const t07 = await prisma.turma.create({ data: { nome: 'Turma 07h' } })
+  const t18 = await criarTurma('Turma 18h')
+  const t07 = await criarTurma('Turma 07h')
   const backSquat = await prisma.exercicio.create({ data: { nome: 'Back Squat' } })
   const deadlift = await prisma.exercicio.create({ data: { nome: 'Deadlift' } })
 
@@ -38,12 +46,12 @@ async function cenario() {
   return { t18, t07, backSquat, deadlift, ana, bruno, carla, novato }
 }
 
-describe('GET /api/admin/evolucao', () => {
+describe('GET /api/c/:contexto/evolucao', () => {
   it('agrupa por semana de teste, com média por turma e evolução de cada aluno', async () => {
     const { t18, t07, backSquat, deadlift } = await cenario()
     const treinador = await logarComoTreinador(app)
 
-    const res = await treinador.get(`/api/admin/evolucao?exercicioId=${backSquat.id}`)
+    const res = await treinador.get(admin(`/evolucao?exercicioId=${backSquat.id}`))
 
     expect(res.status).toBe(200)
     expect(res.body.exercicio).toEqual({ id: backSquat.id, nome: 'Back Squat' })
@@ -108,7 +116,7 @@ describe('GET /api/admin/evolucao', () => {
     const { t07 } = await cenario()
     const treinador = await logarComoTreinador(app)
 
-    const res = await treinador.get(`/api/admin/evolucao?turmaId=${t07.id}`)
+    const res = await treinador.get(admin(`/evolucao?turmaId=${t07.id}`))
 
     expect(res.body.exercicio.nome).toBe('Back Squat')
     expect(res.body.exercicios.map((e: { nome: string }) => e.nome)).toEqual(['Back Squat'])
@@ -121,7 +129,7 @@ describe('GET /api/admin/evolucao', () => {
 
   it('sem dados, responde vazio', async () => {
     const treinador = await logarComoTreinador(app)
-    const res = await treinador.get('/api/admin/evolucao')
+    const res = await treinador.get(admin('/evolucao'))
     expect(res.body).toMatchObject({ exercicio: null, ciclos: [], alunos: [], resumo: null })
   })
 
@@ -129,19 +137,19 @@ describe('GET /api/admin/evolucao', () => {
     const { ana } = await cenario()
     const treinador = await logarComoTreinador(app)
 
-    const res = await treinador.get(`/api/admin/evolucao/alunos/${ana.id}`)
+    const res = await treinador.get(admin(`/evolucao/alunos/${ana.id}`))
 
     expect(res.body.aluno).toMatchObject({ nome: 'Ana Souza', turma: { nome: 'Turma 18h' } })
     expect(
       res.body.exercicios.map((e: { exercicio: { nome: string } }) => e.exercicio.nome),
     ).toEqual(['Back Squat', 'Deadlift'])
-    expect((await treinador.get('/api/admin/evolucao/alunos/9999')).status).toBe(404)
+    expect((await treinador.get(admin('/evolucao/alunos/9999'))).status).toBe(404)
   })
 
   it('é exclusiva do treinador', async () => {
     await cenario()
     const aluna = await logar(app, 'ana@t.com')
-    expect((await aluna.get('/api/admin/evolucao')).status).toBe(403)
+    expect((await aluna.get(admin('/evolucao'))).status).toBe(403)
   })
 })
 

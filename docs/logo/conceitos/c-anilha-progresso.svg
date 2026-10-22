@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="112" fill="#141c28"/>
+  <circle cx="256" cy="256" r="160" fill="none" stroke="#2a3648" stroke-width="52"/>
+  <circle cx="256" cy="256" r="160" fill="none" stroke="#ff7a1a" stroke-width="52" stroke-linecap="round" stroke-dasharray="553 1006" transform="rotate(-90 256 256)"/>
+  <circle cx="256" cy="256" r="108" fill="none" stroke="#f6f8fb" stroke-opacity=".12" stroke-width="4"/>
+  <text x="256" y="304" font-family="Segoe UI,system-ui,Arial,sans-serif" font-size="140" font-weight="800" fill="#f6f8fb" text-anchor="middle" letter-spacing="-4">PR</text>
+</svg>

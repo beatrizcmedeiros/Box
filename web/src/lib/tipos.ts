@@ -1,4 +1,5 @@
-export type Perfil = 'ALUNO' | 'TREINADOR'
+/** PESSOA: aluno e, se ehProfessor, também professor. ACADEMIA: conta do dono do box. */
+export type TipoConta = 'PESSOA' | 'ACADEMIA'
 
 export type TurmaResumo = { id: number; nome: string }
 
@@ -6,13 +7,32 @@ export type Usuario = {
   id: number
   nome: string
   email: string
-  perfil: Perfil
-  turma: TurmaResumo | null
-  trocarSenha: boolean
+  tipo: TipoConta
+  ehProfessor: boolean
+  /** Preenchido na conta da academia */
+  academia: { id: number; nome: string } | null
+  emailConfirmado: boolean
   consentimentoPendente: boolean
 }
 
-export type Turma = { id: number; nome: string; horario: string | null; totalAlunos: number }
+/** Onde o professor ou a academia trabalha: uma academia ou "Meus alunos" (pessoal). */
+export type Contexto = { id: string; tipo: 'academia' | 'professor'; nome: string }
+
+export type Turma = {
+  id: number
+  nome: string
+  horario: string | null
+  totalAlunos: number
+  /** Local do professor (só no contexto "Meus alunos") */
+  local: TurmaResumo | null
+}
+
+/** Agrupamento do professor (ex.: o nome de outra academia onde ele dá aula). */
+export type Local = { id: number; nome: string }
+
+export type CodigoVinculo = { codigo: string; expiraEm: string | null; criadoEm: string }
+
+export type Validade = '15' | '30' | 'nunca'
 
 export type CategoriaExercicio = 'LEVANTAMENTO' | 'OLIMPICO' | 'OUTRO'
 
@@ -28,18 +48,37 @@ export type Exercicio = {
   categoria: CategoriaExercicio
   ativo: boolean
   aliases: string[]
+  escopo: 'PADRAO' | 'ACADEMIA' | 'PROFESSOR' | 'PESSOAL'
+  /** false na lista padrão: só os nomes alternativos podem ser acrescentados */
+  editavel: boolean
 }
 
+/** Aluno vinculado ao contexto, com a organização deste vínculo (turma, local, apelidos). */
 export type Aluno = {
   id: number
   nome: string
   email: string
-  ativo: boolean
-  trocarSenha: boolean
-  consentimentoEm: string | null
-  criadoEm: string
+  vinculoId: number
   turma: TurmaResumo | null
+  local: TurmaResumo | null
   apelidos: string[]
+  desde: string
+  primeiroAcessoPendente: boolean
+}
+
+/** Exercício disponível para o aluno registrar PR. origem: null (padrão), "pessoal" ou o nome da academia/professor */
+export type ExercicioDoAluno = ExercicioResumo & { origem: string | null; pessoal: boolean }
+
+export type Vinculos = {
+  comoAluno: {
+    id: number
+    tipo: 'academia' | 'professor'
+    academia: TurmaResumo | null
+    professor: TurmaResumo | null
+    turma: TurmaResumo | null
+    desde: string
+  }[]
+  academiasOndeEnsina: (TurmaResumo & { desde: string })[]
 }
 
 /** ALUNO = registrado pelo aluno; IMPORTACAO = lista (PDF) do treinador; TREINADOR = lançado na tela Teste de carga */

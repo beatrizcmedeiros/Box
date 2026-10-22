@@ -38,27 +38,30 @@ Para ver a área do aluno, entre com a **aluna de demonstração** (`SEED_ALUNO_
 
 ## Scripts (na raiz)
 
-| Comando                                          | O que faz                                                                                     |
-| ------------------------------------------------ | --------------------------------------------------------------------------------------------- |
-| `npm run dev`                                    | API e web em modo desenvolvimento                                                             |
-| `npm run test:e2e`                               | Testes de ponta a ponta (Playwright, Chrome instalado, banco `prbox_e2e`)                     |
-| `npm test`                                       | Testes da API e do front                                                                      |
-| `npm run lint`                                   | Lint com oxlint                                                                               |
-| `npm run format`                                 | Formata o código com Prettier                                                                 |
-| `npm run typecheck`                              | Checagem de tipos dos dois projetos                                                           |
-| `npm run build`                                  | Build de produção da API (`api/dist`) e do front (`web/dist`)                                 |
-| `npm run db:up` / `db:down`                      | Sobe / para o PostgreSQL no Docker                                                            |
-| `npm run db:migrate`                             | Cria e aplica migrations (após mudar o `schema.prisma`)                                       |
-| `npm run db:seed`                                | Popula exercícios e turmas de exemplo (idempotente)                                           |
-| `npm run db:studio -w api`                       | Abre o Prisma Studio para ver os dados                                                        |
-| `npm run demo -w api`                            | Cria 36 alunos **fictícios** com testes semestrais (consulta de cargas); `-- --remover` apaga |
-| `npm run criar-treinador -w api -- "Nome" email` | Cria um treinador com senha temporária (uso em produção)                                      |
+| Comando                     | O que faz                                                                                     |
+| --------------------------- | --------------------------------------------------------------------------------------------- |
+| `npm run dev`               | API e web em modo desenvolvimento                                                             |
+| `npm run test:e2e`          | Testes de ponta a ponta (Playwright, Chrome instalado, banco `prbox_e2e`)                     |
+| `npm test`                  | Testes da API e do front                                                                      |
+| `npm run lint`              | Lint com oxlint                                                                               |
+| `npm run format`            | Formata o código com Prettier                                                                 |
+| `npm run typecheck`         | Checagem de tipos dos dois projetos                                                           |
+| `npm run build`             | Build de produção da API (`api/dist`) e do front (`web/dist`)                                 |
+| `npm run db:up` / `db:down` | Sobe / para o PostgreSQL no Docker                                                            |
+| `npm run db:migrate`        | Cria e aplica migrations (após mudar o `schema.prisma`)                                       |
+| `npm run db:seed`           | Cria a academia, o professor e a aluna de demonstração (idempotente)                          |
+| `npm run db:studio -w api`  | Abre o Prisma Studio para ver os dados                                                        |
+| `npm run demo -w api`       | Cria 36 alunos **fictícios** com testes semestrais (consulta de cargas); `-- --remover` apaga |
 
-## Autenticação e perfis
+## Contas, vínculos e autenticação
 
-- **Treinador** (administrador): cadastra turmas, exercícios (com nomes alternativos usados no PDF) e alunos.
-- **Aluno**: criado pelo treinador com uma **senha temporária** (exibida uma única vez). No primeiro acesso, precisa trocar a senha e aceitar o termo de consentimento (LGPD) antes de usar o sistema.
-- Senhas com **scrypt** (`node:crypto`); token de acesso **JWT de 15 min** e **refresh token de 7 dias** em cookies `httpOnly`/`SameSite=Strict`. O refresh token é guardado só como hash e é **rotacionado** a cada uso; logout, troca de senha e redefinição pelo treinador revogam as sessões.
+O plano completo está em [docs/plano-vinculos.md](docs/plano-vinculos.md).
+
+- **Cadastro aberto** com e-mail e senha: **pessoa** (todo aluno; quem marca "sou professor" ganha também a área do professor) ou **academia** (conta do dono do box).
+- **Confirmação do e-mail** por código de 6 dígitos (vale 15 min, 5 tentativas). Até confirmar o e-mail e aceitar o termo de consentimento (LGPD), a conta não usa o sistema. **Esqueci a senha** também é por código no e-mail; a resposta é sempre a mesma, para não revelar quais e-mails existem.
+- E-mails enviados pelo [Resend](https://resend.com) (`RESEND_API_KEY`, `EMAIL_REMETENTE`). Sem chave, em desenvolvimento o código aparece no terminal da API.
+- **Vínculos por código**: o aluno digita o código da academia ou do professor; professores entram na academia pelo código de professores. Cada professor e academia vê só os alunos vinculados (rotas `/api/c/:contexto`).
+- Senhas com **scrypt** (`node:crypto`); token de acesso **JWT de 15 min** e **refresh token de 7 dias** em cookies `httpOnly`/`SameSite=Strict` (web) ou no corpo da resposta (app). O refresh token é guardado só como hash e é **rotacionado** a cada uso; logout, troca e redefinição de senha revogam as sessões.
 - Login limitado a 10 tentativas a cada 15 min **por conta e IP** (colegas no mesmo Wi-Fi do box não se bloqueiam) e 100 por IP. `PROXIES_CONFIAVEIS` define quantos proxies à frente da API são confiáveis para identificar o IP (Render + Vercel = 2).
 - Área do aluno em `/api/me/*`: o aluno só vê e altera os próprios dados; resultados importados pelo treinador não podem ser apagados pelo aluno.
 - Em produção, o front deve encaminhar `/api` para a API (rewrite/proxy, mesma origem) para os cookies `SameSite=Strict` funcionarem.
@@ -135,7 +138,7 @@ api/
   src/app.ts             app Express (rotas montadas aqui)
   src/routes/auth.ts     login, refresh, logout, troca de senha, consentimento
   src/routes/admin/      painel do treinador: turmas, exercícios, alunos, importações, consulta de cargas
-  scripts/               criar-treinador, dados de demonstração
+  scripts/               dados de demonstração e preparação dos testes de ponta a ponta
   src/middlewares/       autenticação e controle de perfil
   src/domain/            regras de negócio (percentuais, ciclos de evolução, leitura e associação da lista importada)
   src/routes/aluno/      área do aluno: PRs, histórico, exercícios ativos

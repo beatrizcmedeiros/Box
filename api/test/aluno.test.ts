@@ -1,6 +1,13 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { prisma } from '../src/lib/prisma.ts'
-import { criarAppDeTeste, criarUsuario, limparBanco, logar, logarComoTreinador } from './apoio.ts'
+import {
+  criarAppDeTeste,
+  criarUsuario,
+  limparBanco,
+  logar,
+  logarComoAcademia,
+  logarComoTreinador,
+} from './apoio.ts'
 
 const app = criarAppDeTeste()
 
@@ -27,17 +34,22 @@ const registrar = (
 ) => agente.post('/api/me/prs').send({ exercicioId, dataTeste, cargaKg })
 
 describe('acesso à área do aluno', () => {
-  it('bloqueia o treinador', async () => {
-    const treinador = await logarComoTreinador(app)
-    const res = await treinador.get('/api/me/prs')
+  it('bloqueia a conta da academia (só pessoas têm "Meus PRs")', async () => {
+    const academia = await logarComoAcademia(app)
+    const res = await academia.get('/api/me/prs')
     expect(res.status).toBe(403)
     expect(res.body.codigo).toBe('SEM_PERMISSAO')
   })
 
+  it('o professor também registra os próprios PRs', async () => {
+    const professor = await logarComoTreinador(app)
+    expect((await professor.get('/api/me/prs')).status).toBe(200)
+  })
+
   it('exige concluir o primeiro acesso', async () => {
-    await criarUsuario({ email: 'novo@teste.com', trocarSenha: true, consentido: false })
+    await criarUsuario({ email: 'novo@teste.com', emailConfirmado: false, consentido: false })
     const aluno = await logar(app, 'novo@teste.com')
-    expect((await aluno.get('/api/me/prs')).body.codigo).toBe('TROCAR_SENHA')
+    expect((await aluno.get('/api/me/prs')).body.codigo).toBe('EMAIL_NAO_CONFIRMADO')
   })
 
   it('lista apenas exercícios ativos', async () => {

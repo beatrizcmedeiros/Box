@@ -1,10 +1,12 @@
 import { type RequestHandler, Router } from 'express'
+import { ipKeyGenerator, type Options, rateLimit } from 'express-rate-limit'
 import { z } from 'zod'
 import type { Usuario } from '../generated/prisma/client.ts'
 import { ErroHttp } from '../lib/erros.ts'
 import { prisma } from '../lib/prisma.ts'
 import { gerarHashSenha, verificarSenha } from '../lib/senha.ts'
 import { autenticar } from '../middlewares/autenticacao.ts'
+import { enviarCodigoEmail, validarCodigoEmail } from '../services/codigosEmail.ts'
 import {
   abrirSessao,
   buscarSessaoValida,
@@ -14,8 +16,10 @@ import {
   revogarTodasAsSessoes,
 } from '../services/sessoes.ts'
 
+const emailSchema = z.string().trim().toLowerCase().pipe(z.email('E-mail inválido'))
+
 const loginSchema = z.object({
-  email: z.string().trim().toLowerCase().pipe(z.email('E-mail inválido')),
+  email: emailSchema,
   senha: z.string().min(1, 'Informe a senha'),
 })
 
@@ -23,6 +27,23 @@ export const novaSenhaSchema = z
   .string()
   .min(8, 'A senha precisa ter pelo menos 8 caracteres')
   .max(128, 'A senha pode ter no máximo 128 caracteres')
+
+const cadastroSchema = z.object({
+  // Na conta da academia, é o nome da academia
+  nome: z.string().trim().min(2, 'Informe o nome').max(120),
+  email: emailSchema,
+  senha: novaSenhaSchema,
+  tipo: z.enum(['PESSOA', 'ACADEMIA']).default('PESSOA'),
+  ehProfessor: z.boolean().default(false),
+})
+
+const codigoSchema = z.object({ codigo: z.string().trim().min(1, 'Digite o código') })
+
+const redefinirSchema = z.object({
+  email: emailSchema,
+  codigo: z.string().trim().min(1, 'Digite o código'),
+  novaSenha: novaSenhaSchema,
+})
 
 const excluirContaSchema = z.object({
   senha: z.string().min(1, 'Informe a senha'),
@@ -38,22 +59,84 @@ const HASH_FICTICIO = gerarHashSenha('senha-ficticia-para-tempo-constante')
 
 /** Dados do usuário que podem ser enviados ao front (nunca o hash da senha). */
 export async function usuarioPublico(usuario: Usuario) {
-  const turma = usuario.turmaId
-    ? await prisma.turma.findUnique({ where: { id: usuario.turmaId } })
-    : null
+  const academia =
+    usuario.tipo === 'ACADEMIA'
+      ? await prisma.academia.findUnique({
+          where: { contaId: usuario.id },
+          select: { id: true, nome: true },
+        })
+      : null
   return {
     id: usuario.id,
     nome: usuario.nome,
     email: usuario.email,
-    perfil: usuario.perfil,
-    turma: turma ? { id: turma.id, nome: turma.nome } : null,
-    trocarSenha: usuario.trocarSenha,
+    tipo: usuario.tipo,
+    ehProfessor: usuario.ehProfessor,
+    academia,
+    emailConfirmado: !!usuario.emailVerificadoEm,
     consentimentoPendente: !usuario.consentimentoEm,
   }
 }
 
+const UMA_HORA = 60 * 60 * 1000
+
+/**
+ * Limites contra abuso do cadastro e da recuperação de senha. LIMITE_CADASTRO
+ * multiplica os valores (testes e ambiente de ponta a ponta).
+ */
+function limite(limitePorHora: number, chave?: Options['keyGenerator']): RequestHandler {
+  return rateLimit({
+    windowMs: UMA_HORA,
+    limit: limitePorHora * Number(process.env.LIMITE_CADASTRO ?? 1),
+    standardHeaders: 'draft-8',
+    legacyHeaders: false,
+    message: { erro: 'Muitas tentativas. Tente novamente mais tarde.' },
+    ...(chave ? { keyGenerator: chave } : {}),
+  })
+}
+
+const porIpEEmail: Options['keyGenerator'] = (req) => {
+  const email = typeof req.body?.email === 'string' ? req.body.email.trim().toLowerCase() : ''
+  return `${ipKeyGenerator(req.ip ?? '')}:${email}`
+}
+
 export function authRouter({ limitarLogin }: { limitarLogin: RequestHandler }) {
   const router = Router()
+  const limitarCadastro = limite(10)
+  const limitarRecuperacao = limite(5, porIpEEmail)
+  const limitarRedefinicao = limite(10, porIpEEmail)
+
+  /**
+   * Cadastro aberto: a pessoa (aluno, e opcionalmente professor) ou a academia cria a conta
+   * com e-mail e senha. Já entra logada e recebe um código para confirmar o e-mail.
+   */
+  router.post('/cadastro', limitarCadastro, async (req, res) => {
+    const { nome, email, senha, tipo, ehProfessor } = cadastroSchema.parse(req.body)
+    if (await prisma.usuario.findUnique({ where: { email } })) {
+      throw new ErroHttp(
+        409,
+        'Este e-mail já tem uma conta. Entre ou use "Esqueci a senha".',
+        'EMAIL_EM_USO',
+      )
+    }
+
+    const usuario = await prisma.usuario.create({
+      data: {
+        nome,
+        email,
+        senhaHash: await gerarHashSenha(senha),
+        tipo,
+        ehProfessor: tipo === 'PESSOA' && ehProfessor,
+        ...(tipo === 'ACADEMIA' ? { academia: { create: { nome } } } : {}),
+      },
+    })
+
+    // Se o envio falhar, a conta continua criada e a pessoa pede o código de novo
+    await enviarCodigoEmail(usuario, 'CONFIRMAR_EMAIL').catch(() => undefined)
+
+    const tokens = await abrirSessao(req, res, usuario)
+    res.status(201).json({ usuario: await usuarioPublico(usuario), tokens })
+  })
 
   router.post('/login', limitarLogin, async (req, res) => {
     const { email, senha } = loginSchema.parse(req.body)
@@ -66,6 +149,68 @@ export function authRouter({ limitarLogin }: { limitarLogin: RequestHandler }) {
 
     const tokens = await abrirSessao(req, res, usuario)
     res.json({ usuario: await usuarioPublico(usuario), tokens })
+  })
+
+  /** Confirma o e-mail com o código enviado no cadastro. */
+  router.post('/confirmar-email', autenticar, async (req, res) => {
+    const { codigo } = codigoSchema.parse(req.body)
+    const usuario = req.usuario!
+    if (!usuario.emailVerificadoEm) {
+      await validarCodigoEmail(usuario.id, 'CONFIRMAR_EMAIL', codigo)
+    }
+    const atualizado = await prisma.usuario.update({
+      where: { id: usuario.id },
+      data: { emailVerificadoEm: usuario.emailVerificadoEm ?? new Date() },
+    })
+    res.json({ usuario: await usuarioPublico(atualizado) })
+  })
+
+  router.post('/reenviar-confirmacao', autenticar, async (req, res) => {
+    const usuario = req.usuario!
+    if (usuario.emailVerificadoEm) throw new ErroHttp(400, 'Seu e-mail já está confirmado')
+    await enviarCodigoEmail(usuario, 'CONFIRMAR_EMAIL')
+    res.status(204).end()
+  })
+
+  /**
+   * Esqueci a senha: envia um código ao e-mail, se ele tiver conta. A resposta é sempre
+   * a mesma, para não revelar quais e-mails estão cadastrados.
+   */
+  router.post('/esqueci-senha', limitarRecuperacao, async (req, res) => {
+    const { email } = z.object({ email: emailSchema }).parse(req.body)
+    const usuario = await prisma.usuario.findUnique({ where: { email } })
+    if (usuario?.ativo) {
+      await enviarCodigoEmail(usuario, 'REDEFINIR_SENHA').catch((erro) => {
+        // Pedido repetido em menos de 1 minuto: o código anterior continua valendo
+        if (!(erro instanceof ErroHttp && erro.codigo === 'AGUARDE_REENVIO')) throw erro
+      })
+    }
+    res.status(204).end()
+  })
+
+  /** Cria a nova senha com o código recebido; encerra as sessões abertas em outros aparelhos. */
+  router.post('/redefinir-senha', limitarRedefinicao, async (req, res) => {
+    const { email, codigo, novaSenha } = redefinirSchema.parse(req.body)
+    const usuario = await prisma.usuario.findUnique({ where: { email } })
+    if (!usuario?.ativo) {
+      throw new ErroHttp(
+        400,
+        'Código inválido ou expirado. Peça um novo código.',
+        'CODIGO_INVALIDO',
+      )
+    }
+    await validarCodigoEmail(usuario.id, 'REDEFINIR_SENHA', codigo)
+
+    await prisma.usuario.update({
+      where: { id: usuario.id },
+      data: {
+        senhaHash: await gerarHashSenha(novaSenha),
+        // Quem recebeu o código no e-mail comprovou que o e-mail é dela
+        emailVerificadoEm: usuario.emailVerificadoEm ?? new Date(),
+      },
+    })
+    await revogarTodasAsSessoes(usuario.id)
+    res.status(204).end()
   })
 
   router.post('/refresh', async (req, res) => {
@@ -107,7 +252,7 @@ export function authRouter({ limitarLogin }: { limitarLogin: RequestHandler }) {
 
     const atualizado = await prisma.usuario.update({
       where: { id: usuario.id },
-      data: { senhaHash: await gerarHashSenha(novaSenha), trocarSenha: false },
+      data: { senhaHash: await gerarHashSenha(novaSenha) },
     })
 
     // Encerra as outras sessões (ex.: outro celular) e abre uma nova para este dispositivo
@@ -117,21 +262,15 @@ export function authRouter({ limitarLogin }: { limitarLogin: RequestHandler }) {
   })
 
   /**
-   * O aluno exclui a própria conta (exigência da Google Play para apps com login).
-   * Pede a senha para evitar exclusão acidental ou por quem pegou o celular desbloqueado.
-   * Remove em cascata os testes de carga, apelidos e sessões.
+   * Exclui a própria conta (exigência da Google Play). Pede a senha para evitar exclusão
+   * acidental ou por quem pegou o celular desbloqueado.
+   *  - Pessoa: apaga os PRs dela; exercícios criados por ela e usados por alunos ficam como histórico.
+   *  - Academia: desfaz todos os vínculos, turmas e códigos; os PRs continuam com os alunos.
    */
   router.post('/excluir-conta', autenticar, async (req, res) => {
     const { senha } = excluirContaSchema.parse(req.body)
     const usuario = req.usuario!
 
-    if (usuario.perfil !== 'ALUNO') {
-      throw new ErroHttp(
-        403,
-        'Contas de treinador são excluídas pelo responsável do box',
-        'SEM_PERMISSAO',
-      )
-    }
     if (!(await verificarSenha(senha, usuario.senhaHash))) {
       throw new ErroHttp(400, 'Senha incorreta', 'SENHA_INCORRETA')
     }

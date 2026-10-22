@@ -1,4 +1,4 @@
-// Modelo de dados do PR Box — ver PLANO_DE_DESENVOLVIMENTO.md, seção 4.
+// Modelo de dados do PR Box — contas abertas, academias e vínculos (docs/plano-vinculos.md).
 
 generator client {
   provider = "prisma-client"
@@ -9,9 +9,10 @@ datasource db {
   provider = "postgresql"
 }
 
-enum Perfil {
-  ALUNO
-  TREINADOR
+// PESSOA: aluno e, se ehProfessor, também professor. ACADEMIA: conta do dono do box.
+enum TipoConta {
+  PESSOA
+  ACADEMIA
 }
 
 enum CategoriaExercicio {
@@ -20,10 +21,19 @@ enum CategoriaExercicio {
   OUTRO
 }
 
+// PADRAO: lista que vem com o app (ninguém altera). Os demais pertencem a uma academia,
+// a um professor (para os alunos dele) ou a um aluno (pessoal).
+enum EscopoExercicio {
+  PADRAO
+  ACADEMIA
+  PROFESSOR
+  PESSOAL
+}
+
 enum OrigemTeste {
   ALUNO // registrado pelo próprio aluno
-  IMPORTACAO // importado da lista (PDF) do treinador
-  TREINADOR // lançado pelo treinador na tela "Teste de carga"
+  IMPORTACAO // importado da lista do teste
+  TREINADOR // lançado na tela "Teste de carga" (professor ou academia)
 }
 
 enum StatusImportacao {
@@ -32,39 +42,65 @@ enum StatusImportacao {
   CANCELADA
 }
 
+enum TipoCodigo {
+  ALUNOS_ACADEMIA // aluno se vincula à academia
+  PROFESSORES_ACADEMIA // professor passa a fazer parte da academia
+  ALUNOS_PROFESSOR // aluno se vincula ao professor
+}
+
 model Usuario {
-  id              Int       @id @default(autoincrement())
-  nome            String
-  email           String    @unique
-  senhaHash       String    @map("senha_hash")
-  perfil          Perfil    @default(ALUNO)
-  turmaId         Int?      @map("turma_id")
-  ativo           Boolean   @default(true)
-  // Senha temporária definida pelo treinador: obriga a troca no primeiro acesso
-  trocarSenha     Boolean   @default(true) @map("trocar_senha")
-  consentimentoEm DateTime? @map("consentimento_em")
-  criadoEm        DateTime  @default(now()) @map("criado_em")
+  id                Int       @id @default(autoincrement())
+  nome              String
+  email             String    @unique
+  senhaHash         String    @map("senha_hash")
+  tipo              TipoConta @default(PESSOA)
+  ehProfessor       Boolean   @default(false) @map("eh_professor")
+  ativo             Boolean   @default(true)
+  // Preenchido quando a pessoa digita o código enviado ao e-mail (cadastro ou recuperação de senha)
+  emailVerificadoEm DateTime? @map("email_verificado_em")
+  consentimentoEm   DateTime? @map("consentimento_em")
+  criadoEm          DateTime  @default(now()) @map("criado_em")
 
-  turma       Turma?         @relation(fields: [turmaId], references: [id], onDelete: SetNull)
-  testesCarga TesteCarga[]
-  importacoes Importacao[]
-  sessoes     Sessao[]
-  apelidos    AlunoApelido[]
+  // Preenchido quando tipo = ACADEMIA
+  academia              Academia?
+  testesCarga           TesteCarga[]        @relation("TestesDoAluno")
+  testesLancados        TesteCarga[]        @relation("TestesLancados")
+  importacoes           Importacao[]        @relation("ImportacoesDoAutor")
+  importacoesPessoais   Importacao[]        @relation("ImportacoesDoProfessor")
+  sessoes               Sessao[]
+  vinculosComoAluno     VinculoAluno[]      @relation("VinculosDoAluno")
+  vinculosComoProfessor VinculoAluno[]      @relation("VinculosDoProfessor")
+  academiasOndeEnsina   ProfessorAcademia[]
+  locais                LocalProfessor[]
+  codigos               CodigoVinculo[]
+  exercicios            Exercicio[]
+  aliasesExercicio      ExercicioAlias[]
+  codigosEmail          CodigoEmail[]
 
-  @@index([turmaId])
   @@map("usuarios")
 }
 
-// Como o aluno aparece na lista do treinador (ex.: "Lurdinha"). Guardado normalizado.
-model AlunoApelido {
-  id        Int    @id @default(autoincrement())
-  usuarioId Int    @map("usuario_id")
-  apelido   String @unique
+enum TipoCodigoEmail {
+  CONFIRMAR_EMAIL
+  REDEFINIR_SENHA
+}
+
+// Código de 6 dígitos enviado por e-mail. Guardado só como hash, vale 15 minutos e aceita
+// poucas tentativas. Um código novo do mesmo tipo invalida o anterior.
+model CodigoEmail {
+  id         Int             @id @default(autoincrement())
+  usuarioId  Int             @map("usuario_id")
+  tipo       TipoCodigoEmail
+  codigoHash String          @map("codigo_hash")
+  expiraEm   DateTime        @map("expira_em")
+  tentativas Int             @default(0)
+  usadoEm    DateTime?       @map("usado_em")
+  criadoEm   DateTime        @default(now()) @map("criado_em")
 
   usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
 
-  @@index([usuarioId])
-  @@map("aluno_apelido")
+  @@index([usuarioId, tipo])
+  @@map("codigos_email")
 }
 
 // Refresh tokens (guardados apenas como hash SHA-256). Rotacionados a cada uso.
@@ -82,41 +118,170 @@ model Sessao {
   @@map("sessoes")
 }
 
-model Turma {
-  id      Int     @id @default(autoincrement())
-  nome    String  @unique
-  horario String?
+model Academia {
+  id       Int      @id @default(autoincrement())
+  nome     String
+  contaId  Int      @unique @map("conta_id")
+  criadoEm DateTime @default(now()) @map("criado_em")
 
-  alunos      Usuario[]
+  conta       Usuario             @relation(fields: [contaId], references: [id], onDelete: Cascade)
+  professores ProfessorAcademia[]
+  vinculos    VinculoAluno[]
+  turmas      Turma[]
+  codigos     CodigoVinculo[]
+  exercicios  Exercicio[]
+  aliases     ExercicioAlias[]
+  importacoes Importacao[]
+  testesCarga TesteCarga[]
+
+  @@map("academias")
+}
+
+// Professor que faz parte da academia: vê todos os alunos e turmas dela
+model ProfessorAcademia {
+  id          Int      @id @default(autoincrement())
+  academiaId  Int      @map("academia_id")
+  professorId Int      @map("professor_id")
+  criadoEm    DateTime @default(now()) @map("criado_em")
+
+  academia  Academia @relation(fields: [academiaId], references: [id], onDelete: Cascade)
+  professor Usuario  @relation(fields: [professorId], references: [id], onDelete: Cascade)
+
+  @@unique([academiaId, professorId])
+  @@index([professorId])
+  @@map("professores_academia")
+}
+
+// Agrupamento do professor (ex.: o nome de outra academia onde ele dá aula). Só ele vê.
+model LocalProfessor {
+  id          Int    @id @default(autoincrement())
+  professorId Int    @map("professor_id")
+  nome        String
+
+  professor Usuario        @relation(fields: [professorId], references: [id], onDelete: Cascade)
+  turmas    Turma[]
+  vinculos  VinculoAluno[]
+
+  @@unique([professorId, nome])
+  @@map("locais_professor")
+}
+
+// Vínculo do aluno com UMA academia ou com UM professor (exatamente um dos dois).
+// Turma, local e apelidos valem só dentro deste vínculo.
+model VinculoAluno {
+  id          Int      @id @default(autoincrement())
+  alunoId     Int      @map("aluno_id")
+  academiaId  Int?     @map("academia_id")
+  professorId Int?     @map("professor_id")
+  turmaId     Int?     @map("turma_id")
+  localId     Int?     @map("local_id")
+  criadoEm    DateTime @default(now()) @map("criado_em")
+
+  aluno     Usuario          @relation("VinculosDoAluno", fields: [alunoId], references: [id], onDelete: Cascade)
+  academia  Academia?        @relation(fields: [academiaId], references: [id], onDelete: Cascade)
+  professor Usuario?         @relation("VinculosDoProfessor", fields: [professorId], references: [id], onDelete: Cascade)
+  turma     Turma?           @relation(fields: [turmaId], references: [id], onDelete: SetNull)
+  local     LocalProfessor?  @relation(fields: [localId], references: [id], onDelete: SetNull)
+  apelidos  ApelidoVinculo[]
+
+  @@unique([alunoId, academiaId])
+  @@unique([alunoId, professorId])
+  @@index([academiaId])
+  @@index([professorId])
+  @@map("vinculos_aluno")
+}
+
+// Como o aluno aparece na lista daquela academia ou professor (ex.: "Lurdinha"). Guardado normalizado.
+model ApelidoVinculo {
+  id        Int    @id @default(autoincrement())
+  vinculoId Int    @map("vinculo_id")
+  apelido   String
+
+  vinculo VinculoAluno @relation(fields: [vinculoId], references: [id], onDelete: Cascade)
+
+  @@unique([vinculoId, apelido])
+  @@index([apelido])
+  @@map("apelidos_vinculo")
+}
+
+// Código numérico de 6 dígitos. Gerar um novo revoga o anterior do mesmo dono e tipo.
+model CodigoVinculo {
+  id          Int        @id @default(autoincrement())
+  codigo      String
+  tipo        TipoCodigo
+  academiaId  Int?       @map("academia_id")
+  professorId Int?       @map("professor_id")
+  expiraEm    DateTime?  @map("expira_em")
+  revogadoEm  DateTime?  @map("revogado_em")
+  criadoEm    DateTime   @default(now()) @map("criado_em")
+
+  academia  Academia? @relation(fields: [academiaId], references: [id], onDelete: Cascade)
+  professor Usuario?  @relation(fields: [professorId], references: [id], onDelete: Cascade)
+
+  @@index([codigo])
+  @@map("codigos_vinculo")
+}
+
+// Turma de uma academia ou de um local do professor (exatamente um dos dois)
+model Turma {
+  id         Int     @id @default(autoincrement())
+  nome       String
+  horario    String?
+  academiaId Int?    @map("academia_id")
+  localId    Int?    @map("local_id")
+
+  academia    Academia?       @relation(fields: [academiaId], references: [id], onDelete: Cascade)
+  local       LocalProfessor? @relation(fields: [localId], references: [id], onDelete: Cascade)
+  vinculos    VinculoAluno[]
   importacoes Importacao[]
 
+  @@index([academiaId])
+  @@index([localId])
   @@map("turmas")
 }
 
 model Exercicio {
-  id        Int                @id @default(autoincrement())
-  nome      String             @unique
-  categoria CategoriaExercicio @default(OUTRO)
-  ativo     Boolean            @default(true)
+  id         Int                @id @default(autoincrement())
+  nome       String
+  categoria  CategoriaExercicio @default(OUTRO)
+  ativo      Boolean            @default(true)
+  escopo     EscopoExercicio    @default(PADRAO)
+  // ACADEMIA: academiaId. PROFESSOR e PESSOAL: donoId (o professor ou o aluno).
+  academiaId Int?               @map("academia_id")
+  donoId     Int?               @map("dono_id")
 
+  // Se o dono exclui a conta, o exercício fica sem dono (só como histórico dos PRs dos alunos)
+  academia    Academia?        @relation(fields: [academiaId], references: [id], onDelete: SetNull)
+  dono        Usuario?         @relation(fields: [donoId], references: [id], onDelete: SetNull)
   aliases     ExercicioAlias[]
   testesCarga TesteCarga[]
 
+  @@index([escopo])
+  @@index([academiaId])
+  @@index([donoId])
   @@map("exercicios")
 }
 
-// Grafias alternativas usadas no PDF do treinador (ex.: "Push Pres" -> Push Press)
+// Grafias alternativas usadas na lista do teste (ex.: "Push Pres" -> Push Press).
+// Sem academia nem professor: vale para todos (lista padrão). Senão, só naquele contexto.
 model ExercicioAlias {
   id          Int    @id @default(autoincrement())
   exercicioId Int    @map("exercicio_id")
-  alias       String @unique
+  alias       String
+  academiaId  Int?   @map("academia_id")
+  professorId Int?   @map("professor_id")
 
   exercicio Exercicio @relation(fields: [exercicioId], references: [id], onDelete: Cascade)
+  academia  Academia? @relation(fields: [academiaId], references: [id], onDelete: Cascade)
+  professor Usuario?  @relation(fields: [professorId], references: [id], onDelete: Cascade)
 
+  @@index([alias])
+  @@index([exercicioId])
   @@map("exercicio_alias")
 }
 
 // Histórico completo: o PR vigente é o registro mais recente de (usuario, exercicio).
+// Os PRs pertencem ao aluno: continuam com ele mesmo depois de desfeito um vínculo.
 model TesteCarga {
   id           Int         @id @default(autoincrement())
   usuarioId    Int         @map("usuario_id")
@@ -125,11 +290,16 @@ model TesteCarga {
   cargaKg      Decimal     @map("carga_kg") @db.Decimal(6, 2)
   origem       OrigemTeste @default(ALUNO)
   importacaoId Int?        @map("importacao_id")
+  // Quem lançou (professor ou academia) e em qual academia; nulos quando o aluno registrou
+  lancadoPorId Int?        @map("lancado_por_id")
+  academiaId   Int?        @map("academia_id")
   criadoEm     DateTime    @default(now()) @map("criado_em")
 
-  usuario    Usuario     @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  usuario    Usuario     @relation("TestesDoAluno", fields: [usuarioId], references: [id], onDelete: Cascade)
   exercicio  Exercicio   @relation(fields: [exercicioId], references: [id], onDelete: Restrict)
   importacao Importacao? @relation(fields: [importacaoId], references: [id], onDelete: SetNull)
+  lancadoPor Usuario?    @relation("TestesLancados", fields: [lancadoPorId], references: [id], onDelete: SetNull)
+  academia   Academia?   @relation(fields: [academiaId], references: [id], onDelete: SetNull)
 
   @@index([usuarioId, exercicioId, dataTeste(sort: Desc)])
   @@index([exercicioId])
@@ -138,7 +308,11 @@ model TesteCarga {
 
 model Importacao {
   id          Int              @id @default(autoincrement())
+  // Quem importou (professor ou conta da academia)
   treinadorId Int              @map("treinador_id")
+  // Contexto: a academia, ou o professor (alunos vinculados diretamente a ele)
+  academiaId  Int?             @map("academia_id")
+  professorId Int?             @map("professor_id")
   turmaId     Int?             @map("turma_id")
   dataTeste   DateTime         @map("data_teste") @db.Date
   nomeArquivo String           @map("nome_arquivo")
@@ -146,7 +320,9 @@ model Importacao {
   totalLinhas Int              @default(0) @map("total_linhas")
   criadoEm    DateTime         @default(now()) @map("criado_em")
 
-  treinador   Usuario      @relation(fields: [treinadorId], references: [id], onDelete: Restrict)
+  treinador   Usuario      @relation("ImportacoesDoAutor", fields: [treinadorId], references: [id], onDelete: Cascade)
+  academia    Academia?    @relation(fields: [academiaId], references: [id], onDelete: Cascade)
+  professor   Usuario?     @relation("ImportacoesDoProfessor", fields: [professorId], references: [id], onDelete: Cascade)
   turma       Turma?       @relation(fields: [turmaId], references: [id], onDelete: SetNull)
   testesCarga TesteCarga[]
 

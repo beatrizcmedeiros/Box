@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="112" fill="#141c28"/>
+  <path d="M178 250V196a78 78 0 0 1 156 0v54" fill="none" stroke="#c84b0c" stroke-width="40" stroke-linecap="round"/>
+  <path d="M256 64l-34 40h68z" fill="#ff7a1a"/>
+  <circle cx="256" cy="320" r="128" fill="#ff7a1a"/>
+  <rect x="190" y="432" width="132" height="22" rx="11" fill="#ff7a1a"/>
+  <text x="256" y="366" font-family="Segoe UI,system-ui,Arial,sans-serif" font-size="124" font-weight="800" fill="#141c28" text-anchor="middle" letter-spacing="-4">PR</text>
+</svg>

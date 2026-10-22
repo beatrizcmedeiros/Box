@@ -3,77 +3,66 @@ import { useNavigate } from 'react-router'
 import {
   rotaInicial,
   useAceitarTermo,
+  useConfirmarEmail,
   useLogout,
-  useTrocarSenha,
+  useReenviarConfirmacao,
   useUsuario,
 } from '../auth/sessao.ts'
 import { LayoutPublico } from '../components/LayoutPublico.tsx'
 import { Alerta, Botao, Campo } from '../components/ui.tsx'
 import { ErroApi } from '../lib/api.ts'
 
-export function TrocarSenha() {
+/** Primeiro acesso: digitar o código de 6 dígitos enviado ao e-mail no cadastro. */
+export function ConfirmarEmail() {
   const { data: usuario } = useUsuario()
-  const trocar = useTrocarSenha()
+  const confirmar = useConfirmarEmail()
+  const reenviar = useReenviarConfirmacao()
   const logout = useLogout()
-  const [senhaAtual, setSenhaAtual] = useState('')
-  const [novaSenha, setNovaSenha] = useState('')
-  const [confirmacao, setConfirmacao] = useState('')
-  const [erroConfirmacao, setErroConfirmacao] = useState<string>()
-
-  const erro = trocar.error instanceof ErroApi ? trocar.error : null
+  const [codigo, setCodigo] = useState('')
+  const erro = confirmar.error instanceof ErroApi ? confirmar.error : null
 
   function enviar(e: FormEvent) {
     e.preventDefault()
-    if (novaSenha !== confirmacao) {
-      setErroConfirmacao('As senhas não conferem')
-      return
-    }
-    setErroConfirmacao(undefined)
-    trocar.mutate({ senhaAtual, novaSenha })
+    confirmar.mutate(codigo)
   }
 
   return (
-    <LayoutPublico
-      subtitulo={`Olá, ${usuario?.nome.split(' ')[0]}! Crie sua senha para continuar.`}
-    >
+    <LayoutPublico subtitulo="Confirme o seu e-mail para continuar">
       <form onSubmit={enviar} className="space-y-4" noValidate>
         <Alerta tipo="info">
-          Você entrou com uma senha temporária. Escolha uma senha pessoal com pelo menos 8
-          caracteres.
+          Enviamos um código de 6 dígitos para <strong>{usuario?.email}</strong>. Ele vale por 15
+          minutos. Confira também a caixa de spam.
         </Alerta>
         <Campo
-          rotulo="Senha temporária"
-          type="password"
-          autoComplete="current-password"
-          value={senhaAtual}
-          onChange={(e) => setSenhaAtual(e.target.value)}
+          rotulo="Código"
+          inputMode="numeric"
+          autoComplete="one-time-code"
+          maxLength={6}
+          value={codigo}
+          onChange={(e) => setCodigo(e.target.value.replace(/\D/g, ''))}
           erro={
-            erro?.doCampo('senhaAtual') ??
-            (erro?.codigo === 'SENHA_ATUAL_INCORRETA' ? erro.message : undefined)
+            erro?.doCampo('codigo') ??
+            (erro?.codigo === 'CODIGO_INVALIDO' ? erro.message : undefined)
           }
+          className="[&_input]:text-center [&_input]:text-2xl [&_input]:tracking-[0.4em]"
         />
-        <Campo
-          rotulo="Nova senha"
-          type="password"
-          autoComplete="new-password"
-          value={novaSenha}
-          onChange={(e) => setNovaSenha(e.target.value)}
-          erro={
-            erro?.doCampo('novaSenha') ??
-            (erro?.codigo === 'SENHA_REPETIDA' ? erro.message : undefined)
-          }
-          dica="Mínimo de 8 caracteres"
-        />
-        <Campo
-          rotulo="Confirme a nova senha"
-          type="password"
-          autoComplete="new-password"
-          value={confirmacao}
-          onChange={(e) => setConfirmacao(e.target.value)}
-          erro={erroConfirmacao}
-        />
-        <Botao type="submit" className="w-full" carregando={trocar.isPending}>
-          Salvar nova senha
+        <Botao
+          type="submit"
+          className="w-full"
+          carregando={confirmar.isPending}
+          disabled={codigo.length !== 6}
+        >
+          Confirmar e-mail
+        </Botao>
+        {reenviar.isSuccess && <Alerta tipo="sucesso">Enviamos um novo código.</Alerta>}
+        {reenviar.error && <Alerta>{reenviar.error.message}</Alerta>}
+        <Botao
+          variante="link"
+          className="w-full"
+          carregando={reenviar.isPending}
+          onClick={() => reenviar.mutate()}
+        >
+          Reenviar o código
         </Botao>
         <Botao variante="link" className="w-full" onClick={() => logout.mutate()}>
           Sair
@@ -104,12 +93,14 @@ export function Termo() {
           </li>
         </ul>
         <p>
-          Esses dados são visíveis apenas para você e para os treinadores do seu box, não são
-          compartilhados com terceiros e a senha é armazenada de forma criptografada.
+          Esses dados são visíveis apenas para você e para as academias e professores aos quais você
+          se vincular, não são compartilhados com terceiros e a senha é armazenada de forma
+          criptografada.
         </p>
         <p>
-          Você pode solicitar a correção ou a exclusão dos seus dados a qualquer momento ao seu
-          treinador. A exclusão remove definitivamente sua conta e seu histórico de testes.
+          Você pode corrigir ou excluir os seus dados a qualquer momento no seu perfil, e desfazer
+          os vínculos com academias e professores quando quiser. A exclusão remove definitivamente
+          sua conta e seu histórico de testes.
         </p>
       </article>
       {aceitar.error && (
