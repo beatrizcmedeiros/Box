@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+
+<g transform="translate(256 256) scale(.95) translate(-256 -236)">
+  <path d="M228 70l28-28 28 28" fill="none" stroke="#ff7a1a" stroke-width="22" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M156 282V196a100 84 0 0 1 200 0v86" fill="none" stroke="#c84b0c" stroke-width="38" stroke-linecap="round"/>
+  <path d="M195 424A124 124 0 1 1 317 424Z" fill="#ff7a1a"/>
+  <path d="M170 282a104 104 0 0 1 52-76" fill="none" stroke="#fff" stroke-opacity=".28" stroke-width="12" stroke-linecap="round"/>
+  <rect x="180" y="418" width="152" height="22" rx="11" fill="#c84b0c"/>
+  <text x="256" y="364" font-family="Segoe UI,system-ui,Arial,sans-serif" font-size="122" font-weight="800" fill="#141c28" text-anchor="middle" letter-spacing="-4">PR</text>
+</g>
+</svg>

@@ -16,7 +16,7 @@
       "package": "br.com.prbox.app",
       "versionCode": 1,
       "adaptiveIcon": {
-        "backgroundColor": "#ff7a1a",
+        "backgroundColor": "#141c28",
         "foregroundImage": "./assets/android-icon-foreground.png"
       },
       "predictiveBackGestureEnabled": false,
