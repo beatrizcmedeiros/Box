@@ -135,6 +135,17 @@ describe('registrar PR', () => {
 
     expect(await screen.findByText('A carga deve ser de no máximo 500 kg')).toBeInTheDocument()
   })
+
+  it('avisa quando ainda não há exercícios para escolher', async () => {
+    simularApi({
+      ...sessaoAluno,
+      'GET /api/me/prs': { body: [] },
+      'GET /api/me/exercicios': { body: [] },
+    })
+    renderizar('/aluno/prs/novo')
+
+    expect(await screen.findByText(/Nenhum exercício disponível ainda/)).toBeInTheDocument()
+  })
 })
 
 describe('detalhe do exercício', () => {

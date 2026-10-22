@@ -71,6 +71,12 @@ export function RegistrarPr() {
             </option>
           ))}
         </Selecao>
+        {exercicios.data?.length === 0 && (
+          <Alerta tipo="info">
+            Nenhum exercício disponível ainda. Peça ao seu treinador para cadastrar os exercícios do
+            box.
+          </Alerta>
+        )}
         <Campo
           rotulo="Data do teste de carga"
           type="date"

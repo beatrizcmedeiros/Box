@@ -71,6 +71,11 @@ export default function RegistrarPr() {
             <Carregando />
           ) : exercicios.error ? (
             <Alerta>{exercicios.error.message}</Alerta>
+          ) : exercicios.data.length === 0 ? (
+            <Alerta tipo="info">
+              Nenhum exercício disponível ainda. Peça ao seu treinador para cadastrar os exercícios
+              do box.
+            </Alerta>
           ) : (
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
               {exercicios.data.map((e) => {
