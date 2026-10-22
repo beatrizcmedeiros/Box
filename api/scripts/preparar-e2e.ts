@@ -34,9 +34,9 @@ const opcoes = { env: process.env, stdio: 'inherit' as const }
 execSync('npx prisma migrate deploy', opcoes)
 execSync('npx tsx prisma/seed.ts', opcoes)
 
-// O treinador dos testes já começa com o termo aceito (o fluxo do termo é testado com o aluno novo)
+// Os professores dos testes já começam com o termo aceito (o fluxo do termo é testado com o aluno novo)
 const banco = new pg.Client({ connectionString: url.toString().replace(/\?.*$/, '') })
 await banco.connect()
-await banco.query(`UPDATE usuarios SET consentimento_em = now() WHERE perfil = 'TREINADOR'`)
+await banco.query(`UPDATE usuarios SET consentimento_em = now() WHERE eh_professor`)
 await banco.end()
 console.log(`Banco ${nomeBanco} pronto para os testes de ponta a ponta.`)
