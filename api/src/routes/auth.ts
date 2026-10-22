@@ -8,8 +8,8 @@ import { autenticar } from '../middlewares/autenticacao.ts'
 import {
   abrirSessao,
   buscarSessaoValida,
-  COOKIE_REFRESH,
   limparCookies,
+  refreshDaRequisicao,
   revogarSessao,
   revogarTodasAsSessoes,
 } from '../services/sessoes.ts'
@@ -23,6 +23,10 @@ export const novaSenhaSchema = z
   .string()
   .min(8, 'A senha precisa ter pelo menos 8 caracteres')
   .max(128, 'A senha pode ter no máximo 128 caracteres')
+
+const excluirContaSchema = z.object({
+  senha: z.string().min(1, 'Informe a senha'),
+})
 
 const trocarSenhaSchema = z.object({
   senhaAtual: z.string().min(1, 'Informe a senha atual'),
@@ -60,12 +64,12 @@ export function authRouter({ limitarLogin }: { limitarLogin: RequestHandler }) {
       throw new ErroHttp(401, 'E-mail ou senha incorretos', 'CREDENCIAIS_INVALIDAS')
     }
 
-    await abrirSessao(res, usuario)
-    res.json({ usuario: await usuarioPublico(usuario) })
+    const tokens = await abrirSessao(req, res, usuario)
+    res.json({ usuario: await usuarioPublico(usuario), tokens })
   })
 
   router.post('/refresh', async (req, res) => {
-    const refresh: string | undefined = req.cookies?.[COOKIE_REFRESH]
+    const refresh = refreshDaRequisicao(req)
     const sessao = refresh ? await buscarSessaoValida(refresh) : null
     if (!sessao) {
       limparCookies(res)
@@ -74,12 +78,12 @@ export function authRouter({ limitarLogin }: { limitarLogin: RequestHandler }) {
 
     // Rotação: o refresh token usado é revogado e um novo é emitido
     await revogarSessao(sessao.id)
-    await abrirSessao(res, sessao.usuario)
-    res.json({ usuario: await usuarioPublico(sessao.usuario) })
+    const tokens = await abrirSessao(req, res, sessao.usuario)
+    res.json({ usuario: await usuarioPublico(sessao.usuario), tokens })
   })
 
   router.post('/logout', async (req, res) => {
-    const refresh: string | undefined = req.cookies?.[COOKIE_REFRESH]
+    const refresh = refreshDaRequisicao(req)
     const sessao = refresh ? await buscarSessaoValida(refresh) : null
     if (sessao) await revogarSessao(sessao.id)
     limparCookies(res)
@@ -108,8 +112,33 @@ export function authRouter({ limitarLogin }: { limitarLogin: RequestHandler }) {
 
     // Encerra as outras sessões (ex.: outro celular) e abre uma nova para este dispositivo
     await revogarTodasAsSessoes(usuario.id)
-    await abrirSessao(res, atualizado)
-    res.json({ usuario: await usuarioPublico(atualizado) })
+    const tokens = await abrirSessao(req, res, atualizado)
+    res.json({ usuario: await usuarioPublico(atualizado), tokens })
+  })
+
+  /**
+   * O aluno exclui a própria conta (exigência da Google Play para apps com login).
+   * Pede a senha para evitar exclusão acidental ou por quem pegou o celular desbloqueado.
+   * Remove em cascata os testes de carga, apelidos e sessões.
+   */
+  router.post('/excluir-conta', autenticar, async (req, res) => {
+    const { senha } = excluirContaSchema.parse(req.body)
+    const usuario = req.usuario!
+
+    if (usuario.perfil !== 'ALUNO') {
+      throw new ErroHttp(
+        403,
+        'Contas de treinador são excluídas pelo responsável do box',
+        'SEM_PERMISSAO',
+      )
+    }
+    if (!(await verificarSenha(senha, usuario.senhaHash))) {
+      throw new ErroHttp(400, 'Senha incorreta', 'SENHA_INCORRETA')
+    }
+
+    await prisma.usuario.delete({ where: { id: usuario.id } })
+    limparCookies(res)
+    res.status(204).end()
   })
 
   router.post('/consentimento', autenticar, async (req, res) => {

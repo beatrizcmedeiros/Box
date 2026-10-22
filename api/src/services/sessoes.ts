@@ -1,4 +1,4 @@
-import type { Response } from 'express'
+import type { Request, Response } from 'express'
 import type { Perfil } from '../generated/prisma/client.ts'
 import { env } from '../env.ts'
 import { prisma } from '../lib/prisma.ts'
@@ -26,8 +26,25 @@ function opcoesCookie(path: string, maxAge: number) {
   }
 }
 
-/** Cria a sessão no banco e grava os cookies de acesso e de refresh na resposta. */
-export async function abrirSessao(res: Response, usuario: { id: number; perfil: Perfil }) {
+/** Tokens entregues no corpo da resposta para o app Android (que não usa cookies). */
+export type TokensApp = { acesso: string; refresh: string; acessoExpiraEm: string }
+
+/**
+ * O app Android se identifica com este cabeçalho. Para ele, os tokens vão no corpo da resposta
+ * e o access token volta em "Authorization: Bearer"; a web continua com cookies httpOnly.
+ */
+export const CABECALHO_CLIENTE = 'x-prbox-cliente'
+export const ehClienteApp = (req: Request) => req.get(CABECALHO_CLIENTE) === 'app'
+
+/**
+ * Cria a sessão no banco. Na web grava os cookies de acesso e de refresh;
+ * no app devolve os tokens para a rota incluir na resposta.
+ */
+export async function abrirSessao(
+  req: Request,
+  res: Response,
+  usuario: { id: number; perfil: Perfil },
+): Promise<TokensApp | undefined> {
   const refresh = gerarRefreshToken()
   await prisma.sessao.create({
     data: {
@@ -38,8 +55,30 @@ export async function abrirSessao(res: Response, usuario: { id: number; perfil: 
   })
   const acesso = await assinarTokenAcesso({ usuarioId: usuario.id, perfil: usuario.perfil })
 
+  if (ehClienteApp(req)) {
+    const acessoExpiraEm = new Date(Date.now() + ACCESS_TOKEN_MINUTOS * 60 * 1000).toISOString()
+    return { acesso, refresh, acessoExpiraEm }
+  }
+
   res.cookie(COOKIE_ACESSO, acesso, opcoesCookie('/api', ACCESS_TOKEN_MINUTOS * 60 * 1000))
   res.cookie(COOKIE_REFRESH, refresh, opcoesCookie('/api/auth', REFRESH_TOKEN_DIAS * MS_DIA))
+  return undefined
+}
+
+/** Refresh token da requisição: cookie (web) ou corpo da requisição (app). */
+export function refreshDaRequisicao(req: Request): string | undefined {
+  if (ehClienteApp(req)) {
+    const doCorpo: unknown = req.body?.refreshToken
+    return typeof doCorpo === 'string' && doCorpo ? doCorpo : undefined
+  }
+  return req.cookies?.[COOKIE_REFRESH]
+}
+
+/** Access token da requisição: "Authorization: Bearer" (app) ou cookie (web). */
+export function acessoDaRequisicao(req: Request): string | undefined {
+  const [tipo, token] = req.get('authorization')?.split(' ') ?? []
+  if (tipo?.toLowerCase() === 'bearer' && token) return token
+  return req.cookies?.[COOKIE_ACESSO]
 }
 
 export function limparCookies(res: Response) {

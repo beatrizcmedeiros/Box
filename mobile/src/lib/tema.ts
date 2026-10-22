@@ -1,0 +1,20 @@
+// Cores do PR Box (as mesmas de web/src/index.css)
+export const cores = {
+  marca: '#ff7a1a',
+  marcaForte: '#c84b0c',
+  marcaEscura: '#a84300',
+  marcaClara: '#ffedd5',
+  fundoEscuro: '#141c28',
+  fundo: '#f6f8fb',
+  branco: '#ffffff',
+  texto: '#0f172a',
+  textoSuave: '#5a6b84',
+  borda: '#e2e8f0',
+  cinzaClaro: '#f1f5f9',
+  erro: '#b91c1c',
+  erroFundo: '#fef2f2',
+  sucesso: '#166534',
+  sucessoFundo: '#f0fdf4',
+  aviso: '#78350f',
+  avisoFundo: '#fffbeb',
+}

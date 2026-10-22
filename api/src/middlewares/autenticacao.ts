@@ -3,7 +3,7 @@ import type { Perfil, Usuario } from '../generated/prisma/client.ts'
 import { ErroHttp } from '../lib/erros.ts'
 import { prisma } from '../lib/prisma.ts'
 import { verificarTokenAcesso } from '../lib/tokens.ts'
-import { COOKIE_ACESSO } from '../services/sessoes.ts'
+import { acessoDaRequisicao } from '../services/sessoes.ts'
 
 declare global {
   namespace Express {
@@ -13,9 +13,9 @@ declare global {
   }
 }
 
-/** Exige um token de acesso válido e um usuário ativo. */
+/** Exige um token de acesso válido (cookie na web, Bearer no app) e um usuário ativo. */
 export async function autenticar(req: Request, _res: Response, next: NextFunction) {
-  const token: string | undefined = req.cookies?.[COOKIE_ACESSO]
+  const token = acessoDaRequisicao(req)
   if (!token) throw new ErroHttp(401, 'Não autenticado', 'NAO_AUTENTICADO')
 
   const payload = await verificarTokenAcesso(token)
