@@ -108,7 +108,7 @@ function Navegacao() {
         <Stack.Screen name="(aluno)" options={{ headerShown: false }} />
       </Stack.Protected>
       <Stack.Protected guard={pronto && u.perfil === 'TREINADOR'}>
-        <Stack.Screen name="treinador" options={{ title: 'PR Box — Treinador' }} />
+        <Stack.Screen name="treinador" options={{ headerShown: false }} />
       </Stack.Protected>
     </Stack>
   )

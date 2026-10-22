@@ -19,13 +19,14 @@ Este projeto fica **fora dos workspaces npm** da raiz, porque o React Native exi
 
 ## Estrutura
 
-| Pasta                  | Conteúdo                                                                                             |
-| ---------------------- | ---------------------------------------------------------------------------------------------------- |
-| `src/app/`             | Telas (Expo Router: cada arquivo é uma rota; `_layout.tsx` define a navegação e as regras de acesso) |
-| `src/lib/api.ts`       | Cliente da API: tokens no SecureStore e renovação automática                                         |
-| `src/lib/sessao.ts`    | Login, troca de senha, termo, sair e excluir conta                                                   |
-| `src/lib/consultas.ts` | Consultas do aluno (atualizam a cada 30 s e ao voltar para o app)                                    |
-| `src/components/`      | Componentes visuais                                                                                  |
+| Pasta                           | Conteúdo                                                                                             |
+| ------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| `src/app/`                      | Telas (Expo Router: cada arquivo é uma rota; `_layout.tsx` define a navegação e as regras de acesso) |
+| `src/lib/api.ts`                | Cliente da API: tokens no SecureStore e renovação automática                                         |
+| `src/lib/sessao.ts`             | Login, troca de senha, termo, sair e excluir conta                                                   |
+| `src/lib/consultas.ts`          | Consultas do aluno (atualizam a cada 30 s e ao voltar para o app)                                    |
+| `src/lib/consultasTreinador.ts` | Consultas da área do treinador                                                                       |
+| `src/components/`               | Componentes visuais                                                                                  |
 
 ## Login no app
 
@@ -55,4 +56,5 @@ O build roda na nuvem da Expo, sem Android Studio. A chave de assinatura é cria
 
 ## Ainda não está no app
 
-A área do treinador (Fase 2 do plano). Por enquanto, quem entra como treinador vê um aviso para usar a versão web.
+- Leitura de PDF e OCR na importação: no app, o treinador cola o texto da lista. O PDF continua na versão web.
+- Modo offline e gráficos (Fase 3 do plano).

@@ -35,16 +35,16 @@ Como o banco é um só, o que o aluno registra no app aparece para o treinador, 
 - [x] Atualização automática ao voltar ao app e a cada 30 s.
 - [x] `app.json` e `eas.json` prontos para gerar APK e AAB.
 
-### Fase 2 — Área do treinador no app
+### Fase 2 — Área do treinador no app (feita)
 
-Na ordem de uso no box:
+As telas mais usadas no box ficam em abas (Início, Teste, Percentuais, Alunos); as demais ficam em **Mais**.
 
-1. Visão geral.
-2. Teste de carga (lançar cargas da turma), a tela mais usada no box pelo celular.
-3. Percentuais dos alunos e Consultar cargas (filtros por turma/aluno/exercício).
-4. Alunos (cadastrar, senha temporária, apelidos), Turmas e Exercícios.
-5. Evolução das turmas.
-6. Importação do teste de força: no app, **colar o texto** da nota e revisar com a mesma prévia da API. Leitura de PDF e OCR ficam na web, porque o `tesseract.js` e o `pdf.js` não rodam no React Native. Uma alternativa futura é `expo-document-picker` com OCR no servidor.
+- [x] Visão geral: adesão dos alunos, último teste importado e alunos sem PR.
+- [x] Teste de carga: data, exercício, turma e busca; uma carga por aluno na mesma tela, com aviso de novo PR e remoção do lançamento do treinador.
+- [x] Percentuais dos alunos e Consultar cargas, com filtros, ordenação e paginação.
+- [x] Alunos (cadastrar, editar, apelidos, ativar/desativar, nova senha temporária, excluir), Turmas e Exercícios.
+- [x] Evolução das turmas: resumo da última semana de teste, média por turma e evolução de cada aluno.
+- [x] Importação por **texto colado**, com a mesma revisão da web (escolher aluno e exercício, memorizar apelidos) e o histórico com "Desfazer". Leitura de PDF e OCR continuam só na web, porque o `tesseract.js` e o `pdf.js` não rodam no React Native.
 
 ### Fase 3 — Offline e polimento
 
