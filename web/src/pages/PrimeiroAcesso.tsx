@@ -1,5 +1,5 @@
 import { type FormEvent, useState } from 'react'
-import { useNavigate } from 'react-router'
+import { Link, useNavigate } from 'react-router'
 import {
   rotaInicial,
   useAceitarTermo,
@@ -101,6 +101,11 @@ export function Termo() {
           Você pode corrigir ou excluir os seus dados a qualquer momento no seu perfil, e desfazer
           os vínculos com academias e professores quando quiser. A exclusão remove definitivamente
           sua conta e seu histórico de testes.
+        </p>
+        <p>
+          <Link to="/privacidade" className="font-semibold text-marca-escura underline">
+            Ler a política de privacidade completa
+          </Link>
         </p>
       </article>
       {aceitar.error && (

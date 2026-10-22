@@ -50,6 +50,11 @@ export function Perfil() {
           Sair
         </Botao>
         <ExcluirConta />
+        <p className="text-center">
+          <Link to="/privacidade" className="text-xs text-slate-500 underline">
+            Política de privacidade
+          </Link>
+        </p>
       </section>
     </>
   )

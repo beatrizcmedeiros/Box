@@ -2,6 +2,7 @@ import { Text, View } from 'react-native'
 import { Alerta, Botao, Cartao, TelaPublica } from '../../components/ui'
 import { useAceitarTermo, useLogout } from '../../lib/sessao'
 import { cores } from '../../lib/tema'
+import { LinkPrivacidade } from '../../components/LinkPrivacidade'
 
 const paragrafo = { fontSize: 14, lineHeight: 21, color: '#334155' } as const
 
@@ -28,15 +29,17 @@ export default function Termo() {
           </Text>
         </View>
         <Text style={paragrafo}>
-          Esses dados são visíveis apenas para você e para os treinadores do seu box, não são
-          compartilhados com terceiros e a senha é armazenada de forma criptografada.
+          Esses dados são visíveis apenas para você e para as academias e professores aos quais você
+          se vincular (pelo código), não são compartilhados com terceiros e a senha é armazenada de
+          forma criptografada.
         </Text>
         <Text style={paragrafo}>
-          Você pode pedir a correção dos seus dados ao seu treinador e excluir sua conta a qualquer
-          momento em Perfil → Excluir minha conta. A exclusão remove definitivamente sua conta e seu
-          histórico de testes.
+          Você pode desfazer os vínculos a qualquer momento na aba Vínculos e excluir sua conta em
+          Perfil → Excluir minha conta. A exclusão remove definitivamente sua conta e seu histórico
+          de testes.
         </Text>
       </Cartao>
+      <LinkPrivacidade />
       {aceitar.error && <Alerta>{aceitar.error.message}</Alerta>}
       <Botao aoPressionar={() => aceitar.mutate()} precisaInternet carregando={aceitar.isPending}>
         Li e aceito

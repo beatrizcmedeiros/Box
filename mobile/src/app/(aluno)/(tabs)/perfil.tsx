@@ -11,6 +11,7 @@ import {
   useUsuario,
 } from '../../../lib/sessao'
 import { cores } from '../../../lib/tema'
+import { LinkPrivacidade } from '../../../components/LinkPrivacidade'
 
 export default function Perfil() {
   const { data: usuario } = useUsuario()
@@ -33,6 +34,7 @@ export default function Perfil() {
         Sair
       </Botao>
       <ExcluirConta />
+      <LinkPrivacidade />
     </Tela>
   )
 }
