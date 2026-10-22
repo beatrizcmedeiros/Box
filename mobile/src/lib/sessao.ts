@@ -50,6 +50,64 @@ export function useLogin() {
   })
 }
 
+export type DadosCadastro = {
+  nome: string
+  email: string
+  senha: string
+  tipo: 'PESSOA' | 'ACADEMIA'
+  ehProfessor: boolean
+}
+
+/** Cria a conta e já entra; o próximo passo é confirmar o e-mail. */
+export function useCadastro() {
+  const aplicar = useAplicarSessao()
+  return useMutation({
+    mutationFn: (dados: DadosCadastro) =>
+      api<RespostaSessao>('/auth/cadastro', { method: 'POST', body: dados }),
+    onSuccess: aplicar,
+  })
+}
+
+export function useConfirmarEmail() {
+  const cliente = useQueryClient()
+  return useMutation({
+    mutationFn: (codigo: string) =>
+      api<{ usuario: Usuario }>('/auth/confirmar-email', { method: 'POST', body: { codigo } }),
+    onSuccess: ({ usuario }) => cliente.setQueryData(CHAVE_USUARIO, usuario),
+  })
+}
+
+export const useReenviarConfirmacao = () =>
+  useMutation({ mutationFn: () => api<void>('/auth/reenviar-confirmacao', { method: 'POST' }) })
+
+export const useEsqueciSenha = () =>
+  useMutation({
+    mutationFn: (email: string) =>
+      api<void>('/auth/esqueci-senha', { method: 'POST', body: { email } }),
+  })
+
+export const useRedefinirSenha = () =>
+  useMutation({
+    mutationFn: (dados: { email: string; codigo: string; novaSenha: string }) =>
+      api<void>('/auth/redefinir-senha', { method: 'POST', body: dados }),
+  })
+
+/** Liga ou desliga a área do professor na conta da pessoa. */
+export function useSouProfessor() {
+  const cliente = useQueryClient()
+  return useMutation({
+    mutationFn: (ativo: boolean) =>
+      api<{ usuario: Usuario }>('/professor/perfil', { method: 'PUT', body: { ativo } }),
+    onSuccess: ({ usuario }) => {
+      cliente.setQueryData(CHAVE_USUARIO, usuario)
+      cliente.invalidateQueries({ queryKey: ['contextos'] })
+    },
+  })
+}
+
+/** Pode usar a área de gestão: academia ou professor. */
+export const fazGestao = (u: Usuario) => u.tipo === 'ACADEMIA' || u.ehProfessor
+
 export function useTrocarSenha() {
   const aplicar = useAplicarSessao()
   return useMutation({

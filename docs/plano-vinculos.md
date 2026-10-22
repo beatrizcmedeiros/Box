@@ -115,7 +115,7 @@ Regra única da API, usada em todas as consultas do professor e da academia:
 
 As Fases 3 e 4 podem andar em paralelo.
 
-**Situação:** Fases 0, 1 e 2 feitas (API). A Fase 1 muda as rotas da API, então o app e a web atuais deixam de funcionar com ela. A branch `fase-1-vinculos` só deve entrar na `main` junto com as Fases 3 e 4, para o APK instalado e a web publicada continuarem funcionando até lá. Os testes de ponta a ponta voltam a passar com a Fase 4.
+**Situação:** Fases 0 a 4 feitas. API e web publicadas no modelo novo (PR #6). O app Android foi adaptado na Fase 3 (versão 1.1.0) e precisa de um APK novo, porque o APK antigo não funciona com a API nova. Falta a Fase 5 (publicação na Google Play) e configurar o Resend no Render para os códigos por e-mail chegarem.
 
 ### Rotas da API depois das Fases 1 e 2
 

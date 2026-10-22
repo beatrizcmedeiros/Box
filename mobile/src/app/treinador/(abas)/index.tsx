@@ -4,6 +4,7 @@ import { Text, View } from 'react-native'
 import { Etiqueta } from '../../../components/seletores'
 import { Alerta, Botao, Cartao, Carregando, Tela, Titulo } from '../../../components/ui'
 import { useVisaoGeral } from '../../../lib/consultasTreinador'
+import { useContexto } from '../../../lib/contexto'
 import { formatarData } from '../../../lib/formato'
 import { useUsuario } from '../../../lib/sessao'
 import { cores } from '../../../lib/tema'
@@ -14,6 +15,7 @@ const META_ALUNOS_COM_PR = 70
 /** Visão geral: adesão dos alunos ao PR Box. */
 export default function VisaoGeral() {
   const { data: usuario } = useUsuario()
+  const { contexto } = useContexto()
   const visao = useVisaoGeral()
 
   return (
@@ -21,20 +23,19 @@ export default function VisaoGeral() {
       <Text style={{ fontSize: 20, fontWeight: '700', color: cores.texto }}>
         Olá, {usuario?.nome.split(' ')[0] ?? 'treinador'}
       </Text>
+      <Text style={{ color: cores.textoSuave }}>Trabalhando em {contexto.nome}</Text>
       {visao.isPending ? (
         <Carregando />
       ) : visao.error ? (
         <Alerta>{visao.error.message}</Alerta>
       ) : visao.data.alunos.ativos === 0 ? (
         <Cartao estilo={{ gap: 10 }}>
-          <Text style={{ fontWeight: '700', color: cores.texto }}>
-            Comece cadastrando os alunos do box.
-          </Text>
+          <Text style={{ fontWeight: '700', color: cores.texto }}>Comece trazendo os alunos.</Text>
           <Text style={{ color: cores.textoSuave }}>
-            Cada aluno recebe uma senha temporária para o primeiro acesso. Depois, lance as cargas
-            do último teste de força para que todos já entrem vendo suas cargas.
+            Gere o código de vínculo e passe para os alunos: cada um cria a conta no app e digita o
+            código em Vínculos.
           </Text>
-          <Botao aoPressionar={() => router.navigate('/treinador/alunos')}>Cadastrar alunos</Botao>
+          <Botao aoPressionar={() => router.push('/treinador/codigos')}>Gerar código</Botao>
         </Cartao>
       ) : (
         <Conteudo dados={visao.data} />

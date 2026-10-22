@@ -10,7 +10,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { Alerta, Botao, TelaPublica } from '../components/ui'
 import { definirAoPerderSessao, ErroApi } from '../lib/api'
 import { apagarCacheOffline, persistidor, VALIDADE_CACHE, VERSAO_CACHE } from '../lib/cacheOffline'
-import { CHAVE_USUARIO, useUsuario } from '../lib/sessao'
+import { CHAVE_USUARIO, fazGestao, useUsuario } from '../lib/sessao'
 import { cores } from '../lib/tema'
 
 SplashScreen.preventAutoHideAsync()
@@ -88,7 +88,7 @@ function Navegacao() {
   }
 
   const u = usuario.data
-  const pronto = !!u && !u.trocarSenha && !u.consentimentoPendente
+  const pronto = !!u && u.emailConfirmado && !u.consentimentoPendente
 
   return (
     <Stack
@@ -101,17 +101,20 @@ function Navegacao() {
     >
       <Stack.Protected guard={!u}>
         <Stack.Screen name="login" options={{ headerShown: false }} />
+        <Stack.Screen name="cadastro" options={{ title: 'Criar conta' }} />
+        <Stack.Screen name="esqueci-senha" options={{ title: 'Recuperar a senha' }} />
       </Stack.Protected>
-      <Stack.Protected guard={!!u && u.trocarSenha}>
-        <Stack.Screen name="primeiro-acesso/senha" options={{ headerShown: false }} />
+      <Stack.Protected guard={!!u && !u.emailConfirmado}>
+        <Stack.Screen name="primeiro-acesso/email" options={{ headerShown: false }} />
       </Stack.Protected>
-      <Stack.Protected guard={!!u && !u.trocarSenha && u.consentimentoPendente}>
+      <Stack.Protected guard={!!u && u.emailConfirmado && u.consentimentoPendente}>
         <Stack.Screen name="primeiro-acesso/termo" options={{ headerShown: false }} />
       </Stack.Protected>
-      <Stack.Protected guard={pronto && u.perfil === 'ALUNO'}>
+      {/* O professor tem as duas áreas: Meus PRs (aluno) e a gestão */}
+      <Stack.Protected guard={pronto && u.tipo === 'PESSOA'}>
         <Stack.Screen name="(aluno)" options={{ headerShown: false }} />
       </Stack.Protected>
-      <Stack.Protected guard={pronto && u.perfil === 'TREINADOR'}>
+      <Stack.Protected guard={pronto && fazGestao(u)}>
         <Stack.Screen name="treinador" options={{ headerShown: false }} />
       </Stack.Protected>
     </Stack>

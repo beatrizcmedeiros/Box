@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { Alert, Text, TextInput, View } from 'react-native'
 import { Busca, Chips, Etiqueta, opcoesTurma } from '../../../components/seletores'
 import { Alerta, Botao, Campo, Cartao, Carregando, Tela } from '../../../components/ui'
-import { api, ErroApi } from '../../../lib/api'
+import { api, ErroApi, gestao } from '../../../lib/api'
 import {
   useAlunosParaLancar,
   useAtrasado,
@@ -158,7 +158,7 @@ function ListaLancamento({
 
   const salvar = useMutation({
     mutationFn: () =>
-      api<ResultadoLancamento>('/admin/lancamentos', {
+      api<ResultadoLancamento>(gestao('/lancamentos'), {
         method: 'POST',
         body: {
           dataTeste: dataIso,
@@ -183,7 +183,7 @@ function ListaLancamento({
   })
 
   const remover = useMutation({
-    mutationFn: (id: number) => api<void>(`/admin/lancamentos/${id}`, { method: 'DELETE' }),
+    mutationFn: (id: number) => api<void>(gestao(`/lancamentos/${id}`), { method: 'DELETE' }),
     onSuccess: invalidarDados,
   })
 

@@ -1,6 +1,7 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
-import { api } from './api'
+import { api, gestao } from './api'
+import { useIdContexto } from './contexto'
 import type {
   Aluno,
   AlunoParaLancar,
@@ -9,6 +10,7 @@ import type {
   EvolucaoTurmas,
   Exercicio,
   Importacao,
+  Local,
   Turma,
   VisaoGeral,
 } from './tipos'
@@ -35,85 +37,109 @@ export function useAtrasado<T>(valor: T, ms = 350) {
   return atrasado
 }
 
-export const useTurmas = () =>
-  useQuery({ queryKey: ['turmas'], queryFn: () => api<Turma[]>('/admin/turmas') })
+// As chaves levam o contexto: o cache (inclusive o salvo no aparelho) nunca mistura academias
 
-export const useExercicios = () =>
-  useQuery({ queryKey: ['exercicios'], queryFn: () => api<Exercicio[]>('/admin/exercicios') })
+export const useTurmas = () => {
+  const ctx = useIdContexto()
+  return useQuery({ queryKey: ['turmas', ctx], queryFn: () => api<Turma[]>(gestao('/turmas')) })
+}
 
-export const useVisaoGeral = () =>
-  useQuery({
-    queryKey: ['visao-geral'],
-    queryFn: () => api<VisaoGeral>('/admin/visao-geral'),
+export const useLocais = () => {
+  const ctx = useIdContexto()
+  return useQuery({ queryKey: ['locais', ctx], queryFn: () => api<Local[]>(gestao('/locais')) })
+}
+
+export const useExercicios = () => {
+  const ctx = useIdContexto()
+  return useQuery({
+    queryKey: ['exercicios', ctx],
+    queryFn: () => api<Exercicio[]>(gestao('/exercicios')),
+  })
+}
+
+export const useVisaoGeral = () => {
+  const ctx = useIdContexto()
+  return useQuery({
+    queryKey: ['visao-geral', ctx],
+    queryFn: () => api<VisaoGeral>(gestao('/visao-geral')),
     refetchInterval: ATUALIZAR_A_CADA,
   })
+}
 
-export const useAlunos = (filtros: { busca?: string; turmaId?: number | null }) => {
+type FiltroGrupo = { turmaId?: number | null; localId?: number | null }
+
+export const useAlunos = (filtros: { busca?: string } & FiltroGrupo) => {
+  const ctx = useIdContexto()
   const consulta = parametros(filtros)
   return useQuery({
-    queryKey: ['alunos', consulta],
-    queryFn: () => api<Aluno[]>(`/admin/alunos?${consulta}`),
+    queryKey: ['alunos', ctx, consulta],
+    queryFn: () => api<Aluno[]>(gestao(`/alunos?${consulta}`)),
     placeholderData: keepPreviousData,
     refetchInterval: ATUALIZAR_A_CADA,
   })
 }
 
-export const useAlunosParaLancar = (filtros: {
-  data: string
-  exercicioId: number | null
-  turmaId?: number | null
-  busca?: string
-}) => {
+export const useAlunosParaLancar = (
+  filtros: { data: string; exercicioId: number | null; busca?: string } & FiltroGrupo,
+) => {
+  const ctx = useIdContexto()
   const consulta = parametros(filtros)
   return useQuery({
-    queryKey: ['lancamentos', consulta],
-    queryFn: () => api<{ alunos: AlunoParaLancar[] }>(`/admin/lancamentos?${consulta}`),
+    queryKey: ['lancamentos', ctx, consulta],
+    queryFn: () => api<{ alunos: AlunoParaLancar[] }>(gestao(`/lancamentos?${consulta}`)),
     enabled: !!filtros.exercicioId,
     placeholderData: keepPreviousData,
   })
 }
 
-export const usePercentuaisAlunos = (filtros: {
-  busca?: string
-  exercicioId?: number | null
-  turmaId?: number | null
-}) => {
+export const usePercentuaisAlunos = (
+  filtros: { busca?: string; exercicioId?: number | null } & FiltroGrupo,
+) => {
+  const ctx = useIdContexto()
   const consulta = parametros(filtros)
   return useQuery({
-    queryKey: ['percentuais', consulta],
-    queryFn: () => api<ConsultaPercentuais>(`/admin/percentuais?${consulta}`),
-    enabled: !!(filtros.busca || filtros.exercicioId || filtros.turmaId),
+    queryKey: ['percentuais', ctx, consulta],
+    queryFn: () => api<ConsultaPercentuais>(gestao(`/percentuais?${consulta}`)),
+    enabled: !!(filtros.busca || filtros.exercicioId || filtros.turmaId || filtros.localId),
     placeholderData: keepPreviousData,
     refetchInterval: ATUALIZAR_A_CADA,
   })
 }
 
-export const useConsultaCargas = (filtros: {
-  busca?: string
-  exercicioId?: number | null
-  turmaId?: number | null
-  ordenar: string
-  direcao: 'asc' | 'desc'
-  pagina: number
-}) => {
+export const useConsultaCargas = (
+  filtros: {
+    busca?: string
+    exercicioId?: number | null
+    ordenar: string
+    direcao: 'asc' | 'desc'
+    pagina: number
+  } & FiltroGrupo,
+) => {
+  const ctx = useIdContexto()
   const consulta = parametros({ ...filtros, porPagina: 30 })
   return useQuery({
-    queryKey: ['cargas', consulta],
-    queryFn: () => api<ConsultaCargas>(`/admin/cargas?${consulta}`),
+    queryKey: ['cargas', ctx, consulta],
+    queryFn: () => api<ConsultaCargas>(gestao(`/cargas?${consulta}`)),
     placeholderData: keepPreviousData,
     refetchInterval: ATUALIZAR_A_CADA,
   })
 }
 
 export const useEvolucaoTurmas = (filtros: { exercicioId?: number | null }) => {
+  const ctx = useIdContexto()
   const consulta = parametros(filtros)
   return useQuery({
-    queryKey: ['evolucao', consulta],
-    queryFn: () => api<EvolucaoTurmas>(`/admin/evolucao?${consulta}`),
+    queryKey: ['evolucao', ctx, consulta],
+    queryFn: () => api<EvolucaoTurmas>(gestao(`/evolucao?${consulta}`)),
     placeholderData: keepPreviousData,
     refetchInterval: ATUALIZAR_A_CADA,
   })
 }
 
-export const useImportacoes = () =>
-  useQuery({ queryKey: ['importacoes'], queryFn: () => api<Importacao[]>('/admin/importacoes') })
+export const useImportacoes = () => {
+  const ctx = useIdContexto()
+  return useQuery({
+    queryKey: ['importacoes', ctx],
+    queryFn: () => api<Importacao[]>(gestao('/importacoes')),
+  })
+}

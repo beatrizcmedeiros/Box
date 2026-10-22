@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { Alert, Switch, Text, View } from 'react-native'
 import { Chips, Etiqueta } from '../../components/seletores'
 import { Alerta, Botao, Campo, Cartao, Carregando, Tela, Titulo } from '../../components/ui'
-import { api, ErroApi } from '../../lib/api'
+import { api, ErroApi, gestao } from '../../lib/api'
 import { useExercicios } from '../../lib/consultasTreinador'
 import { cores } from '../../lib/tema'
 import { CATEGORIAS, type CategoriaExercicio, type Exercicio } from '../../lib/tipos'
@@ -51,10 +51,13 @@ export default function Exercicios() {
                   {CATEGORIAS[e.categoria]}
                   {e.aliases.length > 0 ? ` · também: ${e.aliases.join(', ')}` : ''}
                 </Text>
-                {!e.ativo && <Etiqueta cor="vermelho">Inativo</Etiqueta>}
+                <View style={{ flexDirection: 'row', gap: 6 }}>
+                  {!e.editavel && <Etiqueta cor="verde">Padrão</Etiqueta>}
+                  {!e.ativo && <Etiqueta cor="vermelho">Inativo</Etiqueta>}
+                </View>
               </View>
               <Botao variante="link" aoPressionar={() => setEditando(e)}>
-                Editar
+                {e.editavel ? 'Editar' : 'Nomes'}
               </Botao>
             </View>
           ))}
@@ -85,26 +88,31 @@ function FormularioExercicio({
     aoFechar()
   }
 
+  // Exercício da lista padrão: só os nomes alternativos (deste contexto) podem mudar
+  const somenteAliases = !!exercicio && !exercicio.editavel
+
   const salvar = useMutation({
     mutationFn: () => {
-      const corpo = {
-        nome,
-        categoria,
-        ativo,
-        aliases: aliases
-          .split(',')
-          .map((a) => a.trim())
-          .filter(Boolean),
+      const lista = aliases
+        .split(',')
+        .map((a) => a.trim())
+        .filter(Boolean)
+      if (somenteAliases) {
+        return api<Exercicio>(gestao(`/exercicios/${exercicio.id}/aliases`), {
+          method: 'PUT',
+          body: { aliases: lista },
+        })
       }
+      const corpo = { nome, categoria, ativo, aliases: lista }
       return exercicio
-        ? api<Exercicio>(`/admin/exercicios/${exercicio.id}`, { method: 'PUT', body: corpo })
-        : api<Exercicio>('/admin/exercicios', { method: 'POST', body: corpo })
+        ? api<Exercicio>(gestao(`/exercicios/${exercicio.id}`), { method: 'PUT', body: corpo })
+        : api<Exercicio>(gestao('/exercicios'), { method: 'POST', body: corpo })
     },
     onSuccess: atualizar,
   })
 
   const excluir = useMutation({
-    mutationFn: () => api<void>(`/admin/exercicios/${exercicio!.id}`, { method: 'DELETE' }),
+    mutationFn: () => api<void>(gestao(`/exercicios/${exercicio!.id}`), { method: 'DELETE' }),
     onSuccess: atualizar,
   })
 
@@ -113,25 +121,34 @@ function FormularioExercicio({
   return (
     <Cartao estilo={{ gap: 12 }}>
       <Text style={{ fontSize: 16, fontWeight: '700', color: cores.texto }}>
-        {exercicio ? 'Editar exercício' : 'Novo exercício'}
+        {somenteAliases ? exercicio.nome : exercicio ? 'Editar exercício' : 'Novo exercício'}
       </Text>
-      <Campo rotulo="Nome" value={nome} onChangeText={setNome} erro={erro?.doCampo('nome')} />
-      <Chips
-        rotulo="Categoria"
-        opcoes={(Object.keys(CATEGORIAS) as CategoriaExercicio[]).map((c) => ({
-          valor: c,
-          rotulo: CATEGORIAS[c],
-        }))}
-        valor={categoria}
-        aoEscolher={setCategoria}
-      />
+      {somenteAliases ? (
+        <Text style={{ fontSize: 13, color: cores.textoSuave }}>
+          Faz parte da lista padrão do PR Box. Você pode acrescentar os nomes com que ele aparece
+          nas suas listas; eles valem só aqui.
+        </Text>
+      ) : (
+        <>
+          <Campo rotulo="Nome" value={nome} onChangeText={setNome} erro={erro?.doCampo('nome')} />
+          <Chips
+            rotulo="Categoria"
+            opcoes={(Object.keys(CATEGORIAS) as CategoriaExercicio[]).map((c) => ({
+              valor: c,
+              rotulo: CATEGORIAS[c],
+            }))}
+            valor={categoria}
+            aoEscolher={setCategoria}
+          />
+        </>
+      )}
       <Campo
         rotulo="Nomes alternativos (separados por vírgula)"
         value={aliases}
         onChangeText={setAliases}
         dica="Como o exercício aparece na lista do teste (ex.: agachamento)"
       />
-      {exercicio && (
+      {exercicio && !somenteAliases && (
         <View
           style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
         >
@@ -164,7 +181,7 @@ function FormularioExercicio({
           Salvar
         </Botao>
       </View>
-      {exercicio && (
+      {exercicio && !somenteAliases && (
         <Botao
           variante="link"
           carregando={excluir.isPending}
