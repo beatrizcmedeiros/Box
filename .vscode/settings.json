@@ -1,5 +1,19 @@
 {
   "editor.defaultFormatter": "esbenp.prettier-vscode",
   "editor.formatOnSave": true,
-  "[prisma]": { "editor.defaultFormatter": "Prisma.prisma" }
+  "[prisma]": {
+    "editor.defaultFormatter": "Prisma.prisma"
+  },
+  "sqltools.connections": [
+    {
+      "ssh": "Disabled",
+      "previewLimit": 50,
+      "server": "localhost",
+      "port": 5433,
+      "driver": "PostgreSQL",
+      "name": "PRBox",
+      "database": "prbox",
+      "username": "prbox"
+    }
+  ]
 }
