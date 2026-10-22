@@ -15,7 +15,7 @@
     "dev": "concurrently -n api,web -c blue,magenta \"npm run dev -w api\" \"npm run dev -w web\"",
     "build": "npm run build -w api && npm run build -w web",
     "typecheck": "npm run typecheck -w api && npm run typecheck -w web",
-    "lint": "oxlint api/src web/src",
+    "lint": "oxlint api/src web/src mobile/src",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "npm run test -w api && npm run test -w web",

@@ -1,0 +1,43 @@
+{
+  "expo": {
+    "name": "PR Box",
+    "slug": "prbox",
+    "scheme": "prbox",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "backgroundColor": "#f6f8fb",
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "br.com.prbox.app"
+    },
+    "android": {
+      "package": "br.com.prbox.app",
+      "versionCode": 1,
+      "adaptiveIcon": {
+        "backgroundColor": "#ff7a1a",
+        "foregroundImage": "./assets/android-icon-foreground.png"
+      },
+      "predictiveBackGestureEnabled": false,
+      "permissions": []
+    },
+    "plugins": [
+      "expo-router",
+      "expo-status-bar",
+      "expo-secure-store",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 160,
+          "backgroundColor": "#141c28"
+        }
+      ],
+      "expo-font"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
