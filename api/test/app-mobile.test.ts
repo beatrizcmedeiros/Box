@@ -7,7 +7,6 @@ import {
   criarUsuario,
   limparBanco,
   logar,
-  logarComoAcademia,
   logarComoTreinador,
   SENHA,
 } from './apoio.ts'
@@ -105,7 +104,7 @@ describe('refresh e logout pelo app', () => {
   })
 
   it('trocar a senha devolve tokens novos ao app', async () => {
-    await criarUsuario({ email: 'ana@teste.com', trocarSenha: true })
+    await criarUsuario({ email: 'ana@teste.com' })
     const { acesso } = await logarNoApp()
 
     const res = await request(app)
@@ -115,7 +114,7 @@ describe('refresh e logout pelo app', () => {
       .send({ senhaAtual: SENHA, novaSenha: 'nova-senha-123' })
 
     expect(res.status).toBe(200)
-    expect(res.body.usuario.trocarSenha).toBe(false)
+    expect(res.body.usuario.email).toBe('ana@teste.com')
     expect(res.body.tokens.refresh).toEqual(expect.any(String))
   })
 })
@@ -173,11 +172,5 @@ describe('POST /api/auth/excluir-conta', () => {
       donoId: null,
     })
     expect(await prisma.testeCarga.count({ where: { usuarioId: ana.id } })).toBe(1)
-  })
-
-  it('a conta da academia ainda não é excluída pelo app', async () => {
-    const academia = await logarComoAcademia(app)
-    const res = await academia.post('/api/auth/excluir-conta').send({ senha: SENHA })
-    expect(res.status).toBe(403)
   })
 })

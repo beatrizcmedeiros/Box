@@ -22,7 +22,11 @@ export function visaoGeralRouter() {
       await Promise.all([
         prisma.usuario.count({ where: doContexto }),
         prisma.usuario.count({
-          where: { ...doContexto, trocarSenha: false, consentimentoEm: { not: null } },
+          where: {
+            ...doContexto,
+            emailVerificadoEm: { not: null },
+            consentimentoEm: { not: null },
+          },
         }),
         prisma.usuario.count({ where: { ...doContexto, testesCarga: { some: {} } } }),
         prisma.testeCarga.groupBy({
@@ -40,7 +44,8 @@ export function visaoGeralRouter() {
           select: {
             id: true,
             nome: true,
-            trocarSenha: true,
+            emailVerificadoEm: true,
+            consentimentoEm: true,
             vinculosComoAluno: {
               where: vinculoDoContexto(ctx),
               select: { turma: { select: { nome: true } } },
@@ -75,7 +80,7 @@ export function visaoGeralRouter() {
         id: a.id,
         nome: a.nome,
         turma: a.vinculosComoAluno[0]?.turma?.nome ?? null,
-        aguardandoPrimeiroAcesso: a.trocarSenha,
+        aguardandoPrimeiroAcesso: !a.emailVerificadoEm || !a.consentimentoEm,
       })),
     })
   })

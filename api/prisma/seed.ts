@@ -56,7 +56,7 @@ async function criarAcademiaDeDemonstracao() {
         email: acesso.email,
         senhaHash: await gerarHashSenha(acesso.senha),
         tipo: 'ACADEMIA',
-        trocarSenha: false,
+        emailVerificadoEm: new Date(),
         consentimentoEm: new Date(),
       },
     }))
@@ -86,7 +86,7 @@ async function criarProfessorDeDesenvolvimento(academiaId?: number) {
       email: acesso.email,
       senhaHash: await gerarHashSenha(acesso.senha),
       ehProfessor: true,
-      trocarSenha: false,
+      emailVerificadoEm: new Date(),
       consentimentoEm: new Date(),
     },
   })
@@ -124,7 +124,7 @@ async function criarAlunaDeDemonstracao(academiaId?: number) {
         nome: 'Ana Souza (demonstração)',
         email: acesso.email,
         senhaHash: await gerarHashSenha(acesso.senha),
-        trocarSenha: false,
+        emailVerificadoEm: new Date(),
         consentimentoEm: new Date(),
       },
     })

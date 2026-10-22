@@ -47,9 +47,9 @@ describe('acesso à área do aluno', () => {
   })
 
   it('exige concluir o primeiro acesso', async () => {
-    await criarUsuario({ email: 'novo@teste.com', trocarSenha: true, consentido: false })
+    await criarUsuario({ email: 'novo@teste.com', emailConfirmado: false, consentido: false })
     const aluno = await logar(app, 'novo@teste.com')
-    expect((await aluno.get('/api/me/prs')).body.codigo).toBe('TROCAR_SENHA')
+    expect((await aluno.get('/api/me/prs')).body.codigo).toBe('EMAIL_NAO_CONFIRMADO')
   })
 
   it('lista apenas exercícios ativos', async () => {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { gerarHashSenha, gerarSenhaTemporaria, verificarSenha } from './senha.ts'
+import { gerarHashSenha, verificarSenha } from './senha.ts'
 
 describe('hash de senha', () => {
   it('aceita a senha correta e recusa a incorreta', async () => {
@@ -16,15 +16,5 @@ describe('hash de senha', () => {
 
   it('recusa hash em formato desconhecido', async () => {
     expect(await verificarSenha('qualquer', 'formato-invalido')).toBe(false)
-  })
-})
-
-describe('senha temporária', () => {
-  it('tem 10 caracteres sem símbolos ambíguos', () => {
-    for (let i = 0; i < 50; i++) {
-      const senha = gerarSenhaTemporaria()
-      expect(senha).toHaveLength(10)
-      expect(senha).not.toMatch(/[0O1lI]/)
-    }
   })
 })

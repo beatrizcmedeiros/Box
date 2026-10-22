@@ -49,17 +49,17 @@ enum TipoCodigo {
 }
 
 model Usuario {
-  id              Int       @id @default(autoincrement())
-  nome            String
-  email           String    @unique
-  senhaHash       String    @map("senha_hash")
-  tipo            TipoConta @default(PESSOA)
-  ehProfessor     Boolean   @default(false) @map("eh_professor")
-  ativo           Boolean   @default(true)
-  // Senha temporária: obriga a troca no primeiro acesso (sai com o cadastro aberto, Fase 2)
-  trocarSenha     Boolean   @default(true) @map("trocar_senha")
-  consentimentoEm DateTime? @map("consentimento_em")
-  criadoEm        DateTime  @default(now()) @map("criado_em")
+  id                Int       @id @default(autoincrement())
+  nome              String
+  email             String    @unique
+  senhaHash         String    @map("senha_hash")
+  tipo              TipoConta @default(PESSOA)
+  ehProfessor       Boolean   @default(false) @map("eh_professor")
+  ativo             Boolean   @default(true)
+  // Preenchido quando a pessoa digita o código enviado ao e-mail (cadastro ou recuperação de senha)
+  emailVerificadoEm DateTime? @map("email_verificado_em")
+  consentimentoEm   DateTime? @map("consentimento_em")
+  criadoEm          DateTime  @default(now()) @map("criado_em")
 
   // Preenchido quando tipo = ACADEMIA
   academia              Academia?
@@ -75,8 +75,32 @@ model Usuario {
   codigos               CodigoVinculo[]
   exercicios            Exercicio[]
   aliasesExercicio      ExercicioAlias[]
+  codigosEmail          CodigoEmail[]
 
   @@map("usuarios")
+}
+
+enum TipoCodigoEmail {
+  CONFIRMAR_EMAIL
+  REDEFINIR_SENHA
+}
+
+// Código de 6 dígitos enviado por e-mail. Guardado só como hash, vale 15 minutos e aceita
+// poucas tentativas. Um código novo do mesmo tipo invalida o anterior.
+model CodigoEmail {
+  id         Int             @id @default(autoincrement())
+  usuarioId  Int             @map("usuario_id")
+  tipo       TipoCodigoEmail
+  codigoHash String          @map("codigo_hash")
+  expiraEm   DateTime        @map("expira_em")
+  tentativas Int             @default(0)
+  usadoEm    DateTime?       @map("usado_em")
+  criadoEm   DateTime        @default(now()) @map("criado_em")
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@index([usuarioId, tipo])
+  @@map("codigos_email")
 }
 
 // Refresh tokens (guardados apenas como hash SHA-256). Rotacionados a cada uso.

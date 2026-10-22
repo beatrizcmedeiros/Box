@@ -210,7 +210,7 @@ describe('visão geral (indicadores do piloto)', () => {
     await criarUsuario({
       nome: 'Bruno Lima',
       email: 'bruno@t.com',
-      trocarSenha: true,
+      emailConfirmado: false,
       consentido: false,
     })
     await criarUsuario({ nome: 'Carla Mendes', email: 'carla@t.com' })

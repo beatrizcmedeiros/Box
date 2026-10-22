@@ -1,4 +1,4 @@
-import { randomBytes, randomInt, scrypt, timingSafeEqual } from 'node:crypto'
+import { randomBytes, scrypt, timingSafeEqual } from 'node:crypto'
 import { promisify } from 'node:util'
 
 const scryptAsync = promisify(scrypt) as (
@@ -38,13 +38,4 @@ export async function verificarSenha(senha: string, armazenado: string): Promise
     maxmem: PARAMS.maxmem,
   })
   return timingSafeEqual(esperado, calculado)
-}
-
-// Sem caracteres ambíguos (0/O, 1/l/I) para facilitar a digitação no celular
-const ALFABETO = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789'
-
-export function gerarSenhaTemporaria(tamanho = 10): string {
-  let senha = ''
-  for (let i = 0; i < tamanho; i++) senha += ALFABETO[randomInt(ALFABETO.length)]
-  return senha
 }

@@ -9,6 +9,7 @@ export const SENHA = 'senha-correta-123'
 export function criarAppDeTeste() {
   // O limite de tentativas de código é testado à parte; nos demais testes não atrapalha
   process.env.LIMITE_CODIGOS ??= '1000'
+  process.env.LIMITE_CADASTRO ??= '1000'
   return criarApp({
     verificarBanco: async () => true,
     webOrigin: 'http://localhost:5173',
@@ -42,7 +43,7 @@ export async function academiaDeTeste() {
       nome: 'Box Teste',
       email: EMAIL_ACADEMIA,
       tipo: 'ACADEMIA',
-      trocarSenha: false,
+      emailVerificadoEm: new Date(),
       consentimentoEm: new Date(),
       senhaHash: await hashPadrao(),
     },
@@ -69,7 +70,8 @@ type NovoUsuario = {
   /** TREINADOR: professor da academia de teste. ALUNO: vinculado a ela (padrão). */
   perfil?: 'ALUNO' | 'TREINADOR'
   ativo?: boolean
-  trocarSenha?: boolean
+  /** false: ainda não digitou o código enviado ao e-mail */
+  emailConfirmado?: boolean
   consentido?: boolean
   /** Turma do aluno na academia de teste */
   turmaId?: number | null
@@ -82,7 +84,7 @@ export async function criarUsuario({
   email,
   perfil = 'ALUNO',
   ativo = true,
-  trocarSenha = false,
+  emailConfirmado = true,
   consentido = true,
   turmaId = null,
   vinculado = true,
@@ -93,7 +95,7 @@ export async function criarUsuario({
       email,
       ehProfessor: perfil === 'TREINADOR',
       ativo,
-      trocarSenha,
+      emailVerificadoEm: emailConfirmado ? new Date() : null,
       consentimentoEm: consentido ? new Date() : null,
       senhaHash: await hashPadrao(),
     },

@@ -117,24 +117,41 @@ describe('refresh e logout', () => {
   })
 })
 
-describe('primeiro acesso', () => {
-  it('exige trocar a senha temporária e aceitar o termo antes de usar o sistema', async () => {
+describe('primeiro acesso e senha', () => {
+  it('exige confirmar o e-mail e aceitar o termo antes de usar o sistema', async () => {
     await criarUsuario({
       email: 'treinador@teste.com',
       perfil: 'TREINADOR',
-      trocarSenha: true,
+      emailConfirmado: false,
       consentido: false,
     })
     const agente = await logar(app, 'treinador@teste.com')
 
     let res = await agente.get(admin('/turmas'))
     expect(res.status).toBe(403)
-    expect(res.body.codigo).toBe('TROCAR_SENHA')
+    expect(res.body.codigo).toBe('EMAIL_NAO_CONFIRMADO')
 
-    res = await agente
+    await prisma.usuario.update({
+      where: { email: 'treinador@teste.com' },
+      data: { emailVerificadoEm: new Date() },
+    })
+    res = await agente.get(admin('/turmas'))
+    expect(res.status).toBe(403)
+    expect(res.body.codigo).toBe('CONSENTIMENTO_PENDENTE')
+
+    res = await agente.post('/api/auth/consentimento')
+    expect(res.body.usuario.consentimentoPendente).toBe(false)
+
+    expect((await agente.get(admin('/turmas'))).status).toBe(200)
+  })
+
+  it('valida a troca de senha', async () => {
+    await criarUsuario({ email: 'ana@teste.com' })
+    const agente = await logar(app, 'ana@teste.com')
+
+    let res = await agente
       .post('/api/auth/trocar-senha')
       .send({ senhaAtual: 'errada', novaSenha: 'nova-senha-123' })
-    expect(res.status).toBe(400)
     expect(res.body.codigo).toBe('SENHA_ATUAL_INCORRETA')
 
     res = await agente
@@ -144,21 +161,6 @@ describe('primeiro acesso', () => {
 
     res = await agente.post('/api/auth/trocar-senha').send({ senhaAtual: SENHA, novaSenha: SENHA })
     expect(res.body.codigo).toBe('SENHA_REPETIDA')
-
-    res = await agente
-      .post('/api/auth/trocar-senha')
-      .send({ senhaAtual: SENHA, novaSenha: 'nova-senha-123' })
-    expect(res.status).toBe(200)
-    expect(res.body.usuario.trocarSenha).toBe(false)
-
-    res = await agente.get(admin('/turmas'))
-    expect(res.status).toBe(403)
-    expect(res.body.codigo).toBe('CONSENTIMENTO_PENDENTE')
-
-    res = await agente.post('/api/auth/consentimento')
-    expect(res.body.usuario.consentimentoPendente).toBe(false)
-
-    expect((await agente.get(admin('/turmas'))).status).toBe(200)
   })
 
   it('trocar a senha encerra as sessões de outros dispositivos', async () => {

@@ -118,7 +118,7 @@ async function criar() {
           .replace(/ /g, '.')}${DOMINIO}`,
         senhaHash,
         consentimentoEm: new Date(),
-        trocarSenha: false,
+        emailVerificadoEm: new Date(),
         vinculosComoAluno: {
           create: { academiaId: academia.id, turmaId: turmas[i % turmas.length].id },
         },
