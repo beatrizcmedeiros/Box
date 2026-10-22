@@ -224,3 +224,19 @@ export type ResultadoLancamento = {
   atualizados: number
   novosRecordes: { usuarioId: number; nome: string; cargaKg: number; anteriorKg: number }[]
 }
+
+export type LinhaPercentuais = {
+  aluno: { id: number; nome: string }
+  turma: TurmaResumo | null
+  exercicio: { id: number; nome: string }
+  dataTeste: string
+  prKg: number
+  cargas: CargaPercentual[]
+}
+
+export type ConsultaPercentuais = {
+  percentuais: number[]
+  resultados: LinhaPercentuais[]
+  totais: { alunos: number; registros: number }
+  limitado: boolean
+}

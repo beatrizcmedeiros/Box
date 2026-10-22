@@ -16,6 +16,7 @@ import { EvolucaoTurmas } from './pages/treinador/EvolucaoTurmas.tsx'
 import { Exercicios } from './pages/treinador/Exercicios.tsx'
 import { ImportarCargas } from './pages/treinador/importacao/ImportarCargas.tsx'
 import { LayoutTreinador } from './pages/treinador/LayoutTreinador.tsx'
+import { PercentuaisAlunos } from './pages/treinador/PercentuaisAlunos.tsx'
 import { TesteDeCarga } from './pages/treinador/TesteDeCarga.tsx'
 import { Turmas } from './pages/treinador/Turmas.tsx'
 import { VisaoGeral } from './pages/treinador/VisaoGeral.tsx'
@@ -70,6 +71,7 @@ export const rotas: RouteObject[] = [
       { path: 'turmas', element: <Turmas /> },
       { path: 'exercicios', element: <Exercicios /> },
       { path: 'teste-de-carga', element: <TesteDeCarga /> },
+      { path: 'percentuais', element: <PercentuaisAlunos /> },
       { path: 'importar', element: <ImportarCargas /> },
       { path: 'consultar', element: <ConsultarCargas /> },
       { path: 'evolucao', element: <EvolucaoTurmas /> },
