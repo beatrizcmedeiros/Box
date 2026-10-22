@@ -39,7 +39,7 @@ export default function Login() {
         erro={erro?.doCampo('senha')}
       />
       {erro && erro.campos.length === 0 && <Alerta>{erro.message}</Alerta>}
-      <Botao aoPressionar={entrar} carregando={login.isPending}>
+      <Botao aoPressionar={entrar} precisaInternet carregando={login.isPending}>
         Entrar
       </Botao>
       <Text style={{ textAlign: 'center', color: cores.textoSuave, fontSize: 14 }}>

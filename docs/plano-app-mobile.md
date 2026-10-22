@@ -48,10 +48,12 @@ As telas mais usadas no box ficam em abas (Início, Teste, Percentuais, Alunos);
 
 ### Fase 3 — Offline e polimento
 
-- Persistência do cache no AsyncStorage, com aviso "mostrando dados salvos".
-- Gráficos de evolução com `react-native-svg`.
-- Ícone adaptativo, splash e capturas de tela da loja.
-- Testes de componentes (`jest-expo` + Testing Library) dos fluxos de login e de registro de PR.
+- [x] Cache das consultas salvo no aparelho (AsyncStorage, 30 dias): sem sinal, o app abre com os últimos dados e o usuário salvo. O cache é apagado ao sair da conta ou quando a sessão expira.
+- [x] Faixa "Sem internet: mostrando os dados salvos" em todas as telas; botões que gravam no servidor ficam desativados sem conexão.
+- [x] Gráficos de evolução com `react-native-svg`: PR do aluno por teste e média de cada turma por semana de teste.
+- [x] Ícone adaptativo e splash (feitos na Fase 1).
+- [ ] Capturas de tela da loja (Fase 4).
+- [ ] Testes de componentes (`jest-expo` + Testing Library) dos fluxos de login e de registro de PR.
 
 ### Fase 4 — Publicação na Google Play
 

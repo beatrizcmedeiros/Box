@@ -12,6 +12,7 @@ import {
   type ViewStyle,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import { useOnline } from '../lib/cacheOffline'
 import { cores } from '../lib/tema'
 
 /** Tela com rolagem e fundo padrão; com `atualizar`, puxar para baixo busca os dados de novo. */
@@ -37,8 +38,22 @@ export function Tela({
         )
       }
     >
+      <AvisoOffline />
       {children}
     </ScrollView>
+  )
+}
+
+/** Faixa mostrada sem internet: as telas exibem os dados salvos no aparelho. */
+export function AvisoOffline() {
+  const online = useOnline()
+  if (online) return null
+  return (
+    <View accessibilityRole="alert" style={[estilos.alerta, { backgroundColor: cores.avisoFundo }]}>
+      <Text style={{ color: cores.aviso, fontSize: 14 }}>
+        Sem internet: mostrando os dados salvos no aparelho. Para salvar alterações, conecte-se.
+      </Text>
+    </View>
   )
 }
 
@@ -57,7 +72,10 @@ export function TelaPublica({ subtitulo, children }: { subtitulo: string; childr
         <Text style={estilos.tituloPublico}>PR Box</Text>
         <Text style={estilos.subtituloPublico}>{subtitulo}</Text>
       </SafeAreaView>
-      <View style={estilos.tela}>{children}</View>
+      <View style={estilos.tela}>
+        <AvisoOffline />
+        {children}
+      </View>
     </ScrollView>
   )
 }
@@ -70,6 +88,7 @@ export function Botao({
   variante = 'primario',
   carregando = false,
   desabilitado = false,
+  precisaInternet = false,
   estilo,
 }: {
   children: string
@@ -77,9 +96,12 @@ export function Botao({
   variante?: VarianteBotao
   carregando?: boolean
   desabilitado?: boolean
+  /** Desativa o botão sem conexão (ações que gravam no servidor). */
+  precisaInternet?: boolean
   estilo?: ViewStyle
 }) {
-  const inativo = desabilitado || carregando
+  const online = useOnline()
+  const inativo = desabilitado || carregando || (precisaInternet && !online)
   return (
     <Pressable
       accessibilityRole="button"

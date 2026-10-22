@@ -38,7 +38,7 @@ export default function Termo() {
         </Text>
       </Cartao>
       {aceitar.error && <Alerta>{aceitar.error.message}</Alerta>}
-      <Botao aoPressionar={() => aceitar.mutate()} carregando={aceitar.isPending}>
+      <Botao aoPressionar={() => aceitar.mutate()} precisaInternet carregando={aceitar.isPending}>
         Li e aceito
       </Botao>
       <Botao variante="link" aoPressionar={() => logout.mutate()}>

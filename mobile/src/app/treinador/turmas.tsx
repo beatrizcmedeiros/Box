@@ -122,6 +122,7 @@ function FormularioTurma({ turma, aoFechar }: { turma?: Turma; aoFechar: () => v
         </Botao>
         <Botao
           aoPressionar={() => salvar.mutate()}
+          precisaInternet
           carregando={salvar.isPending}
           estilo={{ flex: 1 }}
         >

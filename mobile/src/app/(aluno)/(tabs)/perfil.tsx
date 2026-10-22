@@ -102,7 +102,12 @@ function TrocarSenha() {
         <Botao variante="secundario" aoPressionar={() => setAberto(false)} estilo={{ flex: 1 }}>
           Cancelar
         </Botao>
-        <Botao aoPressionar={salvar} carregando={trocar.isPending} estilo={{ flex: 1 }}>
+        <Botao
+          aoPressionar={salvar}
+          precisaInternet
+          carregando={trocar.isPending}
+          estilo={{ flex: 1 }}
+        >
           Salvar
         </Botao>
       </View>
@@ -164,6 +169,7 @@ function ExcluirConta() {
               <Botao
                 variante="perigo"
                 aoPressionar={() => excluir.mutate({ senha })}
+                precisaInternet
                 carregando={excluir.isPending}
                 desabilitado={!senha}
                 estilo={{ flex: 1 }}

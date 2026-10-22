@@ -307,6 +307,7 @@ function ListaLancamento({
       {remover.error && <Alerta>{remover.error.message}</Alerta>}
       <Botao
         aoPressionar={() => salvar.mutate()}
+        precisaInternet
         carregando={salvar.isPending}
         desabilitado={alterados.length === 0 || invalidos.length > 0}
       >

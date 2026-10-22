@@ -109,6 +109,7 @@ export default function Importar() {
         {previa.error && <Alerta>{previa.error.message}</Alerta>}
         <Botao
           aoPressionar={() => previa.mutate()}
+          precisaInternet
           carregando={previa.isPending}
           desabilitado={!texto.trim() || !dataValida}
         >
@@ -306,6 +307,7 @@ function RevisaoLista({
         )}
         <Botao
           aoPressionar={() => confirmar.mutate()}
+          precisaInternet
           carregando={confirmar.isPending}
           desabilitado={envio.resultados.length === 0 || duplicadas.size > 0}
         >

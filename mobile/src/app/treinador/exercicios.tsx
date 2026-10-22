@@ -157,6 +157,7 @@ function FormularioExercicio({
         </Botao>
         <Botao
           aoPressionar={() => salvar.mutate()}
+          precisaInternet
           carregando={salvar.isPending}
           estilo={{ flex: 1 }}
         >
