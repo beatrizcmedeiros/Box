@@ -11,11 +11,11 @@
     "preview": {
       "distribution": "internal",
       "android": { "buildType": "apk" },
-      "env": { "EXPO_PUBLIC_API_URL": "https://prbox.vercel.app/api" }
+      "env": { "EXPO_PUBLIC_API_URL": "https://prbox-api.onrender.com/api" }
     },
     "production": {
       "autoIncrement": true,
-      "env": { "EXPO_PUBLIC_API_URL": "https://prbox.vercel.app/api" }
+      "env": { "EXPO_PUBLIC_API_URL": "https://prbox-api.onrender.com/api" }
     }
   },
   "submit": {

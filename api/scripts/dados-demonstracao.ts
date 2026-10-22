@@ -89,7 +89,9 @@ async function criar() {
     where: { nome: { in: Object.keys(FAIXAS) } },
   })
   if (turmas.length === 0 || exercicios.length === 0) {
-    throw new Error('Rode o seed antes (npm run db:seed) para criar turmas e exercícios.')
+    throw new Error(
+      'Rode as migrations e o seed antes (npm run setup) para criar turmas e exercícios.',
+    )
   }
 
   // Senha aleatória descartada: os alunos de demonstração não fazem login

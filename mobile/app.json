@@ -38,6 +38,17 @@
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "router": {
+        "asyncRoutes": {
+          "web": true
+        }
+      },
+      "eas": {
+        "projectId": "11d34ccb-9cf7-4371-913c-5eea07d3d9f2"
+      }
+    },
+    "owner": "beatrizmedeiros"
   }
 }
