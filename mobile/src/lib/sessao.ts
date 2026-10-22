@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api, apagarTokens, ErroApi, guardarTokens, refreshAtual, renovarSessao } from './api'
+import { apagarCacheOffline } from './cacheOffline'
 import type { RespostaSessao, Usuario } from './tipos'
 
 export const CHAVE_USUARIO = ['usuario'] as const
@@ -9,6 +10,7 @@ export const CHAVE_USUARIO = ['usuario'] as const
  * Ao abrir o app, usa o refresh token guardado no aparelho para recuperar a sessão.
  */
 export function useUsuario() {
+  const cliente = useQueryClient()
   return useQuery({
     queryKey: CHAVE_USUARIO,
     queryFn: async (): Promise<Usuario | null> => {
@@ -17,6 +19,9 @@ export function useUsuario() {
         return sessao?.usuario ?? null
       } catch (erro) {
         if (erro instanceof ErroApi && erro.status === 401) return null
+        // Sem internet: continua com o usuário salvo no aparelho (modo offline)
+        const salvo = cliente.getQueryData<Usuario | null>(CHAVE_USUARIO)
+        if (erro instanceof ErroApi && erro.codigo === 'SEM_CONEXAO' && salvo) return salvo
         throw erro
       }
     },
@@ -67,6 +72,7 @@ export function useEncerrarNoAparelho() {
   const cliente = useQueryClient()
   return async () => {
     await apagarTokens()
+    await apagarCacheOffline()
     // Não usar clear(): removeria a query do usuário e as telas não seriam avisadas da saída
     cliente.setQueryData(CHAVE_USUARIO, null)
     cliente.removeQueries({ predicate: (query) => query.queryKey[0] !== CHAVE_USUARIO[0] })

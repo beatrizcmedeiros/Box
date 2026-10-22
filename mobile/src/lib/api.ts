@@ -121,7 +121,8 @@ type Opcoes = { method?: string; body?: unknown }
 /** Chama a API; renova o token de acesso quando expira e tenta de novo uma vez. */
 export async function api<T>(caminho: string, { method = 'GET', body }: Opcoes = {}): Promise<T> {
   const podeRenovar = !ROTAS_SEM_RENOVACAO.includes(caminho)
-  if (podeRenovar && tokens && expirando(tokens)) await renovarSessao()
+  // Ao reabrir o app só o refresh token existe (o de acesso fica na memória): renova antes
+  if (podeRenovar && (!tokens || expirando(tokens))) await renovarSessao()
 
   let res = await requisitar(caminho, method, body, tokens?.acesso)
 

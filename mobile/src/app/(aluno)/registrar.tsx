@@ -135,7 +135,12 @@ export default function RegistrarPr() {
         )}
         {erro && erro.campos.length === 0 && <Alerta>{erro.message}</Alerta>}
 
-        <Botao aoPressionar={enviar} carregando={salvar.isPending} desabilitado={!exercicioId}>
+        <Botao
+          aoPressionar={enviar}
+          precisaInternet
+          carregando={salvar.isPending}
+          desabilitado={!exercicioId}
+        >
           Salvar PR
         </Botao>
         <Botao variante="link" aoPressionar={() => router.back()}>

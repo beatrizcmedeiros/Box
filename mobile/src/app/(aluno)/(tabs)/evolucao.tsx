@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Pressable, Text, View } from 'react-native'
 import { BotaoRegistrar } from '../../../components/aluno'
+import { GraficoLinha } from '../../../components/GraficoLinha'
 import { Alerta, Cartao, Carregando, Tela, Titulo } from '../../../components/ui'
 import { useEvolucao } from '../../../lib/consultas'
 import { formatarData, formatarKg, formatarPct } from '../../../lib/formato'
@@ -102,6 +103,21 @@ function PainelSerie({ serie }: { serie: SerieExercicio }) {
         <Indicador rotulo="Atual" valor={serie.atualKg} />
         <Indicador rotulo="Melhor" valor={serie.melhorKg} />
       </View>
+      {serie.pontos.length > 1 && (
+        <GraficoLinha
+          rotulosX={serie.pontos.map((p) =>
+            formatarData(p.data).replace(/\/(\d{2})(\d{2})$/, '/$2'),
+          )}
+          series={[
+            {
+              nome: serie.exercicio.nome,
+              cor: cores.marca,
+              valores: serie.pontos.map((p) => p.cargaKg),
+            },
+          ]}
+          descricao={`Evolução do PR em ${serie.exercicio.nome}: de ${formatarKg(serie.primeiroKg)} kg para ${formatarKg(serie.atualKg)} kg em ${serie.pontos.length} testes.`}
+        />
+      )}
       <View style={{ gap: 8 }}>
         {serie.pontos.map((p) => (
           <View key={p.data} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>

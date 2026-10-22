@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Text, View } from 'react-native'
+import { CORES_SERIES, GraficoLinha } from '../../components/GraficoLinha'
 import { Chips } from '../../components/seletores'
 import { Alerta, Cartao, Carregando, Tela, Titulo } from '../../components/ui'
 import { useEvolucaoTurmas } from '../../lib/consultasTreinador'
@@ -84,6 +85,23 @@ function Conteudo({ dados }: { dados: EvolucaoTurmas }) {
           </Text>
         )}
       </Cartao>
+
+      {ciclos.length > 1 && (
+        <Cartao estilo={{ gap: 8 }}>
+          <Titulo>{`Média do ${dados.exercicio!.nome} por semana de teste`}</Titulo>
+          <GraficoLinha
+            rotulosX={ciclos.map(semanaCurta)}
+            series={dados.turmas.map((t, i) => ({
+              nome: t.turma?.nome ?? 'Sem turma',
+              cor: CORES_SERIES[i % CORES_SERIES.length],
+              valores: ciclos.map(
+                (c) => t.porCiclo.find((p) => p.ciclo === c.chave)?.mediaKg ?? null,
+              ),
+            }))}
+            descricao={`Média do ${dados.exercicio!.nome} por turma em ${ciclos.length} semanas de teste.`}
+          />
+        </Cartao>
+      )}
 
       <Cartao estilo={{ gap: 4 }}>
         <Titulo>Média por turma</Titulo>

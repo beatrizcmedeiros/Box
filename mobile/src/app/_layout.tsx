@@ -1,11 +1,6 @@
 import NetInfo from '@react-native-community/netinfo'
-import {
-  focusManager,
-  onlineManager,
-  QueryClient,
-  QueryClientProvider,
-  useQueryClient,
-} from '@tanstack/react-query'
+import { focusManager, onlineManager, QueryClient, useQueryClient } from '@tanstack/react-query'
+import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client'
 import { Stack } from 'expo-router'
 import * as SplashScreen from 'expo-splash-screen'
 import { StatusBar } from 'expo-status-bar'
@@ -14,6 +9,7 @@ import { AppState, Platform } from 'react-native'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { Alerta, Botao, TelaPublica } from '../components/ui'
 import { definirAoPerderSessao, ErroApi } from '../lib/api'
+import { apagarCacheOffline, persistidor, VALIDADE_CACHE, VERSAO_CACHE } from '../lib/cacheOffline'
 import { CHAVE_USUARIO, useUsuario } from '../lib/sessao'
 import { cores } from '../lib/tema'
 
@@ -39,18 +35,25 @@ const cliente = new QueryClient({
       // Erros 4xx (sem permissão, não encontrado) não melhoram com nova tentativa
       retry: (falhas, erro) => !(erro instanceof ErroApi && erro.status < 500) && falhas < 2,
       staleTime: 15_000,
+      // Mantém os dados na memória pelo mesmo tempo em que ficam salvos no aparelho
+      gcTime: VALIDADE_CACHE,
     },
   },
 })
 
 export default function LayoutRaiz() {
   return (
-    <QueryClientProvider client={cliente}>
+    // Restaura os dados salvos antes de mostrar as telas; sem sinal, o app abre com eles
+    <PersistQueryClientProvider
+      client={cliente}
+      persistOptions={{ persister: persistidor, maxAge: VALIDADE_CACHE, buster: VERSAO_CACHE }}
+      onSuccess={() => cliente.resumePausedMutations()}
+    >
       <SafeAreaProvider>
         <StatusBar style="light" />
         <Navegacao />
       </SafeAreaProvider>
-    </QueryClientProvider>
+    </PersistQueryClientProvider>
   )
 }
 
@@ -63,6 +66,7 @@ function Navegacao() {
     definirAoPerderSessao(() => {
       queryClient.setQueryData(CHAVE_USUARIO, null)
       queryClient.removeQueries({ predicate: (q) => q.queryKey[0] !== CHAVE_USUARIO[0] })
+      apagarCacheOffline()
     })
   }, [queryClient])
 

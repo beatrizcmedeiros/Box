@@ -28,6 +28,10 @@ Este projeto fica **fora dos workspaces npm** da raiz, porque o React Native exi
 | `src/lib/consultasTreinador.ts` | Consultas da área do treinador                                                                       |
 | `src/components/`               | Componentes visuais                                                                                  |
 
+## Sem internet
+
+As respostas da API ficam salvas no aparelho por 30 dias (AsyncStorage). Sem sinal, o app abre com os últimos dados e mostra uma faixa avisando. Botões que gravam no servidor ficam desativados até a conexão voltar. Ao sair da conta, o cache é apagado.
+
 ## Login no app
 
 O app envia `X-Prbox-Cliente: app` e a API devolve os tokens no corpo da resposta, em vez de cookies:
@@ -57,4 +61,4 @@ O build roda na nuvem da Expo, sem Android Studio. A chave de assinatura é cria
 ## Ainda não está no app
 
 - Leitura de PDF e OCR na importação: no app, o treinador cola o texto da lista. O PDF continua na versão web.
-- Modo offline e gráficos (Fase 3 do plano).
+- Testes automatizados das telas (`jest-expo`); hoje a verificação é por tipos, lint e o bundle do Android.

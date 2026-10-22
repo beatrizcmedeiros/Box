@@ -170,7 +170,7 @@ function Formulario({ aluno }: { aluno?: Aluno }) {
           </View>
         )}
         {erro && erro.campos.length === 0 && <Alerta>{erro.message}</Alerta>}
-        <Botao aoPressionar={() => salvar.mutate()} carregando={salvar.isPending}>
+        <Botao aoPressionar={() => salvar.mutate()} precisaInternet carregando={salvar.isPending}>
           {aluno ? 'Salvar alterações' : 'Cadastrar e gerar senha'}
         </Botao>
       </Cartao>

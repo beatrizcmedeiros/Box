@@ -62,7 +62,7 @@ export default function TrocarSenhaTemporaria() {
       {erro && erro.campos.length === 0 && !erro.codigo?.startsWith('SENHA_') && (
         <Alerta>{erro.message}</Alerta>
       )}
-      <Botao aoPressionar={salvar} carregando={trocar.isPending}>
+      <Botao aoPressionar={salvar} precisaInternet carregando={trocar.isPending}>
         Salvar nova senha
       </Botao>
       <Botao variante="link" aoPressionar={() => logout.mutate()}>
