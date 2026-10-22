@@ -1,6 +1,7 @@
 import { Prisma } from '../generated/prisma/client.ts'
 import { formatarData } from '../lib/datas.ts'
 import { prisma } from '../lib/prisma.ts'
+import type { Contexto } from './contexto.ts'
 
 export const ORDENACOES = ['carga', 'aluno', 'data', 'variacao'] as const
 export type Ordenacao = (typeof ORDENACOES)[number]
@@ -10,6 +11,8 @@ export type FiltrosConsulta = {
   busca?: string
   exercicioId?: number
   turmaId?: number
+  /** Local do professor (agrupa turmas dos alunos próprios). */
+  localId?: number
   ordenar: Ordenacao
   direcao: 'asc' | 'desc'
   pagina: number
@@ -40,30 +43,38 @@ const COLUNAS: Record<Ordenacao, Prisma.Sql> = {
 }
 
 /**
- * PR vigente (teste mais recente) de cada aluno ativo em cada exercício, com a variação
- * em relação ao teste anterior. Filtros combináveis por aluno, exercício e turma.
+ * PR vigente (teste mais recente) de cada aluno ativo do contexto em cada exercício, com a
+ * variação em relação ao teste anterior. Filtros combináveis por aluno, exercício, turma e local.
  */
-export async function consultarCargas(filtros: FiltrosConsulta) {
-  const condicoes: Prisma.Sql[] = [Prisma.sql`u.perfil = 'ALUNO'`, Prisma.sql`u.ativo`]
+export async function consultarCargas(ctx: Contexto, filtros: FiltrosConsulta) {
+  // Só alunos vinculados ao contexto; turma, local e apelidos vêm desse vínculo
+  const vinculo =
+    ctx.tipo === 'academia'
+      ? Prisma.sql`va.academia_id = ${ctx.academiaId}`
+      : Prisma.sql`va.professor_id = ${ctx.professorId}`
+  const condicoes: Prisma.Sql[] = [Prisma.sql`u.tipo = 'PESSOA'`, Prisma.sql`u.ativo`]
   if (filtros.exercicioId) condicoes.push(Prisma.sql`t.exercicio_id = ${filtros.exercicioId}`)
-  if (filtros.turmaId) condicoes.push(Prisma.sql`u.turma_id = ${filtros.turmaId}`)
+  if (filtros.turmaId) condicoes.push(Prisma.sql`va.turma_id = ${filtros.turmaId}`)
+  if (filtros.localId) condicoes.push(Prisma.sql`va.local_id = ${filtros.localId}`)
   if (filtros.busca) {
     const termo = `%${filtros.busca.replace(/[\\%_]/g, '\\$&')}%`
     condicoes.push(Prisma.sql`(
       unaccent(u.nome) ILIKE unaccent(${termo})
-      OR EXISTS (SELECT 1 FROM aluno_apelido ap WHERE ap.usuario_id = u.id AND ap.apelido ILIKE unaccent(${termo}))
+      OR EXISTS (SELECT 1 FROM apelidos_vinculo ap WHERE ap.vinculo_id = va.id AND ap.apelido ILIKE unaccent(${termo}))
     )`)
   }
 
   const testesNumerados = Prisma.sql`
     WITH numerados AS (
-      SELECT t.usuario_id, t.exercicio_id, t.data_teste, t.carga_kg::float8 AS carga_kg, t.origem,
+      SELECT t.usuario_id, va.turma_id, t.exercicio_id, t.data_teste,
+             t.carga_kg::float8 AS carga_kg, t.origem,
              ROW_NUMBER() OVER (
                PARTITION BY t.usuario_id, t.exercicio_id
                ORDER BY t.data_teste DESC, t.criado_em DESC, t.id DESC
              ) AS ordem
       FROM testes_carga t
       JOIN usuarios u ON u.id = t.usuario_id
+      JOIN vinculos_aluno va ON va.aluno_id = u.id AND ${vinculo}
       WHERE ${Prisma.join(condicoes, ' AND ')}
     )`
 
@@ -72,7 +83,7 @@ export async function consultarCargas(filtros: FiltrosConsulta) {
     LEFT JOIN numerados a
       ON a.usuario_id = v.usuario_id AND a.exercicio_id = v.exercicio_id AND a.ordem = 2
     JOIN usuarios u ON u.id = v.usuario_id
-    LEFT JOIN turmas tu ON tu.id = u.turma_id
+    LEFT JOIN turmas tu ON tu.id = v.turma_id
     JOIN exercicios e ON e.id = v.exercicio_id
     WHERE v.ordem = 1`
 

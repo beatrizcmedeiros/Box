@@ -84,13 +84,22 @@ async function remover() {
 }
 
 async function criar() {
-  const turmas = await prisma.turma.findMany({ orderBy: { horario: 'asc' } })
-  const exercicios = await prisma.exercicio.findMany({
-    where: { nome: { in: Object.keys(FAIXAS) } },
+  // Os alunos fictícios entram na academia de demonstração criada pelo seed
+  const academia = await prisma.academia.findFirst({
+    where: { conta: { email: process.env.SEED_ACADEMIA_EMAIL?.trim().toLowerCase() } },
   })
-  if (turmas.length === 0 || exercicios.length === 0) {
+  const turmas = academia
+    ? await prisma.turma.findMany({
+        where: { academiaId: academia.id },
+        orderBy: { horario: 'asc' },
+      })
+    : []
+  const exercicios = await prisma.exercicio.findMany({
+    where: { nome: { in: Object.keys(FAIXAS) }, escopo: 'PADRAO' },
+  })
+  if (!academia || turmas.length === 0 || exercicios.length === 0) {
     throw new Error(
-      'Rode as migrations e o seed antes (npm run setup) para criar turmas e exercícios.',
+      'Rode as migrations e o seed antes (npm run setup) para criar a academia, turmas e exercícios.',
     )
   }
 
@@ -108,9 +117,11 @@ async function criar() {
           .replace(/[^a-z ]/g, '')
           .replace(/ /g, '.')}${DOMINIO}`,
         senhaHash,
-        turmaId: turmas[i % turmas.length].id,
         consentimentoEm: new Date(),
         trocarSenha: false,
+        vinculosComoAluno: {
+          create: { academiaId: academia.id, turmaId: turmas[i % turmas.length].id },
+        },
       },
     })
     const nivel = aleatorio() // alunos mais e menos fortes, de forma consistente entre exercícios

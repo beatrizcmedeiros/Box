@@ -8,6 +8,7 @@ import {
   variacaoPercentual,
 } from '../domain/evolucao.ts'
 import { prisma } from '../lib/prisma.ts'
+import { alunosDoContexto, type Contexto, vinculoDoContexto } from './contexto.ts'
 
 const arredondar = (valor: number) => Math.round(valor * 10) / 10
 
@@ -37,14 +38,17 @@ export async function evolucaoDoAluno(usuarioId: number) {
     .sort((a, b) => a.exercicio.nome.localeCompare(b.exercicio.nome, 'pt-BR'))
 }
 
-type FiltrosTurma = { exercicioId?: number; turmaId?: number }
+type FiltrosTurma = { exercicioId?: number; turmaId?: number; localId?: number }
 
 /**
- * Evolução por semana de teste (ciclo semestral) para o treinador: média por turma,
+ * Evolução por semana de teste (ciclo semestral) dos alunos do contexto: média por turma,
  * resumo do último ciclo × anterior e a evolução de cada aluno.
  */
-export async function evolucaoDasTurmas({ exercicioId, turmaId }: FiltrosTurma) {
-  const alunoAtivo = { perfil: 'ALUNO' as const, ativo: true, ...(turmaId ? { turmaId } : {}) }
+export async function evolucaoDasTurmas(
+  ctx: Contexto,
+  { exercicioId, turmaId, localId }: FiltrosTurma,
+) {
+  const alunoAtivo = alunosDoContexto(ctx, { turmaId, localId })
 
   // Exercícios com dados (para o filtro); sem exercício escolhido, usa o mais testado
   const contagem = await prisma.testeCarga.groupBy({
@@ -82,7 +86,17 @@ export async function evolucaoDasTurmas({ exercicioId, turmaId }: FiltrosTurma) 
     select: {
       dataTeste: true,
       cargaKg: true,
-      usuario: { select: { id: true, nome: true, turma: { select: { id: true, nome: true } } } },
+      usuario: {
+        select: {
+          id: true,
+          nome: true,
+          // A turma do aluno é a do vínculo com este contexto
+          vinculosComoAluno: {
+            where: vinculoDoContexto(ctx),
+            select: { turma: { select: { id: true, nome: true } } },
+          },
+        },
+      },
     },
   })
 
@@ -109,7 +123,7 @@ export async function evolucaoDasTurmas({ exercicioId, turmaId }: FiltrosTurma) 
     const anteriorKg = anterior ? melhores.get(anterior)! : null
     return {
       aluno: { id: usuario.id, nome: usuario.nome },
-      turma: usuario.turma,
+      turma: usuario.vinculosComoAluno[0]?.turma ?? null,
       porCiclo: Object.fromEntries(melhores),
       ultimoCiclo: ultimo,
       ultimoKg,

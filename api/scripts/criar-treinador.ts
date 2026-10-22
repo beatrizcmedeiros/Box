@@ -1,4 +1,4 @@
-// Cria uma conta de treinador com senha temporária (troca obrigatória no primeiro acesso).
+// Cria uma conta de professor com senha temporária (troca obrigatória no primeiro acesso).
 // Uso: npm run criar-treinador -w api -- "Nome do Treinador" email@dominio.com
 import { PrismaPg } from '@prisma/adapter-pg'
 import { z } from 'zod'
@@ -39,7 +39,7 @@ try {
       data: {
         nome,
         email,
-        perfil: 'TREINADOR',
+        ehProfessor: true,
         senhaHash: await gerarHashSenha(senhaTemporaria),
         trocarSenha: true,
       },

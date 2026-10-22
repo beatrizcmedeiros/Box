@@ -7,6 +7,7 @@ import {
   criarUsuario,
   limparBanco,
   logar,
+  logarComoAcademia,
   logarComoTreinador,
   SENHA,
 } from './apoio.ts'
@@ -150,12 +151,33 @@ describe('POST /api/auth/excluir-conta', () => {
 
     expect(res.status).toBe(400)
     expect(res.body.codigo).toBe('SENHA_INCORRETA')
-    expect(await prisma.usuario.count()).toBe(1)
+    expect(await prisma.usuario.count({ where: { email: 'ana@teste.com' } })).toBe(1)
   })
 
-  it('não permite que o treinador exclua a própria conta pelo app', async () => {
-    const treinador = await logarComoTreinador(app)
-    const res = await treinador.post('/api/auth/excluir-conta').send({ senha: SENHA })
+  it('o professor exclui a própria conta; exercícios usados por alunos ficam como histórico', async () => {
+    const professor = await logarComoTreinador(app)
+    const prof = await prisma.usuario.findUniqueOrThrow({ where: { email: 'treinador@teste.com' } })
+    const ana = await criarUsuario({ email: 'ana@teste.com' })
+    const exercicio = await prisma.exercicio.create({
+      data: { nome: 'Wall Ball', escopo: 'PROFESSOR', donoId: prof.id },
+    })
+    await prisma.testeCarga.create({
+      data: { usuarioId: ana.id, exercicioId: exercicio.id, dataTeste: new Date(), cargaKg: 9 },
+    })
+
+    const res = await professor.post('/api/auth/excluir-conta').send({ senha: SENHA })
+
+    expect(res.status).toBe(204)
+    expect(await prisma.usuario.findUnique({ where: { id: prof.id } })).toBeNull()
+    expect(await prisma.exercicio.findUnique({ where: { id: exercicio.id } })).toMatchObject({
+      donoId: null,
+    })
+    expect(await prisma.testeCarga.count({ where: { usuarioId: ana.id } })).toBe(1)
+  })
+
+  it('a conta da academia ainda não é excluída pelo app', async () => {
+    const academia = await logarComoAcademia(app)
+    const res = await academia.post('/api/auth/excluir-conta').send({ senha: SENHA })
     expect(res.status).toBe(403)
   })
 })

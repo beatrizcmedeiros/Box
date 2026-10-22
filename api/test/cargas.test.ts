@@ -1,6 +1,15 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { prisma } from '../src/lib/prisma.ts'
-import { criarAppDeTeste, criarUsuario, limparBanco, logar, logarComoTreinador } from './apoio.ts'
+import {
+  admin,
+  apelidar,
+  criarAppDeTeste,
+  criarTurma,
+  criarUsuario,
+  limparBanco,
+  logar,
+  logarComoTreinador,
+} from './apoio.ts'
 
 const app = criarAppDeTeste()
 
@@ -22,8 +31,8 @@ async function teste(
 
 /** Cenário da Figura 4: Back Squat da turma 18h, mais dados de outras turmas e exercícios. */
 async function cenario() {
-  const t18 = await prisma.turma.create({ data: { nome: 'Turma 18h' } })
-  const t07 = await prisma.turma.create({ data: { nome: 'Turma 07h' } })
+  const t18 = await criarTurma('Turma 18h')
+  const t07 = await criarTurma('Turma 07h')
   const backSquat = await prisma.exercicio.create({ data: { nome: 'Back Squat' } })
   const deadlift = await prisma.exercicio.create({ data: { nome: 'Deadlift' } })
 
@@ -43,7 +52,7 @@ async function cenario() {
     turmaId: t18.id,
     ativo: false,
   })
-  await prisma.alunoApelido.create({ data: { usuarioId: helena.id, apelido: 'lena' } })
+  await apelidar(helena.id, 'lena')
 
   // Back Squat: setembro/2025 → março/2026
   for (const [aluno, antes, depois] of [
@@ -64,11 +73,11 @@ async function cenario() {
   return { t18, t07, backSquat, deadlift, bruno, joao, helena, carla, treinador }
 }
 
-const consultar = (agente: Agente, query = '') => agente.get(`/api/admin/cargas${query}`)
+const consultar = (agente: Agente, query = '') => agente.get(admin(`/cargas${query}`))
 const nomes = (body: { resultados: { aluno: { nome: string } }[] }) =>
   body.resultados.map((r) => r.aluno.nome)
 
-describe('GET /api/admin/cargas', () => {
+describe('GET /api/c/:contexto/cargas', () => {
   it('filtra por exercício e turma ao mesmo tempo, com totais e variação (Figura 4)', async () => {
     const { treinador, backSquat, t18 } = await cenario()
 
@@ -180,9 +189,7 @@ describe('desempenho', () => {
   it('responde rápido com 1.000 registros de testes', async () => {
     const treinador = await logarComoTreinador(app)
     const turmas = await Promise.all(
-      ['06h', '07h', '18h', '19h'].map((h) =>
-        prisma.turma.create({ data: { nome: `Turma ${h}` } }),
-      ),
+      ['06h', '07h', '18h', '19h'].map((h) => criarTurma(`Turma ${h}`)),
     )
     const exercicios = await Promise.all(
       ['Back Squat', 'Front Squat', 'Deadlift', 'Clean', 'Snatch'].map((nome) =>
@@ -194,10 +201,19 @@ describe('desempenho', () => {
         nome: `Aluno ${String(i).padStart(3, '0')}`,
         email: `aluno${i}@carga.com`,
         senhaHash: 'x',
+      })),
+    })
+    const alunos = await prisma.usuario.findMany({
+      where: { email: { endsWith: '@carga.com' } },
+      orderBy: { id: 'asc' },
+    })
+    await prisma.vinculoAluno.createMany({
+      data: alunos.map((a, i) => ({
+        alunoId: a.id,
+        academiaId: turmas[0].academiaId!,
         turmaId: turmas[i % 4].id,
       })),
     })
-    const alunos = await prisma.usuario.findMany({ where: { email: { endsWith: '@carga.com' } } })
     // 100 alunos × 5 exercícios × 2 testes semestrais = 1.000 registros
     await prisma.testeCarga.createMany({
       data: alunos.flatMap((a, i) =>

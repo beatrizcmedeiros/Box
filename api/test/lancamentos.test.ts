@@ -1,6 +1,15 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { prisma } from '../src/lib/prisma.ts'
-import { criarAppDeTeste, criarUsuario, limparBanco, logar, logarComoTreinador } from './apoio.ts'
+import {
+  admin,
+  apelidar,
+  criarAppDeTeste,
+  criarTurma,
+  criarUsuario,
+  limparBanco,
+  logar,
+  logarComoTreinador,
+} from './apoio.ts'
 
 const app = criarAppDeTeste()
 
@@ -9,8 +18,8 @@ beforeEach(limparBanco)
 const d = (iso: string) => new Date(`${iso}T00:00:00Z`)
 
 async function cenario() {
-  const t18 = await prisma.turma.create({ data: { nome: 'Turma 18h' } })
-  const t07 = await prisma.turma.create({ data: { nome: 'Turma 07h' } })
+  const t18 = await criarTurma('Turma 18h')
+  const t07 = await criarTurma('Turma 07h')
   const backSquat = await prisma.exercicio.create({ data: { nome: 'Back Squat' } })
   const inativo = await prisma.exercicio.create({ data: { nome: 'Thruster', ativo: false } })
   const ana = await criarUsuario({ nome: 'Ana Souza', email: 'ana@t.com', turmaId: t18.id })
@@ -22,7 +31,7 @@ async function cenario() {
     turmaId: t18.id,
     ativo: false,
   })
-  await prisma.alunoApelido.create({ data: { usuarioId: carla.id, apelido: 'carlinha' } })
+  await apelidar(carla.id, 'carlinha')
   await prisma.testeCarga.create({
     data: { usuarioId: ana.id, exercicioId: backSquat.id, dataTeste: d('2026-03-15'), cargaKg: 80 },
   })
@@ -30,12 +39,12 @@ async function cenario() {
   return { t18, t07, backSquat, inativo, ana, joao, carla, treinador }
 }
 
-describe('GET /api/admin/lancamentos', () => {
+describe('GET /api/c/:contexto/lancamentos', () => {
   it('lista os alunos ativos da turma com o PR atual do exercício', async () => {
     const { treinador, t18, backSquat } = await cenario()
 
     const res = await treinador.get(
-      `/api/admin/lancamentos?exercicioId=${backSquat.id}&data=2026-10-21&turmaId=${t18.id}`,
+      admin(`/lancamentos?exercicioId=${backSquat.id}&data=2026-10-21&turmaId=${t18.id}`),
     )
 
     expect(res.status).toBe(200)
@@ -62,7 +71,7 @@ describe('GET /api/admin/lancamentos', () => {
     const nomes = async (busca: string) =>
       (
         await treinador.get(
-          `/api/admin/lancamentos?exercicioId=${backSquat.id}&data=2026-10-21&busca=${busca}`,
+          admin(`/lancamentos?exercicioId=${backSquat.id}&data=2026-10-21&busca=${busca}`),
         )
       ).body.alunos.map((a: { aluno: { nome: string } }) => a.aluno.nome)
 
@@ -73,18 +82,18 @@ describe('GET /api/admin/lancamentos', () => {
 
   it('exige exercício e data válidos', async () => {
     const { treinador } = await cenario()
-    expect((await treinador.get('/api/admin/lancamentos?data=2026-10-21')).status).toBe(400)
-    expect(
-      (await treinador.get('/api/admin/lancamentos?exercicioId=1&data=2999-01-01')).status,
-    ).toBe(400)
+    expect((await treinador.get(admin('/lancamentos?data=2026-10-21'))).status).toBe(400)
+    expect((await treinador.get(admin('/lancamentos?exercicioId=1&data=2999-01-01'))).status).toBe(
+      400,
+    )
   })
 })
 
-describe('POST /api/admin/lancamentos', () => {
+describe('POST /api/c/:contexto/lancamentos', () => {
   it('lança a carga de vários alunos de uma vez e aponta novos recordes', async () => {
     const { treinador, backSquat, ana, joao } = await cenario()
 
-    const res = await treinador.post('/api/admin/lancamentos').send({
+    const res = await treinador.post(admin('/lancamentos')).send({
       dataTeste: '2026-10-21',
       exercicioId: backSquat.id,
       resultados: [
@@ -111,7 +120,7 @@ describe('POST /api/admin/lancamentos', () => {
 
     // Na tela, o lançamento do dia aparece preenchido
     const lista = await treinador.get(
-      `/api/admin/lancamentos?exercicioId=${backSquat.id}&data=2026-10-21&busca=ana`,
+      admin(`/lancamentos?exercicioId=${backSquat.id}&data=2026-10-21&busca=ana`),
     )
     expect(lista.body.alunos[0]).toMatchObject({
       prAtual: { cargaKg: 80 },
@@ -122,7 +131,7 @@ describe('POST /api/admin/lancamentos', () => {
   it('lançar de novo no mesmo dia corrige a carga em vez de duplicar', async () => {
     const { treinador, backSquat, joao } = await cenario()
     const enviar = (cargaKg: number) =>
-      treinador.post('/api/admin/lancamentos').send({
+      treinador.post(admin('/lancamentos')).send({
         dataTeste: '2026-10-21',
         exercicioId: backSquat.id,
         resultados: [{ usuarioId: joao.id, cargaKg }],
@@ -160,7 +169,7 @@ describe('POST /api/admin/lancamentos', () => {
     ['lista vazia', () => ({ resultados: [] }), 'Dados inválidos'],
   ])('recusa %s', async (_caso, alterar, mensagem) => {
     const c = await cenario()
-    const res = await c.treinador.post('/api/admin/lancamentos').send({
+    const res = await c.treinador.post(admin('/lancamentos')).send({
       dataTeste: '2026-10-21',
       exercicioId: c.backSquat.id,
       resultados: [{ usuarioId: c.ana.id, cargaKg: 80 }],
@@ -173,7 +182,7 @@ describe('POST /api/admin/lancamentos', () => {
   it('é exclusivo do treinador', async () => {
     const { backSquat, ana } = await cenario()
     const aluna = await logar(app, 'ana@t.com')
-    const res = await aluna.post('/api/admin/lancamentos').send({
+    const res = await aluna.post(admin('/lancamentos')).send({
       dataTeste: '2026-10-21',
       exercicioId: backSquat.id,
       resultados: [{ usuarioId: ana.id, cargaKg: 200 }],
@@ -182,10 +191,10 @@ describe('POST /api/admin/lancamentos', () => {
   })
 })
 
-describe('DELETE /api/admin/lancamentos/:id', () => {
+describe('DELETE /api/c/:contexto/lancamentos/:id', () => {
   it('exclui só lançamentos do treinador', async () => {
     const { treinador, backSquat, joao, ana } = await cenario()
-    await treinador.post('/api/admin/lancamentos').send({
+    await treinador.post(admin('/lancamentos')).send({
       dataTeste: '2026-10-21',
       exercicioId: backSquat.id,
       resultados: [{ usuarioId: joao.id, cargaKg: 100 }],
@@ -193,8 +202,8 @@ describe('DELETE /api/admin/lancamentos/:id', () => {
     const doTreinador = await prisma.testeCarga.findFirstOrThrow({ where: { usuarioId: joao.id } })
     const daAluna = await prisma.testeCarga.findFirstOrThrow({ where: { usuarioId: ana.id } })
 
-    expect((await treinador.delete(`/api/admin/lancamentos/${daAluna.id}`)).status).toBe(409)
-    expect((await treinador.delete(`/api/admin/lancamentos/${doTreinador.id}`)).status).toBe(204)
+    expect((await treinador.delete(admin(`/lancamentos/${daAluna.id}`))).status).toBe(409)
+    expect((await treinador.delete(admin(`/lancamentos/${doTreinador.id}`))).status).toBe(204)
     expect(await prisma.testeCarga.count({ where: { usuarioId: joao.id } })).toBe(0)
   })
 })

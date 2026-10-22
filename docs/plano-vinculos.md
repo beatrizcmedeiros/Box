@@ -115,6 +115,23 @@ Regra única da API, usada em todas as consultas do professor e da academia:
 
 As Fases 3 e 4 podem andar em paralelo.
 
+**Situação:** Fases 0 e 1 feitas. A Fase 1 muda as rotas da API, então o app e a web atuais deixam de funcionar com ela. A branch `fase-1-vinculos` só deve entrar na `main` junto com as Fases 2 a 4, para o APK instalado e a web publicada continuarem funcionando até lá.
+
+### Rotas da API depois da Fase 1
+
+| Rota                                                                        | Quem usa             | Para quê                                                                                                                                                     |
+| --------------------------------------------------------------------------- | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `GET /api/auth/me`                                                          | todos                | Agora devolve `tipo` (`PESSOA` ou `ACADEMIA`), `ehProfessor` e `academia` (no lugar de `perfil`).                                                            |
+| `/api/me/prs`, `/api/me/evolucao`                                           | pessoa               | Meus PRs (aluno e professor).                                                                                                                                |
+| `GET/POST/PUT/DELETE /api/me/exercicios`                                    | pessoa               | Exercícios disponíveis (padrão, dos vínculos e pessoais, com `origem`) e cadastro dos pessoais.                                                              |
+| `GET /api/vinculos`, `POST /api/vinculos/codigo`                            | pessoa               | Ver vínculos e usar um código (de academia, de professor ou de professores da academia). Limite de 10 tentativas por hora.                                   |
+| `DELETE /api/vinculos/:id`, `DELETE /api/vinculos/academias/:id`            | pessoa               | O aluno desfaz um vínculo; o professor sai de uma academia.                                                                                                  |
+| `PUT /api/professor/perfil`                                                 | pessoa               | Ativar ou desativar "sou professor".                                                                                                                         |
+| `/api/professor/codigo`, `/api/professor/locais`                            | professor            | Código dos alunos dele (validade `15`, `30` ou `nunca`) e locais.                                                                                            |
+| `/api/academia`, `/api/academia/codigos/:tipo`, `/api/academia/professores` | academia             | Nome, códigos (`alunos` e `professores`) e professores da academia.                                                                                          |
+| `GET /api/contextos`                                                        | professor e academia | Onde a pessoa pode trabalhar: `pessoal` ("Meus alunos") e cada academia.                                                                                     |
+| `/api/c/:contexto/...`                                                      | professor e academia | As antigas rotas `/api/admin/...` (turmas, exercícios, alunos, teste de carga, consultas, evolução, importação), filtradas pelo contexto. Mais `GET locais`. |
+
 ## 7. Decisões complementares (confirmadas em 22/10/2026)
 
 Todos os pontos seguem a recomendação.

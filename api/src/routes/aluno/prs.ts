@@ -5,6 +5,7 @@ import type { Exercicio, TesteCarga } from '../../generated/prisma/client.ts'
 import { dataDoTesteSchema, formatarData, paraData } from '../../lib/datas.ts'
 import { ErroHttp, naoEncontrado } from '../../lib/erros.ts'
 import { prisma } from '../../lib/prisma.ts'
+import { exerciciosDoAluno } from '../../services/contexto.ts'
 import { cargaKgSchema } from '../../lib/validacao.ts'
 import { parseId } from '../admin/comum.ts'
 
@@ -88,8 +89,11 @@ export function prsRouter() {
   router.post('/', async (req, res) => {
     const { exercicioId, dataTeste, cargaKg } = novoPrSchema.parse(req.body)
 
-    const exercicio = await prisma.exercicio.findUnique({ where: { id: exercicioId } })
-    if (!exercicio || !exercicio.ativo) throw new ErroHttp(400, 'Exercício não disponível')
+    // Só exercícios disponíveis para a pessoa: padrão, pessoais e os dos vínculos dela
+    const exercicio = await prisma.exercicio.findFirst({
+      where: { id: exercicioId, ativo: true, ...(await exerciciosDoAluno(req.usuario!.id)) },
+    })
+    if (!exercicio) throw new ErroHttp(400, 'Exercício não disponível')
 
     const teste = await prisma.testeCarga.create({
       data: {

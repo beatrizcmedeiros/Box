@@ -1,5 +1,4 @@
 import type { Request, Response } from 'express'
-import type { Perfil } from '../generated/prisma/client.ts'
 import { env } from '../env.ts'
 import { prisma } from '../lib/prisma.ts'
 import {
@@ -43,7 +42,7 @@ export const ehClienteApp = (req: Request) => req.get(CABECALHO_CLIENTE) === 'ap
 export async function abrirSessao(
   req: Request,
   res: Response,
-  usuario: { id: number; perfil: Perfil },
+  usuario: { id: number },
 ): Promise<TokensApp | undefined> {
   const refresh = gerarRefreshToken()
   await prisma.sessao.create({
@@ -53,7 +52,7 @@ export async function abrirSessao(
       expiraEm: new Date(Date.now() + REFRESH_TOKEN_DIAS * MS_DIA),
     },
   })
-  const acesso = await assinarTokenAcesso({ usuarioId: usuario.id, perfil: usuario.perfil })
+  const acesso = await assinarTokenAcesso({ usuarioId: usuario.id })
 
   if (ehClienteApp(req)) {
     const acessoExpiraEm = new Date(Date.now() + ACCESS_TOKEN_MINUTOS * 60 * 1000).toISOString()

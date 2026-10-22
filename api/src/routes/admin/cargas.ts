@@ -12,6 +12,7 @@ const filtrosSchema = z.object({
     .transform((v) => v || undefined),
   exercicioId: idSchema.optional(),
   turmaId: idSchema.optional(),
+  localId: idSchema.optional(),
   ordenar: z.enum(ORDENACOES).default('carga'),
   direcao: z.enum(['asc', 'desc']).default('desc'),
   pagina: z.coerce.number().int().min(1).default(1),
@@ -21,9 +22,9 @@ const filtrosSchema = z.object({
 export function cargasRouter() {
   const router = Router()
 
-  /** Cargas máximas vigentes com filtros combináveis por aluno, exercício e turma (Figura 4). */
+  /** Cargas máximas vigentes dos alunos do contexto, com filtros por aluno, exercício, turma e local. */
   router.get('/', async (req, res) => {
-    res.json(await consultarCargas(filtrosSchema.parse(req.query)))
+    res.json(await consultarCargas(req.contexto!, filtrosSchema.parse(req.query)))
   })
 
   return router

@@ -1,159 +1,153 @@
 import { Router } from 'express'
 import { z } from 'zod'
-import type { Prisma } from '../../generated/prisma/client.ts'
 import { ErroHttp, naoEncontrado } from '../../lib/erros.ts'
 import { prisma } from '../../lib/prisma.ts'
-import { gerarHashSenha, gerarSenhaTemporaria } from '../../lib/senha.ts'
 import { normalizarTexto } from '../../lib/texto.ts'
-import { revogarTodasAsSessoes } from '../../services/sessoes.ts'
+import { type Contexto, vinculoDoAluno, vinculoDoContexto } from '../../services/contexto.ts'
 import { idSchema, parseId } from './comum.ts'
+import { buscarTurma } from './turmas.ts'
 
-const alunoSchema = z.object({
-  nome: z.string().trim().min(2, 'Informe o nome completo').max(120),
-  email: z.string().trim().toLowerCase().pipe(z.email('E-mail inválido')),
+const filtrosSchema = z.object({
+  busca: z.string().trim().optional(),
+  turmaId: idSchema.optional(),
+  localId: idSchema.optional(),
+})
+
+// O que o professor ou a academia pode mudar no vínculo do aluno (não nos dados da conta dele)
+const vinculoSchema = z.object({
   turmaId: idSchema.nullish().transform((v) => v ?? null),
-  ativo: z.boolean().default(true),
-  // Como o aluno aparece na lista do treinador; se omitido, os apelidos atuais são mantidos
+  localId: idSchema.nullish().transform((v) => v ?? null),
+  // Como o aluno aparece na lista do teste; se omitido, os apelidos atuais são mantidos
   apelidos: z
     .array(z.string().max(80))
     .optional()
     .transform((lista) => lista && [...new Set(lista.map(normalizarTexto).filter(Boolean))]),
 })
 
-const filtrosSchema = z.object({
-  busca: z.string().trim().optional(),
-  turmaId: idSchema.optional(),
-  ativo: z
-    .enum(['true', 'false'])
-    .optional()
-    .transform((v) => (v === undefined ? undefined : v === 'true')),
-})
-
-// Nunca devolver o hash da senha
-const camposPublicos = {
-  id: true,
-  nome: true,
-  email: true,
-  ativo: true,
-  trocarSenha: true,
-  consentimentoEm: true,
-  criadoEm: true,
+const incluir = {
+  aluno: {
+    select: { id: true, nome: true, email: true, trocarSenha: true, consentimentoEm: true },
+  },
   turma: { select: { id: true, nome: true } },
+  local: { select: { id: true, nome: true } },
   apelidos: { select: { apelido: true }, orderBy: { apelido: 'asc' } },
-} satisfies Prisma.UsuarioSelect
+} as const
 
-type AlunoSelecionado = Prisma.UsuarioGetPayload<{ select: typeof camposPublicos }>
+type VinculoCompleto = Awaited<ReturnType<typeof buscarVinculos>>[number]
 
-const formatar = ({ apelidos, ...aluno }: AlunoSelecionado) => ({
-  ...aluno,
-  apelidos: apelidos.map((a) => a.apelido),
+const buscarVinculos = (where: Parameters<typeof prisma.vinculoAluno.findMany>[0]) =>
+  prisma.vinculoAluno.findMany({ ...where, include: incluir })
+
+const formatar = (v: VinculoCompleto) => ({
+  id: v.aluno.id,
+  nome: v.aluno.nome,
+  email: v.aluno.email,
+  vinculoId: v.id,
+  turma: v.turma,
+  local: v.local,
+  apelidos: v.apelidos.map((a) => a.apelido),
+  desde: v.criadoEm,
+  // Ainda não concluiu o primeiro acesso (troca de senha e termo)
+  primeiroAcessoPendente: v.aluno.trocarSenha || !v.aluno.consentimentoEm,
 })
 
+/**
+ * Alunos vinculados ao contexto. O professor ou a academia organiza o aluno (turma, local,
+ * apelidos) e pode desfazer o vínculo; os dados da conta pertencem ao próprio aluno.
+ */
 export function alunosRouter() {
   const router = Router()
 
   router.get('/', async (req, res) => {
-    const { busca, turmaId, ativo } = filtrosSchema.parse(req.query)
-    const alunos = await prisma.usuario.findMany({
+    const ctx = req.contexto!
+    const { busca, turmaId, localId } = filtrosSchema.parse(req.query)
+    const vinculos = await buscarVinculos({
       where: {
-        perfil: 'ALUNO',
-        turmaId,
-        ativo,
-        OR: busca
-          ? [
-              { nome: { contains: busca, mode: 'insensitive' } },
-              { email: { contains: busca, mode: 'insensitive' } },
-            ]
-          : undefined,
+        ...vinculoDoContexto(ctx),
+        aluno: {
+          tipo: 'PESSOA',
+          ativo: true,
+          OR: busca
+            ? [
+                { nome: { contains: busca, mode: 'insensitive' } },
+                { email: { contains: busca, mode: 'insensitive' } },
+              ]
+            : undefined,
+        },
+        ...(turmaId ? { turmaId } : {}),
+        ...(localId ? { localId } : {}),
       },
-      orderBy: { nome: 'asc' },
-      select: camposPublicos,
+      orderBy: { aluno: { nome: 'asc' } },
     })
-    res.json(alunos.map(formatar))
+    res.json(vinculos.map(formatar))
   })
 
-  /** Cria o aluno com uma senha temporária, exibida uma única vez ao treinador. */
-  router.post('/', async (req, res) => {
-    const { apelidos, ...dados } = alunoSchema.parse(req.body)
-    await validarTurma(dados.turmaId)
-    await validarApelidos(apelidos ?? [])
-    const senhaTemporaria = gerarSenhaTemporaria()
-    const aluno = await prisma.usuario.create({
-      data: {
-        ...dados,
-        perfil: 'ALUNO',
-        senhaHash: await gerarHashSenha(senhaTemporaria),
-        trocarSenha: true,
-        apelidos: { create: (apelidos ?? []).map((apelido) => ({ apelido })) },
-      },
-      select: camposPublicos,
-    })
-    res.status(201).json({ aluno: formatar(aluno), senhaTemporaria })
-  })
-
+  /** Turma, local e apelidos do aluno neste contexto. */
   router.put('/:id', async (req, res) => {
-    const id = parseId(req.params.id)
-    await buscarAluno(id)
-    const { apelidos, ...dados } = alunoSchema.parse(req.body)
-    await validarTurma(dados.turmaId)
-    if (apelidos) await validarApelidos(apelidos, id)
-    const aluno = await prisma.usuario.update({
-      where: { id },
+    const ctx = req.contexto!
+    const vinculo = await vinculoDoAluno(ctx, parseId(req.params.id))
+    const { turmaId, localId, apelidos } = vinculoSchema.parse(req.body)
+    const organizacao = await validarOrganizacao(ctx, turmaId, localId)
+    if (apelidos) await validarApelidos(ctx, apelidos, vinculo.id)
+
+    await prisma.vinculoAluno.update({
+      where: { id: vinculo.id },
       data: {
-        ...dados,
+        ...organizacao,
         apelidos: apelidos && {
           deleteMany: {},
           create: apelidos.map((apelido) => ({ apelido })),
         },
       },
-      select: camposPublicos,
     })
-    if (!aluno.ativo) await revogarTodasAsSessoes(id)
-    res.json(formatar(aluno))
+    const [atualizado] = await buscarVinculos({ where: { id: vinculo.id } })
+    res.json(formatar(atualizado))
   })
 
-  /** Gera nova senha temporária (aluno esqueceu a senha) e encerra as sessões abertas. */
-  router.post('/:id/redefinir-senha', async (req, res) => {
-    const id = parseId(req.params.id)
-    await buscarAluno(id)
-    const senhaTemporaria = gerarSenhaTemporaria()
-    await prisma.usuario.update({
-      where: { id },
-      data: { senhaHash: await gerarHashSenha(senhaTemporaria), trocarSenha: true },
-    })
-    await revogarTodasAsSessoes(id)
-    res.json({ senhaTemporaria })
-  })
-
-  /** Remove o aluno e todos os seus dados (testes de carga e sessões). */
+  /** Desfaz o vínculo: o aluno continua com a conta e os PRs; o contexto deixa de vê-los. */
   router.delete('/:id', async (req, res) => {
-    const id = parseId(req.params.id)
-    await buscarAluno(id)
-    await prisma.usuario.delete({ where: { id } })
+    const vinculo = await vinculoDoAluno(req.contexto!, parseId(req.params.id))
+    await prisma.vinculoAluno.delete({ where: { id: vinculo.id } })
     res.status(204).end()
   })
 
   return router
 }
 
-async function validarTurma(turmaId: number | null) {
-  if (turmaId && !(await prisma.turma.findUnique({ where: { id: turmaId } }))) {
-    throw new ErroHttp(400, 'Turma não encontrada')
+/** Turma e local precisam ser do contexto; no professor, a turma define o local. */
+async function validarOrganizacao(ctx: Contexto, turmaId: number | null, localId: number | null) {
+  if (ctx.tipo === 'academia') {
+    if (localId) throw new ErroHttp(400, 'Locais são usados só em "Meus alunos"')
+    if (turmaId) await buscarTurma(ctx, turmaId)
+    return { turmaId, localId: null }
   }
+  if (turmaId) {
+    const turma = await buscarTurma(ctx, turmaId)
+    return { turmaId, localId: turma.localId }
+  }
+  if (localId) {
+    const local = await prisma.localProfessor.findFirst({
+      where: { id: localId, professorId: ctx.professorId },
+    })
+    if (!local) throw naoEncontrado('Local')
+  }
+  return { turmaId: null, localId }
 }
 
-async function validarApelidos(apelidos: string[], alunoId?: number) {
-  const emUso = await prisma.alunoApelido.findFirst({
-    where: { apelido: { in: apelidos }, NOT: alunoId ? { usuarioId: alunoId } : undefined },
-    include: { usuario: { select: { nome: true } } },
+/** Dentro do mesmo contexto, cada apelido aponta para um só aluno. */
+export async function validarApelidos(ctx: Contexto, apelidos: string[], vinculoId?: number) {
+  if (apelidos.length === 0) return
+  const emUso = await prisma.apelidoVinculo.findFirst({
+    where: {
+      apelido: { in: apelidos },
+      vinculo: { ...vinculoDoContexto(ctx), NOT: vinculoId ? { id: vinculoId } : undefined },
+    },
+    include: { vinculo: { include: { aluno: { select: { nome: true } } } } },
   })
   if (emUso) {
-    throw new ErroHttp(409, `O apelido "${emUso.apelido}" já pertence a ${emUso.usuario.nome}`)
+    throw new ErroHttp(
+      409,
+      `O apelido "${emUso.apelido}" já pertence a ${emUso.vinculo.aluno.nome}`,
+    )
   }
-}
-
-async function buscarAluno(id: number) {
-  const aluno = await prisma.usuario.findFirst({ where: { id, perfil: 'ALUNO' } })
-  if (!aluno) throw naoEncontrado('Aluno')
-  return aluno
 }

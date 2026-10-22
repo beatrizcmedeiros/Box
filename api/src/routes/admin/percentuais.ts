@@ -17,6 +17,7 @@ const filtrosSchema = z.object({
     .transform((v) => v || undefined),
   exercicioId: idSchema.optional(),
   turmaId: idSchema.optional(),
+  localId: idSchema.optional(),
   // Ex.: "35,45". Sem o parâmetro, vêm todos os percentuais padrão.
   percentuais: z
     .string()
@@ -41,11 +42,11 @@ export function percentuaisRouter() {
 
   router.get('/', async (req, res) => {
     const { percentuais, ...filtros } = filtrosSchema.parse(req.query)
-    if (!filtros.busca && !filtros.exercicioId && !filtros.turmaId) {
-      throw new ErroHttp(400, 'Escolha uma turma, um exercício ou pesquise um aluno')
+    if (!filtros.busca && !filtros.exercicioId && !filtros.turmaId && !filtros.localId) {
+      throw new ErroHttp(400, 'Escolha uma turma, um local, um exercício ou pesquise um aluno')
     }
 
-    const consulta = await consultarCargas({
+    const consulta = await consultarCargas(req.contexto!, {
       ...filtros,
       ordenar: 'aluno',
       direcao: 'asc',

@@ -1,4 +1,7 @@
-// Dados de exemplo para desenvolvimento: turmas, treinador e aluna de demonstração.
+// Dados de exemplo para desenvolvimento (nunca rodam em produção):
+//  - academia de demonstração (conta própria) com 4 turmas;
+//  - professor, membro da academia;
+//  - aluna com PRs de exemplo, vinculada à academia.
 // A lista padrão de exercícios vem da migration 20261022150000_exercicios_padrao.
 import { PrismaPg } from '@prisma/adapter-pg'
 import { PrismaClient } from '../src/generated/prisma/client.ts'
@@ -21,38 +24,80 @@ const turmas = [
   { nome: 'Turma 19h', horario: '19:00' },
 ]
 
-async function main() {
-  for (const turma of turmas) {
-    await prisma.turma.upsert({ where: { nome: turma.nome }, update: turma, create: turma })
-  }
-
-  console.log(`Seed concluído: ${turmas.length} turmas.`)
-
-  await criarTreinadorDeDesenvolvimento()
-  await criarAlunaDeDemonstracao()
+const credenciais = (prefixo: string) => {
+  const email = process.env[`${prefixo}_EMAIL`]?.trim().toLowerCase()
+  const senha = process.env[`${prefixo}_SENHA`]
+  return email && senha ? { email, senha } : null
 }
 
-/** Treinador para testar localmente, com as credenciais do api/.env. Nunca roda em produção. */
-async function criarTreinadorDeDesenvolvimento() {
-  const email = process.env.SEED_TREINADOR_EMAIL?.trim().toLowerCase()
-  const senha = process.env.SEED_TREINADOR_SENHA
-  if (process.env.NODE_ENV === 'production' || !email || !senha) return
-
-  const existente = await prisma.usuario.findUnique({ where: { email } })
-  if (existente) {
-    console.log(`Treinador de desenvolvimento já existe: ${email}`)
+async function main() {
+  if (process.env.NODE_ENV === 'production') {
+    console.log('Seed ignorado em produção.')
     return
   }
-  await prisma.usuario.create({
-    data: {
-      nome: 'Treinador (desenvolvimento)',
-      email,
-      senhaHash: await gerarHashSenha(senha),
-      perfil: 'TREINADOR',
+  const academia = await criarAcademiaDeDemonstracao()
+  const professor = await criarProfessorDeDesenvolvimento(academia?.id)
+  await criarAlunaDeDemonstracao(academia?.id)
+  console.log(
+    `Seed concluído${academia ? `: academia "${academia.nome}" com ${turmas.length} turmas` : ''}${professor ? ' e professor' : ''}.`,
+  )
+}
+
+/** Conta da academia, com as credenciais do api/.env. */
+async function criarAcademiaDeDemonstracao() {
+  const acesso = credenciais('SEED_ACADEMIA')
+  if (!acesso) return null
+
+  const conta =
+    (await prisma.usuario.findUnique({ where: { email: acesso.email } })) ??
+    (await prisma.usuario.create({
+      data: {
+        nome: 'Box Demonstração',
+        email: acesso.email,
+        senhaHash: await gerarHashSenha(acesso.senha),
+        tipo: 'ACADEMIA',
+        trocarSenha: false,
+        consentimentoEm: new Date(),
+      },
+    }))
+  const academia =
+    (await prisma.academia.findUnique({ where: { contaId: conta.id } })) ??
+    (await prisma.academia.create({ data: { nome: 'Box Demonstração', contaId: conta.id } }))
+
+  for (const turma of turmas) {
+    const existe = await prisma.turma.findFirst({
+      where: { academiaId: academia.id, nome: turma.nome },
+    })
+    if (!existe) await prisma.turma.create({ data: { ...turma, academiaId: academia.id } })
+  }
+  return academia
+}
+
+/** Professor para testar localmente, membro da academia de demonstração. */
+async function criarProfessorDeDesenvolvimento(academiaId?: number) {
+  const acesso = credenciais('SEED_TREINADOR')
+  if (!acesso) return null
+
+  const professor = await prisma.usuario.upsert({
+    where: { email: acesso.email },
+    update: { ehProfessor: true },
+    create: {
+      nome: 'Professor (desenvolvimento)',
+      email: acesso.email,
+      senhaHash: await gerarHashSenha(acesso.senha),
+      ehProfessor: true,
       trocarSenha: false,
+      consentimentoEm: new Date(),
     },
   })
-  console.log(`Treinador de desenvolvimento criado: ${email} (senha em api/.env)`)
+  if (academiaId) {
+    await prisma.professorAcademia.upsert({
+      where: { academiaId_professorId: { academiaId, professorId: professor.id } },
+      update: {},
+      create: { academiaId, professorId: professor.id },
+    })
+  }
+  return professor
 }
 
 // Histórico usado nas telas de modelo do relatório (Figuras 1 e 2)
@@ -67,40 +112,48 @@ const historicoDemonstracao: [exercicio: string, data: string, cargaKg: number][
   ['Push Press', '2026-03-18', 60],
 ]
 
-/** Aluna com PRs de exemplo, para testar e demonstrar a área do aluno. Nunca roda em produção. */
-async function criarAlunaDeDemonstracao() {
-  const email = process.env.SEED_ALUNO_EMAIL?.trim().toLowerCase()
-  const senha = process.env.SEED_ALUNO_SENHA
-  if (process.env.NODE_ENV === 'production' || !email || !senha) return
+/** Aluna com PRs de exemplo, vinculada à academia de demonstração (Turma 18h). */
+async function criarAlunaDeDemonstracao(academiaId?: number) {
+  const acesso = credenciais('SEED_ALUNO')
+  if (!acesso) return
 
-  if (await prisma.usuario.findUnique({ where: { email } })) {
-    console.log(`Aluna de demonstração já existe: ${email}`)
-    return
-  }
-  const turma = await prisma.turma.findUnique({ where: { nome: 'Turma 18h' } })
-  const aluna = await prisma.usuario.create({
-    data: {
-      nome: 'Ana Souza (demonstração)',
-      email,
-      senhaHash: await gerarHashSenha(senha),
-      perfil: 'ALUNO',
-      turmaId: turma?.id,
-      trocarSenha: false,
-      consentimentoEm: new Date(),
-    },
-  })
-  for (const [nome, data, cargaKg] of historicoDemonstracao) {
-    const exercicio = await prisma.exercicio.findUniqueOrThrow({ where: { nome } })
-    await prisma.testeCarga.create({
+  let aluna = await prisma.usuario.findUnique({ where: { email: acesso.email } })
+  if (!aluna) {
+    aluna = await prisma.usuario.create({
       data: {
-        usuarioId: aluna.id,
-        exercicioId: exercicio.id,
-        dataTeste: new Date(`${data}T00:00:00.000Z`),
-        cargaKg,
+        nome: 'Ana Souza (demonstração)',
+        email: acesso.email,
+        senhaHash: await gerarHashSenha(acesso.senha),
+        trocarSenha: false,
+        consentimentoEm: new Date(),
       },
     })
+    for (const [nome, data, cargaKg] of historicoDemonstracao) {
+      const exercicio = await prisma.exercicio.findFirstOrThrow({
+        where: { nome, escopo: 'PADRAO' },
+      })
+      await prisma.testeCarga.create({
+        data: {
+          usuarioId: aluna.id,
+          exercicioId: exercicio.id,
+          dataTeste: new Date(`${data}T00:00:00.000Z`),
+          cargaKg,
+        },
+      })
+    }
   }
-  console.log(`Aluna de demonstração criada: ${email} (senha em api/.env)`)
+
+  if (academiaId) {
+    const turma = await prisma.turma.findFirst({ where: { academiaId, nome: 'Turma 18h' } })
+    const vinculo = await prisma.vinculoAluno.findFirst({
+      where: { alunoId: aluna.id, academiaId },
+    })
+    if (!vinculo) {
+      await prisma.vinculoAluno.create({
+        data: { alunoId: aluna.id, academiaId, turmaId: turma?.id },
+      })
+    }
+  }
 }
 
 main()

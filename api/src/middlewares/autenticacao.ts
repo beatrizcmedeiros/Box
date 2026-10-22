@@ -1,5 +1,5 @@
 import type { NextFunction, Request, Response } from 'express'
-import type { Perfil, Usuario } from '../generated/prisma/client.ts'
+import type { Usuario } from '../generated/prisma/client.ts'
 import { ErroHttp } from '../lib/erros.ts'
 import { prisma } from '../lib/prisma.ts'
 import { verificarTokenAcesso } from '../lib/tokens.ts'
@@ -47,11 +47,22 @@ export function exigirCadastroCompleto(req: Request, _res: Response, next: NextF
   next()
 }
 
-export function exigirPerfil(perfil: Perfil) {
-  return (req: Request, _res: Response, next: NextFunction) => {
-    if (req.usuario?.perfil !== perfil) {
-      throw new ErroHttp(403, 'Acesso não permitido para este perfil', 'SEM_PERMISSAO')
-    }
-    next()
+const semPermissao = (mensagem: string) => new ErroHttp(403, mensagem, 'SEM_PERMISSAO')
+
+/** Área "Meus PRs": qualquer pessoa (aluno ou professor), não a conta da academia. */
+export function exigirPessoa(req: Request, _res: Response, next: NextFunction) {
+  if (req.usuario?.tipo !== 'PESSOA') throw semPermissao('Disponível apenas para contas pessoais')
+  next()
+}
+
+export function exigirProfessor(req: Request, _res: Response, next: NextFunction) {
+  if (req.usuario?.tipo !== 'PESSOA' || !req.usuario.ehProfessor) {
+    throw semPermissao('Disponível apenas para professores')
   }
+  next()
+}
+
+export function exigirAcademia(req: Request, _res: Response, next: NextFunction) {
+  if (req.usuario?.tipo !== 'ACADEMIA') throw semPermissao('Disponível apenas para academias')
+  next()
 }

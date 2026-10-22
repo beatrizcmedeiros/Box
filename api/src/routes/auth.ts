@@ -38,15 +38,20 @@ const HASH_FICTICIO = gerarHashSenha('senha-ficticia-para-tempo-constante')
 
 /** Dados do usuário que podem ser enviados ao front (nunca o hash da senha). */
 export async function usuarioPublico(usuario: Usuario) {
-  const turma = usuario.turmaId
-    ? await prisma.turma.findUnique({ where: { id: usuario.turmaId } })
-    : null
+  const academia =
+    usuario.tipo === 'ACADEMIA'
+      ? await prisma.academia.findUnique({
+          where: { contaId: usuario.id },
+          select: { id: true, nome: true },
+        })
+      : null
   return {
     id: usuario.id,
     nome: usuario.nome,
     email: usuario.email,
-    perfil: usuario.perfil,
-    turma: turma ? { id: turma.id, nome: turma.nome } : null,
+    tipo: usuario.tipo,
+    ehProfessor: usuario.ehProfessor,
+    academia,
     trocarSenha: usuario.trocarSenha,
     consentimentoPendente: !usuario.consentimentoEm,
   }
@@ -117,7 +122,8 @@ export function authRouter({ limitarLogin }: { limitarLogin: RequestHandler }) {
   })
 
   /**
-   * O aluno exclui a própria conta (exigência da Google Play para apps com login).
+   * A pessoa (aluno ou professor) exclui a própria conta (exigência da Google Play).
+   * Os PRs dela são apagados; exercícios criados por ela e usados por alunos ficam como histórico.
    * Pede a senha para evitar exclusão acidental ou por quem pegou o celular desbloqueado.
    * Remove em cascata os testes de carga, apelidos e sessões.
    */
@@ -125,10 +131,11 @@ export function authRouter({ limitarLogin }: { limitarLogin: RequestHandler }) {
     const { senha } = excluirContaSchema.parse(req.body)
     const usuario = req.usuario!
 
-    if (usuario.perfil !== 'ALUNO') {
+    if (usuario.tipo !== 'PESSOA') {
+      // A exclusão da conta da academia chega com o cadastro aberto (Fase 2)
       throw new ErroHttp(
         403,
-        'Contas de treinador são excluídas pelo responsável do box',
+        'A conta da academia ainda não pode ser excluída pelo app',
         'SEM_PERMISSAO',
       )
     }

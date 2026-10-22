@@ -9,6 +9,13 @@ import {
 } from '../domain/importacao/associar.ts'
 import { lerTexto } from '../domain/importacao/lerTexto.ts'
 import { prisma } from '../lib/prisma.ts'
+import {
+  aliasesDoContexto,
+  alunosDoContexto,
+  type Contexto,
+  exerciciosDoContexto,
+  vinculoDoContexto,
+} from './contexto.ts'
 
 export type LinhaPrevia = {
   numero: number
@@ -29,34 +36,52 @@ export type SecaoPrevia = {
   linhas: LinhaPrevia[]
 }
 
-async function carregarCadastro() {
+async function carregarCadastro(ctx: Contexto) {
   const [alunos, exercicios] = await Promise.all([
     prisma.usuario.findMany({
-      where: { perfil: 'ALUNO', ativo: true },
+      where: alunosDoContexto(ctx),
       select: {
         id: true,
         nome: true,
-        turmaId: true,
-        turma: { select: { nome: true } },
-        apelidos: { select: { apelido: true } },
+        // Turma e apelidos são os do vínculo com este contexto
+        vinculosComoAluno: {
+          where: vinculoDoContexto(ctx),
+          select: {
+            turmaId: true,
+            turma: { select: { nome: true } },
+            apelidos: { select: { apelido: true } },
+          },
+        },
       },
       orderBy: { nome: 'asc' },
     }),
     prisma.exercicio.findMany({
-      where: { ativo: true },
-      select: { id: true, nome: true, aliases: { select: { alias: true } } },
+      where: { ativo: true, ...exerciciosDoContexto(ctx) },
+      select: {
+        id: true,
+        nome: true,
+        aliases: { where: aliasesDoContexto(ctx), select: { alias: true } },
+      },
       orderBy: { nome: 'asc' },
     }),
   ])
-  return { alunos, exercicios }
+  return {
+    alunos: alunos.map(({ vinculosComoAluno: [vinculo], ...a }) => ({
+      ...a,
+      turmaId: vinculo?.turmaId ?? null,
+      turma: vinculo?.turma ?? null,
+      apelidos: vinculo?.apelidos ?? [],
+    })),
+    exercicios,
+  }
 }
 
 /**
  * Interpreta o texto da lista do treinador e associa nomes a alunos e títulos a exercícios.
  * Nada é gravado: o treinador revisa a prévia e confirma.
  */
-export async function gerarPrevia(texto: string, turmaId: number | null) {
-  const { alunos, exercicios } = await carregarCadastro()
+export async function gerarPrevia(ctx: Contexto, texto: string, turmaId: number | null) {
+  const { alunos, exercicios } = await carregarCadastro(ctx)
 
   const paraAssociar: AlunoParaAssociar[] = alunos.map((a) => ({
     id: a.id,

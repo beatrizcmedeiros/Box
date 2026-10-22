@@ -1,7 +1,15 @@
 import request from 'supertest'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { prisma } from '../src/lib/prisma.ts'
-import { cookiesDe, criarAppDeTeste, criarUsuario, limparBanco, logar, SENHA } from './apoio.ts'
+import {
+  admin,
+  cookiesDe,
+  criarAppDeTeste,
+  criarUsuario,
+  limparBanco,
+  logar,
+  SENHA,
+} from './apoio.ts'
 
 const app = criarAppDeTeste()
 
@@ -19,7 +27,9 @@ describe('POST /api/auth/login', () => {
     expect(res.body.usuario).toMatchObject({
       nome: 'Ana Souza',
       email: 'ana@teste.com',
-      perfil: 'ALUNO',
+      tipo: 'PESSOA',
+      ehProfessor: false,
+      academia: null,
     })
     expect(res.body.usuario).not.toHaveProperty('senhaHash')
 
@@ -117,7 +127,7 @@ describe('primeiro acesso', () => {
     })
     const agente = await logar(app, 'treinador@teste.com')
 
-    let res = await agente.get('/api/admin/turmas')
+    let res = await agente.get(admin('/turmas'))
     expect(res.status).toBe(403)
     expect(res.body.codigo).toBe('TROCAR_SENHA')
 
@@ -141,14 +151,14 @@ describe('primeiro acesso', () => {
     expect(res.status).toBe(200)
     expect(res.body.usuario.trocarSenha).toBe(false)
 
-    res = await agente.get('/api/admin/turmas')
+    res = await agente.get(admin('/turmas'))
     expect(res.status).toBe(403)
     expect(res.body.codigo).toBe('CONSENTIMENTO_PENDENTE')
 
     res = await agente.post('/api/auth/consentimento')
     expect(res.body.usuario.consentimentoPendente).toBe(false)
 
-    expect((await agente.get('/api/admin/turmas')).status).toBe(200)
+    expect((await agente.get(admin('/turmas'))).status).toBe(200)
   })
 
   it('trocar a senha encerra as sessões de outros dispositivos', async () => {
