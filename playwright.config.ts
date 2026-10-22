@@ -12,7 +12,8 @@ const PORTA_API = 3334
 const PORTA_WEB = 4174
 const bancoBase =
   process.env.DATABASE_URL ?? 'postgresql://prbox:prbox@localhost:5433/prbox?schema=public'
-const bancoE2e = (() => {
+/** Banco dos testes de ponta a ponta (os testes também o acessam, ex.: confirmar e-mail). */
+export const bancoE2e = (() => {
   const url = new URL(bancoBase)
   url.pathname = '/prbox_e2e'
   return url.toString()
@@ -24,6 +25,8 @@ const ambienteApi = {
   WEB_ORIGIN: `http://localhost:${PORTA_WEB}`,
   JWT_SECRET: process.env.JWT_SECRET ?? 'segredo-somente-para-testes-e2e-0123456789-abcdef',
   LIMITE_LOGIN: '1000',
+  LIMITE_CADASTRO: '1000',
+  LIMITE_CODIGOS: '1000',
   // O seed cria a academia de demonstração; o professor e a aluna ficam vinculados a ela
   SEED_ACADEMIA_EMAIL: E2E.academia.email,
   SEED_ACADEMIA_SENHA: E2E.academia.senha,

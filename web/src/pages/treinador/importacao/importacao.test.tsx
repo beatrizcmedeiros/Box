@@ -14,7 +14,7 @@ vi.mock('../../../lib/extrairTextoPdf.ts', () => ({
   ),
 }))
 
-const treinador = usuario({ id: 9, nome: 'Carlos Treinador', perfil: 'TREINADOR' })
+const treinador = usuario({ id: 9, nome: 'Carlos Treinador', ehProfessor: true })
 
 const previa: Previa = {
   secoes: [
@@ -63,12 +63,12 @@ const previa: Previa = {
 function simular() {
   return simularApi({
     'GET /api/auth/me': { body: { usuario: treinador } },
-    'GET /api/admin/turmas': {
+    'GET /api/c/1/turmas': {
       body: [{ id: 3, nome: 'Turma 18h', horario: '18:00', totalAlunos: 2 }],
     },
-    'GET /api/admin/importacoes': { body: [] },
-    'POST /api/admin/importacoes/previa': { body: previa },
-    'POST /api/admin/importacoes': {
+    'GET /api/c/1/importacoes': { body: [] },
+    'POST /api/c/1/importacoes/previa': { body: previa },
+    'POST /api/c/1/importacoes': {
       status: 201,
       body: { importacaoId: 1, criados: 2, atualizados: 0, apelidosSalvos: 1, aliasesSalvos: 1 },
     },
@@ -92,7 +92,7 @@ describe('importar cargas', () => {
 
     // Prévia: o texto extraído foi enviado para a API (o PDF não)
     const revisao = await screen.findByRole('region', { name: 'Revisão da importação' })
-    expect(chamadas.find((c) => c.url === '/api/admin/importacoes/previa')?.corpo).toEqual({
+    expect(chamadas.find((c) => c.url === '/api/c/1/importacoes/previa')?.corpo).toEqual({
       texto: 'Teste agachamento\nCarla 55kg\nToninho 85',
       turmaId: null,
     })
@@ -111,7 +111,7 @@ describe('importar cargas', () => {
     ).toBeInTheDocument()
     await waitFor(() =>
       expect(
-        chamadas.find((c) => c.metodo === 'POST' && c.url === '/api/admin/importacoes')?.corpo,
+        chamadas.find((c) => c.metodo === 'POST' && c.url === '/api/c/1/importacoes')?.corpo,
       ).toEqual({
         dataTeste: '2026-09-20',
         turmaId: null,
@@ -135,7 +135,7 @@ describe('importar cargas', () => {
     await pessoa.click(screen.getByRole('button', { name: 'Ler resultados' }))
 
     await screen.findByRole('region', { name: 'Revisão da importação' })
-    expect(chamadas.find((c) => c.url === '/api/admin/importacoes/previa')?.corpo).toEqual({
+    expect(chamadas.find((c) => c.url === '/api/c/1/importacoes/previa')?.corpo).toEqual({
       texto: 'Teste agachamento\nCarla 55kg',
       turmaId: null,
     })

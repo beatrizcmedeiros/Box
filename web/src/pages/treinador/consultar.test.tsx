@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest'
 import type { ConsultaCargas } from '../../lib/tipos.ts'
 import { renderizar, simularApi, usuario } from '../../test/apoio.tsx'
 
-const treinador = usuario({ id: 9, nome: 'Carlos Treinador', perfil: 'TREINADOR' })
+const treinador = usuario({ id: 9, nome: 'Carlos Treinador', ehProfessor: true })
 
 const resposta: ConsultaCargas = {
   resultados: [
@@ -36,20 +36,20 @@ const resposta: ConsultaCargas = {
 function simular() {
   return simularApi({
     'GET /api/auth/me': { body: { usuario: treinador } },
-    'GET /api/admin/turmas': {
+    'GET /api/c/1/turmas': {
       body: [{ id: 3, nome: 'Turma 18h', horario: '18:00', totalAlunos: 2 }],
     },
-    'GET /api/admin/exercicios': {
+    'GET /api/c/1/exercicios': {
       body: [{ id: 1, nome: 'Back Squat', categoria: 'LEVANTAMENTO', ativo: true, aliases: [] }],
     },
-    'GET /api/admin/cargas': { body: resposta },
+    'GET /api/c/1/cargas': { body: resposta },
   })
 }
 
 const ultimaConsulta = (chamadas: { url: string }[]) =>
   new URLSearchParams(
     chamadas
-      .filter((c) => c.url.startsWith('/api/admin/cargas'))
+      .filter((c) => c.url.startsWith('/api/c/1/cargas'))
       .at(-1)!
       .url.split('?')[1],
   )

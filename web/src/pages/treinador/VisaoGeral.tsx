@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router'
 import { useUsuario } from '../../auth/sessao.ts'
 import { Alerta, Carregando, Etiqueta } from '../../components/ui.tsx'
-import { api } from '../../lib/api.ts'
+import { api, gestao } from '../../lib/api.ts'
 import { formatarData } from '../../lib/formato.ts'
 import type { VisaoGeral as Dados } from '../../lib/tipos.ts'
 import { CabecalhoPagina } from './LayoutTreinador.tsx'
@@ -14,7 +14,7 @@ export function VisaoGeral() {
   const { data: usuario } = useUsuario()
   const visao = useQuery({
     queryKey: ['visao-geral'],
-    queryFn: () => api<Dados>('/admin/visao-geral'),
+    queryFn: () => api<Dados>(gestao('/visao-geral')),
   })
 
   return (

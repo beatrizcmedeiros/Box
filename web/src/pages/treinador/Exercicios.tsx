@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { type FormEvent, useState } from 'react'
 import { Alerta, Botao, Campo, Carregando, Etiqueta, Modal, Selecao } from '../../components/ui.tsx'
-import { api, ErroApi } from '../../lib/api.ts'
+import { api, gestao, ErroApi } from '../../lib/api.ts'
 import { CATEGORIAS, type CategoriaExercicio, type Exercicio } from '../../lib/tipos.ts'
 import { CabecalhoPagina } from './LayoutTreinador.tsx'
 
@@ -9,7 +9,7 @@ export function Exercicios() {
   const cliente = useQueryClient()
   const exercicios = useQuery({
     queryKey: ['exercicios'],
-    queryFn: () => api<Exercicio[]>('/admin/exercicios'),
+    queryFn: () => api<Exercicio[]>(gestao('/exercicios')),
   })
   const [editando, setEditando] = useState<Exercicio | 'novo' | null>(null)
 
@@ -17,7 +17,7 @@ export function Exercicios() {
 
   const excluir = useMutation({
     mutationFn: (exercicio: Exercicio) =>
-      api<void>(`/admin/exercicios/${exercicio.id}`, { method: 'DELETE' }),
+      api<void>(gestao(`/exercicios/${exercicio.id}`), { method: 'DELETE' }),
     onSuccess: atualizar,
   })
 
@@ -54,6 +54,7 @@ export function Exercicios() {
                   <p className="flex items-center gap-2 font-semibold">
                     {exercicio.nome}
                     <Etiqueta>{CATEGORIAS[exercicio.categoria]}</Etiqueta>
+                    {!exercicio.editavel && <Etiqueta cor="verde">Padrão</Etiqueta>}
                     {!exercicio.ativo && <Etiqueta cor="amarelo">Inativo</Etiqueta>}
                   </p>
                   {exercicio.aliases.length > 0 && (
@@ -64,17 +65,19 @@ export function Exercicios() {
                 </div>
                 <div className="space-x-3">
                   <Botao variante="link" onClick={() => setEditando(exercicio)}>
-                    Editar
+                    {exercicio.editavel ? 'Editar' : 'Nomes alternativos'}
                   </Botao>
-                  <Botao
-                    variante="link"
-                    className="!text-red-600"
-                    onClick={() =>
-                      confirm(`Excluir ${exercicio.nome}?`) && excluir.mutate(exercicio)
-                    }
-                  >
-                    Excluir
-                  </Botao>
+                  {exercicio.editavel && (
+                    <Botao
+                      variante="link"
+                      className="!text-red-600"
+                      onClick={() =>
+                        confirm(`Excluir ${exercicio.nome}?`) && excluir.mutate(exercicio)
+                      }
+                    >
+                      Excluir
+                    </Botao>
+                  )}
                 </div>
               </li>
             ))}
@@ -112,20 +115,25 @@ function FormularioExercicio({
   const [ativo, setAtivo] = useState(exercicio?.ativo ?? true)
   const [aliases, setAliases] = useState(exercicio?.aliases.join(', ') ?? '')
 
+  // Exercício da lista padrão: só os nomes alternativos (deste contexto) podem mudar
+  const somenteAliases = exercicio !== null && !exercicio.editavel
+
   const salvar = useMutation({
     mutationFn: () => {
-      const body = {
-        nome,
-        categoria,
-        ativo,
-        aliases: aliases
-          .split(',')
-          .map((a) => a.trim())
-          .filter(Boolean),
+      const lista = aliases
+        .split(',')
+        .map((a) => a.trim())
+        .filter(Boolean)
+      if (somenteAliases) {
+        return api<Exercicio>(gestao(`/exercicios/${exercicio.id}/aliases`), {
+          method: 'PUT',
+          body: { aliases: lista },
+        })
       }
+      const body = { nome, categoria, ativo, aliases: lista }
       return exercicio
-        ? api<Exercicio>(`/admin/exercicios/${exercicio.id}`, { method: 'PUT', body })
-        : api<Exercicio>('/admin/exercicios', { method: 'POST', body })
+        ? api<Exercicio>(gestao(`/exercicios/${exercicio.id}`), { method: 'PUT', body })
+        : api<Exercicio>(gestao('/exercicios'), { method: 'POST', body })
     },
     onSuccess: aoSalvar,
   })
@@ -139,32 +147,42 @@ function FormularioExercicio({
   return (
     <Modal titulo={exercicio ? 'Editar exercício' : 'Novo exercício'} aoFechar={aoFechar}>
       <form onSubmit={enviar} className="space-y-4" noValidate>
-        <Campo
-          rotulo="Nome"
-          value={nome}
-          onChange={(e) => setNome(e.target.value)}
-          erro={erro?.doCampo('nome')}
-          placeholder="Ex.: Back Squat"
-          autoFocus
-        />
-        <Selecao
-          rotulo="Categoria"
-          value={categoria}
-          onChange={(e) => setCategoria(e.target.value as CategoriaExercicio)}
-        >
-          {Object.entries(CATEGORIAS).map(([valor, rotulo]) => (
-            <option key={valor} value={valor}>
-              {rotulo}
-            </option>
-          ))}
-        </Selecao>
+        {somenteAliases && (
+          <p className="text-sm text-slate-500">
+            {exercicio.nome} faz parte da lista padrão do PR Box. Você pode acrescentar os nomes com
+            que ele aparece nas suas listas; eles valem só aqui.
+          </p>
+        )}
+        {!somenteAliases && (
+          <Campo
+            rotulo="Nome"
+            value={nome}
+            onChange={(e) => setNome(e.target.value)}
+            erro={erro?.doCampo('nome')}
+            placeholder="Ex.: Back Squat"
+            autoFocus
+          />
+        )}
+        {!somenteAliases && (
+          <Selecao
+            rotulo="Categoria"
+            value={categoria}
+            onChange={(e) => setCategoria(e.target.value as CategoriaExercicio)}
+          >
+            {Object.entries(CATEGORIAS).map(([valor, rotulo]) => (
+              <option key={valor} value={valor}>
+                {rotulo}
+              </option>
+            ))}
+          </Selecao>
+        )}
         <Campo
           rotulo="Nomes alternativos"
           value={aliases}
           onChange={(e) => setAliases(e.target.value)}
           dica="Separe por vírgula. Ex.: agachamento livre, back sq — usados para reconhecer o exercício no PDF."
         />
-        {exercicio && (
+        {exercicio && !somenteAliases && (
           <label className="flex items-center gap-2 text-sm">
             <input
               type="checkbox"

@@ -1,7 +1,7 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { type KeyboardEvent, useEffect, useMemo, useRef, useState } from 'react'
 import { Alerta, Botao, Campo, Carregando, Etiqueta, Selecao } from '../../components/ui.tsx'
-import { api, ErroApi } from '../../lib/api.ts'
+import { api, gestao, ErroApi } from '../../lib/api.ts'
 import { useExercicios, useTurmas } from '../../lib/consultas.ts'
 import { formatarData, formatarKg, hojeIso, lerNumero } from '../../lib/formato.ts'
 import type { AlunoParaLancar, ResultadoLancamento } from '../../lib/tipos.ts'
@@ -142,7 +142,7 @@ function useAlunosParaLancar(
   if (params.busca) consulta.set('busca', params.busca)
   return useQuery({
     queryKey: ['lancamentos', consulta.toString()],
-    queryFn: () => api<{ alunos: AlunoParaLancar[] }>(`/admin/lancamentos?${consulta}`),
+    queryFn: () => api<{ alunos: AlunoParaLancar[] }>(gestao(`/lancamentos?${consulta}`)),
     placeholderData: keepPreviousData,
     enabled: ativo,
   })
@@ -156,7 +156,7 @@ function useSalvarLancamentos(
   const cliente = useQueryClient()
   return useMutation({
     mutationFn: (resultados: { usuarioId: number; cargaKg: number }[]) =>
-      api<ResultadoLancamento>('/admin/lancamentos', {
+      api<ResultadoLancamento>(gestao('/lancamentos'), {
         method: 'POST',
         body: { dataTeste: data, exercicioId: Number(exercicioId), resultados },
       }),
@@ -180,7 +180,7 @@ function useSalvarLancamentos(
 function useExcluirLancamento() {
   const cliente = useQueryClient()
   return useMutation({
-    mutationFn: (id: number) => api<void>(`/admin/lancamentos/${id}`, { method: 'DELETE' }),
+    mutationFn: (id: number) => api<void>(gestao(`/lancamentos/${id}`), { method: 'DELETE' }),
     onSuccess: () => cliente.invalidateQueries({ queryKey: ['lancamentos'] }),
   })
 }

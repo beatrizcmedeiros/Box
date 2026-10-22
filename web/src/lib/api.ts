@@ -22,7 +22,14 @@ export class ErroApi extends Error {
 
 type Opcoes = { method?: string; body?: unknown }
 
-const ROTAS_SEM_RENOVACAO = ['/auth/login', '/auth/refresh', '/auth/logout']
+const ROTAS_SEM_RENOVACAO = [
+  '/auth/login',
+  '/auth/refresh',
+  '/auth/logout',
+  '/auth/cadastro',
+  '/auth/esqueci-senha',
+  '/auth/redefinir-senha',
+]
 
 // Várias requisições podem receber 401 ao mesmo tempo; todas aguardam a mesma renovação
 let renovacaoEmAndamento: Promise<boolean> | null = null
@@ -77,4 +84,20 @@ export async function api<T>(caminho: string, opcoes: Opcoes = {}): Promise<T> {
     )
   }
   return dados as T
+}
+
+// Contexto de gestão escolhido no menu do professor ou da academia: o id de uma academia
+// ou "pessoal" ("Meus alunos"). As telas de gestão chamam /api/c/<contexto>/...
+let contextoAtual: string | null = null
+
+export const definirContextoAtual = (id: string | null) => {
+  contextoAtual = id
+}
+
+/** Caminho de uma rota de gestão no contexto atual (ex.: gestao('/turmas')). */
+export function gestao(caminho: string) {
+  if (!contextoAtual) {
+    throw new ErroApi(0, 'Escolha a academia ou "Meus alunos" no menu.', 'SEM_CONTEXTO')
+  }
+  return `/c/${contextoAtual}${caminho}`
 }

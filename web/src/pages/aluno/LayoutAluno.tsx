@@ -20,6 +20,13 @@ const abas = [
     icone: <path d="M3 17l6-6 4 4 8-8M15 7h6v6" />,
   },
   {
+    para: '/aluno/vinculos',
+    rotulo: 'Vínculos',
+    icone: (
+      <path d="M10 14a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1M14 10a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1" />
+    ),
+  },
+  {
     para: '/aluno/perfil',
     rotulo: 'Perfil',
     icone: (

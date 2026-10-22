@@ -25,25 +25,25 @@ const clean = { id: 2, nome: 'Clean' }
 function simular(resposta: ConsultaPercentuais) {
   return simularApi({
     'GET /api/auth/me': {
-      body: { usuario: usuario({ id: 9, nome: 'Carlos', perfil: 'TREINADOR' }) },
+      body: { usuario: usuario({ id: 9, nome: 'Carlos', ehProfessor: true }) },
     },
-    'GET /api/admin/turmas': {
+    'GET /api/c/1/turmas': {
       body: [{ id: 3, nome: 'Turma 18h', horario: '18:00', totalAlunos: 2 }],
     },
-    'GET /api/admin/exercicios': {
+    'GET /api/c/1/exercicios': {
       body: [
         { id: 1, nome: 'Back Squat', categoria: 'LEVANTAMENTO', ativo: true, aliases: [] },
         { id: 2, nome: 'Clean', categoria: 'OLIMPICO', ativo: true, aliases: [] },
       ],
     },
-    'GET /api/admin/percentuais': { body: resposta },
+    'GET /api/c/1/percentuais': { body: resposta },
   })
 }
 
 const ultimaConsulta = (chamadas: { url: string }[]) =>
   new URLSearchParams(
     chamadas
-      .filter((c) => c.url.startsWith('/api/admin/percentuais'))
+      .filter((c) => c.url.startsWith('/api/c/1/percentuais'))
       .at(-1)
       ?.url.split('?')[1],
   )
@@ -59,7 +59,7 @@ describe('percentuais do treinador', () => {
     renderizar('/treinador/percentuais')
 
     expect(await screen.findByText(/Escolha uma turma, um exercício/)).toBeInTheDocument()
-    expect(chamadas.some((c) => c.url.startsWith('/api/admin/percentuais'))).toBe(false)
+    expect(chamadas.some((c) => c.url.startsWith('/api/c/1/percentuais'))).toBe(false)
   })
 
   it('mostra a turma inteira no exercício e filtra só os percentuais escolhidos', async () => {

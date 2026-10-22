@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Alerta, Botao, Carregando, Etiqueta } from '../../../components/ui.tsx'
-import { api } from '../../../lib/api.ts'
+import { api, gestao } from '../../../lib/api.ts'
 import { formatarData } from '../../../lib/formato.ts'
 import type { Importacao } from '../../../lib/tipos.ts'
 
@@ -8,12 +8,12 @@ export function HistoricoImportacoes() {
   const cliente = useQueryClient()
   const importacoes = useQuery({
     queryKey: ['importacoes'],
-    queryFn: () => api<Importacao[]>('/admin/importacoes'),
+    queryFn: () => api<Importacao[]>(gestao('/importacoes')),
   })
 
   const desfazer = useMutation({
     mutationFn: (importacao: Importacao) =>
-      api<{ removidos: number }>(`/admin/importacoes/${importacao.id}`, { method: 'DELETE' }),
+      api<{ removidos: number }>(gestao(`/importacoes/${importacao.id}`), { method: 'DELETE' }),
     onSuccess: () => {
       cliente.invalidateQueries({ queryKey: ['importacoes'] })
     },

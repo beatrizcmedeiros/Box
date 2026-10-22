@@ -2,7 +2,7 @@ import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router'
 import { Alerta, Botao, Campo, Carregando, Etiqueta, Selecao } from '../../components/ui.tsx'
-import { api } from '../../lib/api.ts'
+import { api, gestao } from '../../lib/api.ts'
 import { useExercicios, useTurmas } from '../../lib/consultas.ts'
 import { formatarData, formatarKg } from '../../lib/formato.ts'
 import type { ConsultaCargas, OrdenacaoCargas } from '../../lib/tipos.ts'
@@ -65,7 +65,7 @@ export function ConsultarCargas() {
 
   const consulta = useQuery({
     queryKey: ['cargas', consultaParams.toString()],
-    queryFn: () => api<ConsultaCargas>(`/admin/cargas?${consultaParams}`),
+    queryFn: () => api<ConsultaCargas>(gestao(`/cargas?${consultaParams}`)),
     placeholderData: keepPreviousData,
   })
 

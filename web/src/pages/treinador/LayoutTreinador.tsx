@@ -1,5 +1,6 @@
 import { NavLink, Outlet } from 'react-router'
 import { useLogout, useUsuario } from '../../auth/sessao.ts'
+import { ProvedorContexto, useContexto } from '../../lib/contexto.tsx'
 
 const itens = [
   { para: '/treinador/visao-geral', rotulo: 'Visão geral' },
@@ -11,11 +12,29 @@ const itens = [
   { para: '/treinador/alunos', rotulo: 'Alunos' },
   { para: '/treinador/turmas', rotulo: 'Turmas' },
   { para: '/treinador/exercicios', rotulo: 'Exercícios' },
+  { para: '/treinador/codigos', rotulo: 'Códigos de vínculo' },
 ]
 
+/** Área de gestão do professor e da academia. */
 export function LayoutTreinador() {
+  return (
+    <ProvedorContexto>
+      <Painel />
+    </ProvedorContexto>
+  )
+}
+
+function Painel() {
   const { data: usuario } = useUsuario()
   const logout = useLogout()
+  const ehAcademia = usuario?.tipo === 'ACADEMIA'
+
+  const menu = [
+    ...itens,
+    ...(ehAcademia ? [{ para: '/treinador/professores', rotulo: 'Professores' }] : []),
+    // O professor também é aluno: registra os próprios PRs
+    ...(ehAcademia ? [] : [{ para: '/aluno', rotulo: 'Meus PRs' }]),
+  ]
 
   return (
     <div className="min-h-dvh md:flex">
@@ -23,7 +42,9 @@ export function LayoutTreinador() {
         <div className="flex items-center justify-between md:block">
           <div>
             <p className="text-base font-extrabold tracking-[0.15em] text-marca">PR BOX</p>
-            <p className="text-xs text-slate-400">Painel do Treinador</p>
+            <p className="text-xs text-slate-400">
+              {ehAcademia ? 'Painel da academia' : 'Painel do professor'}
+            </p>
           </div>
           <button
             type="button"
@@ -34,11 +55,13 @@ export function LayoutTreinador() {
           </button>
         </div>
 
+        <SeletorContexto />
+
         <nav
-          className="-mx-1 mt-4 flex gap-1 overflow-x-auto md:mx-0 md:mt-8 md:flex-col"
-          aria-label="Menu do treinador"
+          className="-mx-1 mt-4 flex gap-1 overflow-x-auto md:mx-0 md:mt-6 md:flex-col"
+          aria-label="Menu de gestão"
         >
-          {itens.map(({ para, rotulo }) => (
+          {menu.map(({ para, rotulo }) => (
             <NavLink
               key={para}
               to={para}
@@ -68,6 +91,30 @@ export function LayoutTreinador() {
         <Outlet />
       </main>
     </div>
+  )
+}
+
+/** Onde a pessoa está trabalhando: cada academia ou "Meus alunos". */
+function SeletorContexto() {
+  const { contexto, contextos, trocar } = useContexto()
+  if (contextos.length < 2) {
+    return <p className="mt-4 text-sm font-semibold text-white md:mt-6">{contexto.nome}</p>
+  }
+  return (
+    <label className="mt-4 block md:mt-6">
+      <span className="text-xs text-slate-400">Trabalhando em</span>
+      <select
+        value={contexto.id}
+        onChange={(e) => trocar(e.target.value)}
+        className="mt-1 w-full rounded-lg border border-white/20 bg-white/10 px-2 py-1.5 text-sm text-white"
+      >
+        {contextos.map((c) => (
+          <option key={c.id} value={c.id} className="text-slate-900">
+            {c.nome}
+          </option>
+        ))}
+      </select>
+    </label>
   )
 }
 

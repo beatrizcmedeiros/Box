@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { api } from './api.ts'
-import type { DetalhePr, ExercicioResumo, ResumoPr } from './tipos.ts'
+import type { DetalhePr, ExercicioDoAluno, ResumoPr } from './tipos.ts'
 
 export const usePrs = () =>
   useQuery({ queryKey: ['prs'], queryFn: () => api<ResumoPr[]>('/me/prs') })
@@ -14,6 +14,6 @@ export const useDetalhePr = (exercicioId: number) =>
 export const useExerciciosAtivos = () =>
   useQuery({
     queryKey: ['exercicios-ativos'],
-    queryFn: () => api<ExercicioResumo[]>('/me/exercicios'),
+    queryFn: () => api<ExercicioDoAluno[]>('/me/exercicios'),
     staleTime: 10 * 60 * 1000,
   })

@@ -7,7 +7,7 @@ const treinador = usuario({
   id: 9,
   nome: 'Carlos Treinador',
   email: 'carlos@box.com',
-  perfil: 'TREINADOR',
+  ehProfessor: true,
 })
 
 describe('acesso', () => {
@@ -24,7 +24,7 @@ describe('acesso', () => {
       'GET /api/auth/me': semSessao,
       'POST /api/auth/refresh': semSessao,
       'POST /api/auth/login': { body: { usuario: treinador } },
-      'GET /api/admin/visao-geral': {
+      'GET /api/c/1/visao-geral': {
         body: {
           alunos: { ativos: 0, primeiroAcessoConcluido: 0, comPr: 0, percentualComPr: 0 },
           ultimos30Dias: { registradosPeloAluno: 0, importados: 0 },
@@ -78,8 +78,8 @@ describe('acesso', () => {
   it('sair encerra a sessão e volta ao login', async () => {
     simularApi({
       'GET /api/auth/me': { body: { usuario: treinador } },
-      'GET /api/admin/alunos': { body: [] },
-      'GET /api/admin/turmas': { body: [] },
+      'GET /api/c/1/alunos': { body: [] },
+      'GET /api/c/1/turmas': { body: [] },
       'POST /api/auth/logout': { status: 204 },
     })
     const router = renderizar('/treinador/alunos')
@@ -93,86 +93,156 @@ describe('acesso', () => {
   })
 })
 
-describe('primeiro acesso', () => {
-  it('exige trocar a senha e depois aceitar o termo', async () => {
-    const chamadas = simularApi({
-      'GET /api/auth/me': {
-        body: { usuario: usuario({ trocarSenha: true, consentimentoPendente: true }) },
-      },
-      'POST /api/auth/trocar-senha': {
-        body: { usuario: usuario({ consentimentoPendente: true }) },
-      },
-      'POST /api/auth/consentimento': { body: { usuario: usuario() } },
-      'GET /api/me/prs': { body: [] },
+describe('cadastro e primeiro acesso', () => {
+  it('cria a conta de professor, confirma o e-mail, aceita o termo e entra na gestão', async () => {
+    const novo = usuario({
+      id: 7,
+      nome: 'Carla',
+      email: 'carla@t.com',
+      ehProfessor: true,
+      emailConfirmado: false,
+      consentimentoPendente: true,
     })
-    const router = renderizar('/aluno')
+    const chamadas = simularApi({
+      'GET /api/auth/me': semSessao,
+      'POST /api/auth/refresh': semSessao,
+      'POST /api/auth/cadastro': { status: 201, body: { usuario: novo } },
+      'POST /api/auth/confirmar-email': (corpo) =>
+        (corpo as { codigo: string }).codigo === '123456'
+          ? { body: { usuario: { ...novo, emailConfirmado: true } } }
+          : {
+              status: 400,
+              body: { erro: 'Código inválido ou expirado.', codigo: 'CODIGO_INVALIDO' },
+            },
+      'POST /api/auth/consentimento': {
+        body: { usuario: { ...novo, emailConfirmado: true, consentimentoPendente: false } },
+      },
+      'GET /api/c/1/visao-geral': {
+        body: {
+          alunos: { ativos: 0, primeiroAcessoConcluido: 0, comPr: 0, percentualComPr: 0 },
+          ultimos30Dias: { registradosPeloAluno: 0, importados: 0 },
+          ultimaImportacao: null,
+          alunosSemPr: [],
+        },
+      },
+    })
+    const router = renderizar('/cadastro')
     const pessoa = userEvent.setup()
 
-    await pessoa.type(await screen.findByLabelText('Senha temporária'), 'Temp1234ab')
-    await pessoa.type(screen.getByLabelText('Nova senha'), 'minha-senha-nova')
-    await pessoa.type(screen.getByLabelText('Confirme a nova senha'), 'outra-coisa')
-    await pessoa.click(screen.getByRole('button', { name: 'Salvar nova senha' }))
+    await pessoa.click(await screen.findByLabelText(/Professor/))
+    await pessoa.type(screen.getByLabelText('Seu nome'), 'Carla')
+    await pessoa.type(screen.getByLabelText('E-mail'), 'carla@t.com')
+    await pessoa.type(screen.getByLabelText('Senha'), 'senha-forte-1')
+    await pessoa.type(screen.getByLabelText('Confirme a senha'), 'outra')
+    await pessoa.click(screen.getByRole('button', { name: 'Criar conta' }))
     expect(screen.getByText('As senhas não conferem')).toBeInTheDocument()
-    expect(chamadas.some((c) => c.url === '/api/auth/trocar-senha')).toBe(false)
 
-    await pessoa.clear(screen.getByLabelText('Confirme a nova senha'))
-    await pessoa.type(screen.getByLabelText('Confirme a nova senha'), 'minha-senha-nova')
-    await pessoa.click(screen.getByRole('button', { name: 'Salvar nova senha' }))
+    await pessoa.clear(screen.getByLabelText('Confirme a senha'))
+    await pessoa.type(screen.getByLabelText('Confirme a senha'), 'senha-forte-1')
+    await pessoa.click(screen.getByRole('button', { name: 'Criar conta' }))
+
+    // Confirmação do e-mail
+    const campo = await screen.findByLabelText('Código')
+    await pessoa.type(campo, '000000')
+    await pessoa.click(screen.getByRole('button', { name: 'Confirmar e-mail' }))
+    expect(await screen.findByText(/Código inválido/)).toBeInTheDocument()
+    await pessoa.clear(campo)
+    await pessoa.type(campo, '123456')
+    await pessoa.click(screen.getByRole('button', { name: 'Confirmar e-mail' }))
 
     await pessoa.click(await screen.findByRole('button', { name: 'Li e aceito' }))
+    expect(await screen.findByRole('heading', { name: 'Olá, Carla' })).toBeInTheDocument()
+    expect(router.state.location.pathname).toBe('/treinador/visao-geral')
+    expect(chamadas.find((c) => c.url === '/api/auth/cadastro')?.corpo).toEqual({
+      nome: 'Carla',
+      email: 'carla@t.com',
+      senha: 'senha-forte-1',
+      tipo: 'PESSOA',
+      ehProfessor: true,
+    })
+  })
 
-    expect(await screen.findByRole('heading', { name: 'Percentuais de carga' })).toBeInTheDocument()
-    expect(router.state.location.pathname).toBe('/aluno/percentuais')
-    expect(chamadas.find((c) => c.url === '/api/auth/trocar-senha')?.corpo).toEqual({
-      senhaAtual: 'Temp1234ab',
-      novaSenha: 'minha-senha-nova',
+  it('esqueci a senha: pede o código e cria a nova senha', async () => {
+    const chamadas = simularApi({
+      'GET /api/auth/me': semSessao,
+      'POST /api/auth/refresh': semSessao,
+      'POST /api/auth/esqueci-senha': { status: 204 },
+      'POST /api/auth/redefinir-senha': { status: 204 },
+    })
+    renderizar('/login')
+    const pessoa = userEvent.setup()
+
+    await pessoa.click(await screen.findByRole('link', { name: 'Esqueci a senha' }))
+    await pessoa.type(await screen.findByLabelText('E-mail'), 'ana@t.com')
+    await pessoa.click(screen.getByRole('button', { name: 'Enviar código' }))
+    await pessoa.type(await screen.findByLabelText('Código'), '654321')
+    await pessoa.type(screen.getByLabelText('Nova senha'), 'nova-senha-123')
+    await pessoa.click(screen.getByRole('button', { name: 'Salvar nova senha' }))
+
+    expect(await screen.findByText(/Sua senha foi alterada/)).toBeInTheDocument()
+    expect(chamadas.find((c) => c.url === '/api/auth/redefinir-senha')?.corpo).toEqual({
+      email: 'ana@t.com',
+      codigo: '654321',
+      novaSenha: 'nova-senha-123',
     })
   })
 })
 
-describe('cadastro de aluno', () => {
-  it('exibe a senha temporária gerada', async () => {
+describe('vínculos', () => {
+  it('o aluno usa o código do box', async () => {
+    const chamadas = simularApi({
+      'GET /api/auth/me': { body: { usuario: usuario() } },
+      'GET /api/vinculos': { body: { comoAluno: [], academiasOndeEnsina: [] } },
+      'POST /api/vinculos/codigo': {
+        status: 201,
+        body: { tipo: 'academia', academia: { id: 1, nome: 'Box Centro' } },
+      },
+    })
+    renderizar('/aluno/vinculos')
+    const pessoa = userEvent.setup()
+
+    await pessoa.type(await screen.findByLabelText('Código de vínculo'), '482913')
+    await pessoa.click(screen.getByRole('button', { name: 'Vincular' }))
+
+    expect(await screen.findByText('Pronto! Você está vinculado a Box Centro.')).toBeInTheDocument()
+    expect(chamadas.find((c) => c.url === '/api/vinculos/codigo')?.corpo).toEqual({
+      codigo: '482913',
+    })
+  })
+
+  it('o professor organiza o aluno na turma e pode desvinculá-lo', async () => {
+    const ana = {
+      id: 5,
+      nome: 'Ana Souza',
+      email: 'ana@t.com',
+      vinculoId: 11,
+      turma: null,
+      local: null,
+      apelidos: [],
+      desde: '2026-10-01T00:00:00.000Z',
+      primeiroAcessoPendente: false,
+    }
     const chamadas = simularApi({
       'GET /api/auth/me': { body: { usuario: treinador } },
-      'GET /api/admin/alunos': { body: [] },
-      'GET /api/admin/turmas': {
-        body: [{ id: 3, nome: 'Turma 18h', horario: '18:00', totalAlunos: 0 }],
+      'GET /api/c/1/alunos': { body: [ana] },
+      'GET /api/c/1/turmas': {
+        body: [{ id: 3, nome: 'Turma 18h', horario: '18:00', totalAlunos: 0, local: null }],
       },
-      'POST /api/admin/alunos': (corpo) => ({
-        status: 201,
-        body: {
-          aluno: {
-            id: 5,
-            ...(corpo as object),
-            trocarSenha: true,
-            turma: { id: 3, nome: 'Turma 18h' },
-          },
-          senhaTemporaria: 'Abc23xyZ9k',
-        },
-      }),
+      'GET /api/c/1/locais': { body: [] },
+      'PUT /api/c/1/alunos/5': { body: { ...ana, turma: { id: 3, nome: 'Turma 18h' } } },
     })
     renderizar('/treinador/alunos')
     const pessoa = userEvent.setup()
 
-    await pessoa.click(await screen.findByRole('button', { name: '+ Novo aluno' }))
-    const dialogo = await screen.findByRole('dialog', { name: 'Novo aluno' })
-    await pessoa.type(screen.getByLabelText('Nome completo'), 'Bruno Lima')
-    await pessoa.type(
-      screen.getByLabelText('E-mail', { selector: '[role=dialog] input' }),
-      'bruno@teste.com',
-    )
+    await pessoa.click(await screen.findByRole('button', { name: 'Organizar' }))
+    const dialogo = await screen.findByRole('dialog', { name: 'Organizar Ana Souza' })
     await pessoa.selectOptions(dialogo.querySelector('select')!, '3')
-    await pessoa.click(screen.getByRole('button', { name: 'Cadastrar aluno' }))
+    await pessoa.click(screen.getByRole('button', { name: 'Salvar' }))
 
-    expect(await screen.findByTestId('senha-temporaria')).toHaveTextContent('Abc23xyZ9k')
     await waitFor(() =>
-      expect(
-        chamadas.find((c) => c.metodo === 'POST' && c.url === '/api/admin/alunos')?.corpo,
-      ).toEqual({
-        nome: 'Bruno Lima',
-        email: 'bruno@teste.com',
+      expect(chamadas.find((c) => c.metodo === 'PUT')?.corpo).toEqual({
         turmaId: 3,
-        ativo: true,
+        localId: null,
         apelidos: [],
       }),
     )

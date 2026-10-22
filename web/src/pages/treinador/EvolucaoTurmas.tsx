@@ -7,7 +7,7 @@ import { GraficoLinha, LegendaLinhas, type Serie } from '../../components/grafic
 import { PainelEvolucao } from '../../components/graficos/PainelEvolucao.tsx'
 import { CartaoGrafico, Tabela } from '../../components/graficos/TabelaDados.tsx'
 import { Alerta, Carregando, Modal, Selecao } from '../../components/ui.tsx'
-import { api } from '../../lib/api.ts'
+import { api, gestao } from '../../lib/api.ts'
 import { useTurmas } from '../../lib/consultas.ts'
 import { formatarData, formatarKg, formatarPct } from '../../lib/formato.ts'
 import type { Ciclo, EvolucaoTurmas, SerieExercicio, TurmaResumo } from '../../lib/tipos.ts'
@@ -30,7 +30,7 @@ export function EvolucaoTurmas() {
   if (turmaId) consulta.set('turmaId', turmaId)
   const evolucao = useQuery({
     queryKey: ['evolucao', consulta.toString()],
-    queryFn: () => api<EvolucaoTurmas>(`/admin/evolucao?${consulta}`),
+    queryFn: () => api<EvolucaoTurmas>(gestao(`/evolucao?${consulta}`)),
     placeholderData: keepPreviousData,
   })
 
@@ -301,7 +301,7 @@ function DetalheAluno({
       api<{
         aluno: { id: number; nome: string; turma: TurmaResumo | null }
         exercicios: SerieExercicio[]
-      }>(`/admin/evolucao/alunos/${alunoId}`),
+      }>(gestao(`/evolucao/alunos/${alunoId}`)),
   })
   const [escolhido, setEscolhido] = useState<number | null>(exercicioId)
   const series = detalhe.data?.exercicios ?? []

@@ -1,5 +1,5 @@
 import { type FormEvent, useState } from 'react'
-import { Navigate, useLocation, useNavigate } from 'react-router'
+import { Link, Navigate, useLocation, useNavigate } from 'react-router'
 import { rotaInicial, useLogin, useUsuario } from '../auth/sessao.ts'
 import { LayoutPublico } from '../components/LayoutPublico.tsx'
 import { Alerta, Botao, Campo } from '../components/ui.tsx'
@@ -59,8 +59,17 @@ export function Login() {
         <Botao type="submit" className="w-full" carregando={login.isPending}>
           Entrar
         </Botao>
+        <Link
+          to="/esqueci-senha"
+          className="block text-center text-sm font-semibold text-slate-600 hover:underline"
+        >
+          Esqueci a senha
+        </Link>
         <p className="text-center text-sm text-slate-500">
-          Esqueceu a senha? Peça ao seu treinador para gerar uma nova senha temporária.
+          Ainda não tem conta?{' '}
+          <Link to="/cadastro" className="font-semibold text-marca-escura hover:underline">
+            Criar conta
+          </Link>
         </p>
       </form>
     </LayoutPublico>

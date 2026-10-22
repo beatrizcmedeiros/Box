@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { type FormEvent, useState } from 'react'
 import { Alerta, Botao, Campo, Selecao } from '../../../components/ui.tsx'
-import { api, ErroApi } from '../../../lib/api.ts'
+import { api, gestao, ErroApi } from '../../../lib/api.ts'
 import { useTurmas } from '../../../lib/consultas.ts'
 import { hojeIso } from '../../../lib/formato.ts'
 import type { Previa } from '../../../lib/tipos.ts'
@@ -99,7 +99,7 @@ function FormularioOrigem({
         setTexto(conteudo)
       }
       setProgresso('Conferindo os nomes com os alunos cadastrados…')
-      const previa = await api<Previa>('/admin/importacoes/previa', {
+      const previa = await api<Previa>(gestao('/importacoes/previa'), {
         method: 'POST',
         body: { texto: conteudo, turmaId },
       })

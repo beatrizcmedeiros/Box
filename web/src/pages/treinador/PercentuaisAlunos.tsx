@@ -2,7 +2,7 @@ import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router'
 import { Alerta, Botao, Campo, Carregando, Selecao } from '../../components/ui.tsx'
-import { api } from '../../lib/api.ts'
+import { api, gestao } from '../../lib/api.ts'
 import { useExercicios, useTurmas } from '../../lib/consultas.ts'
 import { formatarData, formatarKg } from '../../lib/formato.ts'
 import type { ConsultaPercentuais, LinhaPercentuais } from '../../lib/tipos.ts'
@@ -68,7 +68,7 @@ export function PercentuaisAlunos() {
 
   const consulta = useQuery({
     queryKey: ['percentuais', consultaParams.toString()],
-    queryFn: () => api<ConsultaPercentuais>(`/admin/percentuais?${consultaParams}`),
+    queryFn: () => api<ConsultaPercentuais>(gestao(`/percentuais?${consultaParams}`)),
     placeholderData: keepPreviousData,
     enabled: temFiltro,
   })
