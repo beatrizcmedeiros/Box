@@ -4,7 +4,7 @@ import { Alert, FlatList, Modal, Pressable, Switch, Text, TextInput, View } from
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Busca, Chips, Etiqueta, opcoesTurma } from '../../components/seletores'
 import { Alerta, Botao, Campo, Cartao, Tela, Titulo } from '../../components/ui'
-import { api, ErroApi } from '../../lib/api'
+import { api, ErroApi, gestao } from '../../lib/api'
 import { useImportacoes, useTurmas } from '../../lib/consultasTreinador'
 import { formatarData, hojeIso, lerData, mascaraData } from '../../lib/formato'
 import {
@@ -38,7 +38,7 @@ export default function Importar() {
 
   const previa = useMutation({
     mutationFn: () =>
-      api<Previa>('/admin/importacoes/previa', { method: 'POST', body: { texto, turmaId } }),
+      api<Previa>(gestao('/importacoes/previa'), { method: 'POST', body: { texto, turmaId } }),
     onSuccess: (p) => {
       setMensagem(null)
       setRevisao({ previa: p, ...montarEstado(p) })
@@ -156,10 +156,13 @@ function RevisaoLista({
 
   const confirmar = useMutation({
     mutationFn: () =>
-      api<{ criados: number; atualizados: number; apelidosSalvos: number }>('/admin/importacoes', {
-        method: 'POST',
-        body: { dataTeste: dataIso, turmaId, nomeArquivo: 'Texto colado (app)', ...envio },
-      }),
+      api<{ criados: number; atualizados: number; apelidosSalvos: number }>(
+        gestao('/importacoes'),
+        {
+          method: 'POST',
+          body: { dataTeste: dataIso, turmaId, nomeArquivo: 'Texto colado (app)', ...envio },
+        },
+      ),
     onSuccess: (r) => {
       for (const chave of [
         'importacoes',
@@ -435,7 +438,7 @@ function Historico() {
   const importacoes = useImportacoes()
   const desfazer = useMutation({
     mutationFn: (id: number) =>
-      api<{ removidos: number }>(`/admin/importacoes/${id}`, { method: 'DELETE' }),
+      api<{ removidos: number }>(gestao(`/importacoes/${id}`), { method: 'DELETE' }),
     onSuccess: () => {
       for (const chave of [
         'importacoes',

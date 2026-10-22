@@ -102,12 +102,18 @@ export default function RegistrarPr() {
                       }}
                     >
                       {e.nome}
+                      {e.origem ? (
+                        <Text style={{ fontSize: 12, color: cores.textoSuave }}>
+                          {` · ${e.origem}`}
+                        </Text>
+                      ) : null}
                     </Text>
                   </Pressable>
                 )
               })}
             </View>
           )}
+          <NovoExercicioPessoal aoCriar={setExercicioId} />
           {erro?.doCampo('exercicioId') && (
             <Text style={{ color: cores.erro, fontSize: 13 }}>{erro.doCampo('exercicioId')}</Text>
           )}
@@ -153,5 +159,54 @@ export default function RegistrarPr() {
         </Botao>
       </Cartao>
     </Tela>
+  )
+}
+
+/** Exercício que não está na lista: o aluno cria um pessoal (só ele usa). */
+function NovoExercicioPessoal({ aoCriar }: { aoCriar: (id: number) => void }) {
+  const cliente = useQueryClient()
+  const [aberto, setAberto] = useState(false)
+  const [nome, setNome] = useState('')
+  const criar = useMutation({
+    mutationFn: () => api<{ id: number }>('/me/exercicios', { method: 'POST', body: { nome } }),
+    onSuccess: async ({ id }) => {
+      await cliente.invalidateQueries({ queryKey: ['exercicios-ativos'] })
+      aoCriar(id)
+      setNome('')
+      setAberto(false)
+    },
+  })
+
+  if (!aberto) {
+    return (
+      <Botao variante="link" aoPressionar={() => setAberto(true)}>
+        + Exercício que não está na lista
+      </Botao>
+    )
+  }
+  return (
+    <View style={{ gap: 8, backgroundColor: cores.cinzaClaro, borderRadius: 12, padding: 12 }}>
+      <Campo
+        rotulo="Nome do exercício pessoal"
+        value={nome}
+        onChangeText={setNome}
+        dica="Só você usa este exercício."
+      />
+      {criar.error && <Alerta>{criar.error.message}</Alerta>}
+      <View style={{ flexDirection: 'row', gap: 12 }}>
+        <Botao variante="secundario" aoPressionar={() => setAberto(false)} estilo={{ flex: 1 }}>
+          Cancelar
+        </Botao>
+        <Botao
+          aoPressionar={() => criar.mutate()}
+          carregando={criar.isPending}
+          desabilitado={!nome.trim()}
+          precisaInternet
+          estilo={{ flex: 1 }}
+        >
+          Criar
+        </Botao>
+      </View>
+    </View>
   )
 }

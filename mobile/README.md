@@ -32,6 +32,14 @@ Este projeto fica **fora dos workspaces npm** da raiz, porque o React Native exi
 
 As respostas da API ficam salvas no aparelho por 30 dias (AsyncStorage). Sem sinal, o app abre com os últimos dados e mostra uma faixa avisando. Botões que gravam no servidor ficam desativados até a conexão voltar. Ao sair da conta, o cache é apagado.
 
+## Contas e vínculos
+
+O app segue o modelo de [docs/plano-vinculos.md](../docs/plano-vinculos.md):
+
+- **Entrada:** entrar, criar conta (aluno, professor ou academia), confirmar o e-mail com o código e esqueci a senha.
+- **Aluno:** abas Percentuais, Meus PRs, Evolução, **Vínculos** (usar o código do box ou do professor, desfazer) e Perfil ("Sou professor", trocar senha, excluir conta).
+- **Professor e academia:** área de gestão em `/treinador`, sempre num **contexto** (cada academia ou "Meus alunos", escolhido em Mais → Trabalhando em). Telas de Códigos de vínculo, Professores (academia), Turmas com locais (professor) e alunos vinculados com turma, local e apelidos.
+
 ## Login no app
 
 O app envia `X-Prbox-Cliente: app` e a API devolve os tokens no corpo da resposta, em vez de cookies:

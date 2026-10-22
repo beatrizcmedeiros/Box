@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { api } from './api'
-import type { DetalhePr, ExercicioResumo, ResumoPr, SerieExercicio } from './tipos'
+import type { DetalhePr, ExercicioDoAluno, ResumoPr, SerieExercicio } from './tipos'
 
 /**
  * Telas que mostram dados que outra pessoa pode mudar (o treinador lança o teste do aluno)
@@ -32,6 +32,6 @@ export const useEvolucao = () =>
 export const useExerciciosAtivos = () =>
   useQuery({
     queryKey: ['exercicios-ativos'],
-    queryFn: () => api<ExercicioResumo[]>('/me/exercicios'),
+    queryFn: () => api<ExercicioDoAluno[]>('/me/exercicios'),
     staleTime: 10 * 60 * 1000,
   })

@@ -2,7 +2,9 @@ import Ionicons from '@expo/vector-icons/Ionicons'
 import { type Href, router } from 'expo-router'
 import type { ComponentProps } from 'react'
 import { Pressable, Text, View } from 'react-native'
+import { Chips } from '../../../components/seletores'
 import { Alerta, Botao, Cartao, Tela } from '../../../components/ui'
+import { useContexto } from '../../../lib/contexto'
 import { useLogout, useUsuario } from '../../../lib/sessao'
 import { cores } from '../../../lib/tema'
 
@@ -31,9 +33,15 @@ const itens: {
     icone: 'clipboard-outline',
   },
   {
+    para: '/treinador/codigos',
+    rotulo: 'Códigos de vínculo',
+    descricao: 'Códigos para os alunos (e professores) se vincularem',
+    icone: 'key-outline',
+  },
+  {
     para: '/treinador/turmas',
     rotulo: 'Turmas',
-    descricao: 'Cadastrar, renomear e remover turmas',
+    descricao: 'Turmas (e, em "Meus alunos", os locais onde você dá aula)',
     icone: 'time-outline',
   },
   {
@@ -47,11 +55,33 @@ const itens: {
 export default function Mais() {
   const { data: usuario } = useUsuario()
   const logout = useLogout()
+  const ehAcademia = usuario?.tipo === 'ACADEMIA'
+  const menu = [
+    ...itens,
+    ...(ehAcademia
+      ? [
+          {
+            para: '/treinador/professores' as Href,
+            rotulo: 'Professores',
+            descricao: 'Professores da academia',
+            icone: 'people-circle-outline' as const,
+          },
+        ]
+      : [
+          {
+            para: '/' as Href,
+            rotulo: 'Meus PRs',
+            descricao: 'Os seus próprios PRs e cargas',
+            icone: 'trophy-outline' as const,
+          },
+        ]),
+  ]
 
   return (
     <Tela>
+      <SeletorContexto />
       <Cartao estilo={{ paddingVertical: 4 }}>
-        {itens.map((item, i) => (
+        {menu.map((item, i) => (
           <Pressable
             key={item.rotulo}
             accessibilityRole="button"
@@ -91,5 +121,28 @@ export default function Mais() {
         Sair
       </Botao>
     </Tela>
+  )
+}
+
+/** Onde a pessoa está trabalhando: cada academia ou "Meus alunos". */
+function SeletorContexto() {
+  const { contexto, contextos, trocar } = useContexto()
+  if (contextos.length < 2) {
+    return (
+      <Cartao>
+        <Text style={{ fontSize: 12, color: cores.textoSuave }}>Trabalhando em</Text>
+        <Text style={{ fontWeight: '700', color: cores.texto }}>{contexto.nome}</Text>
+      </Cartao>
+    )
+  }
+  return (
+    <Cartao>
+      <Chips
+        rotulo="Trabalhando em"
+        opcoes={contextos.map((c) => ({ valor: c.id, rotulo: c.nome }))}
+        valor={contexto.id}
+        aoEscolher={trocar}
+      />
+    </Cartao>
   )
 }

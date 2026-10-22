@@ -114,7 +114,14 @@ export function renovarSessao(): Promise<RespostaSessao | null> {
 
 const expirando = (t: Tokens) => Date.parse(t.acessoExpiraEm) - Date.now() < 30_000
 
-const ROTAS_SEM_RENOVACAO = ['/auth/login', '/auth/refresh', '/auth/logout']
+const ROTAS_SEM_RENOVACAO = [
+  '/auth/login',
+  '/auth/refresh',
+  '/auth/logout',
+  '/auth/cadastro',
+  '/auth/esqueci-senha',
+  '/auth/redefinir-senha',
+]
 
 type Opcoes = { method?: string; body?: unknown }
 
@@ -136,4 +143,20 @@ export async function api<T>(caminho: string, { method = 'GET', body }: Opcoes =
   }
 
   return lerResposta<T>(res)
+}
+
+// Contexto de gestão escolhido pelo professor ou pela academia: o id de uma academia
+// ou "pessoal" ("Meus alunos"). As telas de gestão chamam /api/c/<contexto>/...
+let contextoAtual: string | null = null
+
+export const definirContextoAtual = (id: string | null) => {
+  contextoAtual = id
+}
+
+/** Caminho de uma rota de gestão no contexto atual (ex.: gestao('/turmas')). */
+export function gestao(caminho: string) {
+  if (!contextoAtual) {
+    throw new ErroApi(0, 'Escolha a academia ou "Meus alunos" em Mais.', 'SEM_CONTEXTO')
+  }
+  return `/c/${contextoAtual}${caminho}`
 }

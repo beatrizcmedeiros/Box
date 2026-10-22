@@ -41,6 +41,10 @@ export default function AbasAluno() {
         options={{ title: 'Evolução', tabBarIcon: icone('trending-up-outline') }}
       />
       <Tabs.Screen
+        name="vinculos"
+        options={{ title: 'Vínculos', tabBarIcon: icone('link-outline') }}
+      />
+      <Tabs.Screen
         name="perfil"
         options={{ title: 'Perfil', tabBarIcon: icone('person-circle-outline') }}
       />

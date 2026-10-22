@@ -1,3 +1,4 @@
+import { router } from 'expo-router'
 import { useState } from 'react'
 import { Text } from 'react-native'
 import { Alerta, Botao, Campo, TelaPublica } from '../components/ui'
@@ -11,7 +12,7 @@ export default function Login() {
   const [senha, setSenha] = useState('')
   const erro = login.error instanceof ErroApi ? login.error : null
 
-  // Depois do login, as regras de acesso do _layout levam cada perfil para a sua tela
+  // Depois do login, as regras de acesso do _layout levam cada conta para a sua área
   const entrar = () => login.mutate({ email: email.trim(), senha })
 
   return (
@@ -42,9 +43,15 @@ export default function Login() {
       <Botao aoPressionar={entrar} precisaInternet carregando={login.isPending}>
         Entrar
       </Botao>
+      <Botao variante="link" aoPressionar={() => router.push('/esqueci-senha')}>
+        Esqueci a senha
+      </Botao>
       <Text style={{ textAlign: 'center', color: cores.textoSuave, fontSize: 14 }}>
-        Esqueceu a senha? Peça ao seu treinador para gerar uma nova senha temporária.
+        Ainda não tem conta?
       </Text>
+      <Botao variante="secundario" aoPressionar={() => router.push('/cadastro')}>
+        Criar conta
+      </Botao>
     </TelaPublica>
   )
 }
