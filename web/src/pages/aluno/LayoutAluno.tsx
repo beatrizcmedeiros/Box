@@ -15,6 +15,11 @@ const abas = [
     icone: <path d="M6 4v16M18 4v16M2 8v8M22 8v8M6 12h12" />,
   },
   {
+    para: '/aluno/evolucao',
+    rotulo: 'Evolução',
+    icone: <path d="M3 17l6-6 4 4 8-8M15 7h6v6" />,
+  },
+  {
     para: '/aluno/perfil',
     rotulo: 'Perfil',
     icone: (

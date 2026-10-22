@@ -37,7 +37,7 @@ export function visaoGeralRouter() {
         }),
       ])
 
-    const contar = (origem: 'ALUNO' | 'IMPORTACAO') =>
+    const contar = (origem: 'ALUNO' | 'IMPORTACAO' | 'TREINADOR') =>
       registrosRecentes.find((r) => r.origem === origem)?._count._all ?? 0
 
     res.json({
@@ -47,7 +47,11 @@ export function visaoGeralRouter() {
         comPr,
         percentualComPr: ativos ? Math.round((comPr / ativos) * 100) : 0,
       },
-      ultimos30Dias: { registradosPeloAluno: contar('ALUNO'), importados: contar('IMPORTACAO') },
+      // Lista importada e lançamentos na tela Teste de carga contam como registros do treinador
+      ultimos30Dias: {
+        registradosPeloAluno: contar('ALUNO'),
+        importados: contar('IMPORTACAO') + contar('TREINADOR'),
+      },
       ultimaImportacao: ultimaImportacao && {
         dataTeste: formatarData(ultimaImportacao.dataTeste),
         criadoEm: ultimaImportacao.criadoEm,

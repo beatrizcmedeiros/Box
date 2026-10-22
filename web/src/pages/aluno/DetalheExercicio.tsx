@@ -118,7 +118,7 @@ export function DetalheExercicio() {
               >
                 <span>
                   {formatarData(lancamento.dataTeste)}
-                  {lancamento.origem === 'IMPORTACAO' && (
+                  {lancamento.origem !== 'ALUNO' && (
                     <span className="ml-2 text-xs text-slate-500">(treinador)</span>
                   )}
                 </span>
@@ -147,6 +147,12 @@ export function DetalheExercicio() {
         <BotaoFlutuante para={`/aluno/prs/novo?exercicio=${exercicio.id}`}>
           + Registrar novo PR
         </BotaoFlutuante>
+        <Link
+          to={`/aluno/evolucao?exercicio=${exercicio.id}`}
+          className="block text-center text-sm font-semibold text-marca-escura"
+        >
+          Ver gráfico de evolução
+        </Link>
         <Link
           to="/aluno/percentuais"
           className="block text-center text-sm font-semibold text-slate-600"

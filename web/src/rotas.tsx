@@ -2,6 +2,7 @@ import { Navigate, type RouteObject } from 'react-router'
 import { RotaProtegida } from './auth/RotaProtegida.tsx'
 import { RedirecionarInicio } from './auth/RedirecionarInicio.tsx'
 import { DetalheExercicio } from './pages/aluno/DetalheExercicio.tsx'
+import { Evolucao } from './pages/aluno/Evolucao.tsx'
 import { LayoutAluno } from './pages/aluno/LayoutAluno.tsx'
 import { MeusPrs } from './pages/aluno/MeusPrs.tsx'
 import { Percentuais } from './pages/aluno/Percentuais.tsx'
@@ -11,9 +12,12 @@ import { Login } from './pages/Login.tsx'
 import { Termo, TrocarSenha } from './pages/PrimeiroAcesso.tsx'
 import { Alunos } from './pages/treinador/Alunos.tsx'
 import { ConsultarCargas } from './pages/treinador/ConsultarCargas.tsx'
+import { EvolucaoTurmas } from './pages/treinador/EvolucaoTurmas.tsx'
 import { Exercicios } from './pages/treinador/Exercicios.tsx'
 import { ImportarCargas } from './pages/treinador/importacao/ImportarCargas.tsx'
 import { LayoutTreinador } from './pages/treinador/LayoutTreinador.tsx'
+import { PercentuaisAlunos } from './pages/treinador/PercentuaisAlunos.tsx'
+import { TesteDeCarga } from './pages/treinador/TesteDeCarga.tsx'
 import { Turmas } from './pages/treinador/Turmas.tsx'
 import { VisaoGeral } from './pages/treinador/VisaoGeral.tsx'
 
@@ -47,6 +51,7 @@ export const rotas: RouteObject[] = [
       { index: true, element: <Navigate to="percentuais" replace /> },
       { path: 'percentuais', element: <Percentuais /> },
       { path: 'prs', element: <MeusPrs /> },
+      { path: 'evolucao', element: <Evolucao /> },
       { path: 'prs/novo', element: <RegistrarPr /> },
       { path: 'exercicios/:id', element: <DetalheExercicio /> },
       { path: 'perfil', element: <Perfil /> },
@@ -65,8 +70,11 @@ export const rotas: RouteObject[] = [
       { path: 'alunos', element: <Alunos /> },
       { path: 'turmas', element: <Turmas /> },
       { path: 'exercicios', element: <Exercicios /> },
+      { path: 'teste-de-carga', element: <TesteDeCarga /> },
+      { path: 'percentuais', element: <PercentuaisAlunos /> },
       { path: 'importar', element: <ImportarCargas /> },
       { path: 'consultar', element: <ConsultarCargas /> },
+      { path: 'evolucao', element: <EvolucaoTurmas /> },
     ],
   },
   // Raiz e endereços desconhecidos: leva cada perfil para a sua tela inicial

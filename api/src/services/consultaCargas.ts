@@ -25,7 +25,7 @@ type LinhaSql = {
   exercicio_nome: string
   data_teste: Date
   carga_kg: number
-  origem: 'ALUNO' | 'IMPORTACAO'
+  origem: 'ALUNO' | 'IMPORTACAO' | 'TREINADOR'
   carga_anterior: number | null
 }
 

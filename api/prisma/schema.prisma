@@ -21,8 +21,9 @@ enum CategoriaExercicio {
 }
 
 enum OrigemTeste {
-  ALUNO
-  IMPORTACAO
+  ALUNO // registrado pelo próprio aluno
+  IMPORTACAO // importado da lista (PDF) do treinador
+  TREINADOR // lançado pelo treinador na tela "Teste de carga"
 }
 
 enum StatusImportacao {

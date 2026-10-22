@@ -3,8 +3,11 @@ import { useLogout, useUsuario } from '../../auth/sessao.ts'
 
 const itens = [
   { para: '/treinador/visao-geral', rotulo: 'Visão geral' },
+  { para: '/treinador/teste-de-carga', rotulo: 'Teste de carga' },
+  { para: '/treinador/percentuais', rotulo: 'Percentuais' },
   { para: '/treinador/importar', rotulo: 'Importar cargas (PDF)' },
   { para: '/treinador/consultar', rotulo: 'Consultar cargas' },
+  { para: '/treinador/evolucao', rotulo: 'Evolução' },
   { para: '/treinador/alunos', rotulo: 'Alunos' },
   { para: '/treinador/turmas', rotulo: 'Turmas' },
   { para: '/treinador/exercicios', rotulo: 'Exercícios' },
@@ -16,7 +19,7 @@ export function LayoutTreinador() {
 
   return (
     <div className="min-h-dvh md:flex">
-      <aside className="bg-fundo-escuro px-4 py-4 text-slate-300 md:flex md:w-60 md:shrink-0 md:flex-col md:py-6">
+      <aside className="bg-fundo-escuro px-4 print:hidden py-4 text-slate-300 md:flex md:w-60 md:shrink-0 md:flex-col md:py-6">
         <div className="flex items-center justify-between md:block">
           <div>
             <p className="text-base font-extrabold tracking-[0.15em] text-marca">PR BOX</p>
@@ -61,7 +64,7 @@ export function LayoutTreinador() {
         </div>
       </aside>
 
-      <main className="min-w-0 flex-1 p-4 md:p-8">
+      <main className="min-w-0 flex-1 p-4 md:p-8 print:p-0">
         <Outlet />
       </main>
     </div>

@@ -97,6 +97,20 @@ Lucas 110 kg
 - Para testar: `npm run preview` (o `npm run dev` não registra o service worker).
 - Limitações do iOS: instalação manual pelo Safari; o sistema pode limpar os dados offline se o app ficar semanas sem uso.
 
+## Teste de carga (lançamento pelo treinador)
+
+- Tela **Teste de carga**: data (hoje por padrão, editável) e exercício no topo.
+  - **Por turma**: escolhe a turma (ou todas), pesquisa por nome/apelido e digita a carga de cada aluno na mesma tela (Enter passa ao próximo); o PR anterior aparece como referência e o novo recorde é sinalizado. Salva tudo de uma vez.
+  - **Por aluno**: pesquisa o aluno pelo nome e lança a carga individualmente.
+- Origem **TREINADOR**: o aluno vê como “(treinador)” e não pode apagar; lançar de novo o mesmo aluno/exercício/data corrige a carga; o treinador pode excluir um lançamento feito por engano.
+- O aluno continua registrando os próprios PRs em **Registrar PR**.
+
+## Evolução (dashboards)
+
+- **Aluno** (aba _Evolução_): para cada exercício, gráfico de linha do PR em cada teste registrado, com PR atual, primeiro registro, evolução (kg e %) e melhor marca; cartões com minigráfico de todos os exercícios; alternativa em tabela.
+- **Treinador** (_Evolução_): os testes são agrupados em **ciclos semestrais** (o teste de força é a cada 6 meses), identificados pela **semana do teste** (a semana com mais registros no semestre). Em cada ciclo vale a maior carga do aluno. Mostra a **média por turma** em cada semana de teste (uma linha por turma, com cor fixa por turma), indicadores do último teste × anterior (evolução média calculada só com quem fez os dois testes) e a **evolução de cada aluno** (anterior → último); tocar no aluno abre o detalhe dele em todos os exercícios.
+- Gráficos em SVG próprio (sem biblioteca), com linha guia e dica no mouse, toque e teclado, legenda para mais de uma série e alternativa em tabela. Cores validadas para daltonismo e contraste (`web/src/components/graficos/cores.ts`).
+
 ## Regra dos percentuais
 
 - **PR vigente** = teste mais recente de cada exercício (mesmo que a carga seja menor); o histórico nunca é apagado automaticamente.
@@ -123,7 +137,7 @@ api/
   src/routes/admin/      painel do treinador: turmas, exercícios, alunos, importações, consulta de cargas
   scripts/               criar-treinador, dados de demonstração
   src/middlewares/       autenticação e controle de perfil
-  src/domain/            regras de negócio (percentuais; leitura e associação da lista importada)
+  src/domain/            regras de negócio (percentuais, ciclos de evolução, leitura e associação da lista importada)
   src/routes/aluno/      área do aluno: PRs, histórico, exercícios ativos
   src/services/          sessões (cookies e refresh tokens)
   test/                  testes de integração (banco prbox_test)
