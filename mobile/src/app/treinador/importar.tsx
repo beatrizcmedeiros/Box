@@ -3,10 +3,11 @@ import { useMemo, useState } from 'react'
 import { Alert, FlatList, Modal, Pressable, Switch, Text, TextInput, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Busca, Chips, Etiqueta, opcoesTurma } from '../../components/seletores'
-import { Alerta, Botao, Campo, Cartao, Tela, Titulo } from '../../components/ui'
+import { CampoData } from '../../components/CampoData'
+import { Alerta, Botao, Cartao, Tela, Titulo } from '../../components/ui'
 import { api, ErroApi, gestao } from '../../lib/api'
 import { useImportacoes, useTurmas } from '../../lib/consultasTreinador'
-import { formatarData, hojeIso, lerData, mascaraData } from '../../lib/formato'
+import { formatarData, hojeIso } from '../../lib/formato'
 import {
   cargaValida,
   type LinhaEditavel,
@@ -27,14 +28,13 @@ type Revisao = { previa: Previa; secoes: SecaoEditavel[]; linhas: LinhaEditavel[
  */
 export default function Importar() {
   const turmas = useTurmas()
-  const [dataTexto, setDataTexto] = useState(formatarData(hojeIso()))
+  const [dataIso, setDataIso] = useState(hojeIso())
   const [turmaId, setTurmaId] = useState<number | null>(null)
   const [texto, setTexto] = useState('')
   const [revisao, setRevisao] = useState<Revisao | null>(null)
   const [mensagem, setMensagem] = useState<string | null>(null)
 
-  const dataIso = lerData(dataTexto)
-  const dataValida = !!dataIso && dataIso <= hojeIso()
+  const dataValida = dataIso <= hojeIso()
 
   const previa = useMutation({
     mutationFn: () =>
@@ -45,7 +45,7 @@ export default function Importar() {
     },
   })
 
-  if (revisao && dataIso) {
+  if (revisao) {
     return (
       <RevisaoLista
         revisao={revisao}
@@ -65,15 +65,7 @@ export default function Importar() {
     <Tela>
       {mensagem && <Alerta tipo="sucesso">{mensagem}</Alerta>}
       <Cartao estilo={{ gap: 14 }}>
-        <Campo
-          rotulo="Data do teste"
-          value={dataTexto}
-          onChangeText={(t) => setDataTexto(mascaraData(t))}
-          keyboardType="number-pad"
-          placeholder="DD/MM/AAAA"
-          maxLength={10}
-          erro={dataTexto.length === 10 && !dataValida ? 'Data inválida ou no futuro' : undefined}
-        />
+        <CampoData rotulo="Data do teste" valor={dataIso} aoMudar={setDataIso} />
         <Chips
           rotulo="Turma (ajuda a desempatar nomes iguais)"
           opcoes={opcoesTurma(turmas.data)}

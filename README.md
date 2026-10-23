@@ -57,7 +57,7 @@ Para ver a área do aluno, entre com a **aluna de demonstração** (`SEED_ALUNO_
 
 O plano completo está em [docs/plano-vinculos.md](docs/plano-vinculos.md).
 
-- **Cadastro aberto** com e-mail e senha: **pessoa** (todo aluno; quem marca "sou professor" ganha também a área do professor) ou **academia** (conta do dono do box).
+- **Cadastro aberto** com e-mail e senha: **pessoa** (todo aluno; quem escolhe "professor" no cadastro ganha também a área do professor, que abre primeiro) ou **academia** (conta do dono do box).
 - **Sem código no cadastro:** a conta é criada e já entra; até aceitar o termo de consentimento (LGPD), não usa o sistema. **Esqueci a senha** é por código de 6 dígitos no e-mail (vale 15 min, 5 tentativas); a resposta é sempre a mesma, para não revelar quais e-mails existem.
 - E-mails enviados pelo [Resend](https://resend.com) (`RESEND_API_KEY`, `EMAIL_REMETENTE`). Sem chave, em desenvolvimento o código aparece no terminal da API.
 - **Vínculos por código**: o aluno digita o código da academia ou do professor; professores entram na academia pelo código de professores. Cada professor e academia vê só os alunos vinculados (rotas `/api/c/:contexto`).

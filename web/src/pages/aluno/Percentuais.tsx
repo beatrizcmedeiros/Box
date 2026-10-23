@@ -2,7 +2,9 @@ import { useState } from 'react'
 import { Link } from 'react-router'
 import { useUsuario } from '../../auth/sessao.ts'
 import { ConviteInstalacao } from '../../components/Instalacao.tsx'
+import { SeletorBasePr } from '../../components/SeletorBasePr.tsx'
 import { Alerta, Carregando } from '../../components/ui.tsx'
+import { useBasePr } from '../../lib/basePr.ts'
 import { usePrs } from '../../lib/consultasAluno.ts'
 import { formatarKg } from '../../lib/formato.ts'
 import type { CategoriaExercicio, ResumoPr } from '../../lib/tipos.ts'
@@ -17,7 +19,8 @@ const filtros: { valor: CategoriaExercicio | null; rotulo: string }[] = [
 /** Dashboard do aluno: cargas de 35% a 55% do PR de cada exercício (Figura 2a). */
 export function Percentuais() {
   const { data: usuario } = useUsuario()
-  const prs = usePrs()
+  const [base] = useBasePr()
+  const prs = usePrs(base)
   const [categoria, setCategoria] = useState<CategoriaExercicio | null>(null)
 
   const visiveis = prs.data?.filter((r) => !categoria || r.exercicio.categoria === categoria) ?? []
@@ -39,6 +42,7 @@ export function Percentuais() {
           <SemPrs />
         ) : (
           <>
+            <SeletorBasePr />
             <div
               className="flex gap-2 overflow-x-auto"
               role="group"

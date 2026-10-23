@@ -2,17 +2,11 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { router, useLocalSearchParams } from 'expo-router'
 import { useState } from 'react'
 import { Pressable, Text, View } from 'react-native'
+import { CampoData } from '../../components/CampoData'
 import { Alerta, Botao, Campo, Cartao, Carregando, Tela, Titulo } from '../../components/ui'
 import { api, ErroApi } from '../../lib/api'
 import { useExerciciosAtivos, usePrs } from '../../lib/consultas'
-import {
-  formatarData,
-  formatarKg,
-  hojeIso,
-  lerData,
-  lerNumero,
-  mascaraData,
-} from '../../lib/formato'
+import { formatarKg, hojeIso, lerNumero } from '../../lib/formato'
 import { cores } from '../../lib/tema'
 import type { Lancamento } from '../../lib/tipos'
 
@@ -24,9 +18,8 @@ export default function RegistrarPr() {
   const prs = usePrs()
 
   const [exercicioId, setExercicioId] = useState(Number(params.exercicio) || 0)
-  const [data, setData] = useState(formatarData(hojeIso()))
+  const [data, setData] = useState(hojeIso())
   const [carga, setCarga] = useState('')
-  const [erroData, setErroData] = useState<string>()
 
   const cargaKg = lerNumero(carga)
   const prAtual = prs.data?.find((r) => r.exercicio.id === exercicioId)?.pr.cargaKg
@@ -49,17 +42,7 @@ export default function RegistrarPr() {
   const erro = salvar.error instanceof ErroApi ? salvar.error : null
 
   function enviar() {
-    const dataTeste = lerData(data)
-    if (!dataTeste) {
-      setErroData('Data inválida. Use o formato DD/MM/AAAA.')
-      return
-    }
-    if (dataTeste > hojeIso()) {
-      setErroData('A data do teste não pode ser no futuro.')
-      return
-    }
-    setErroData(undefined)
-    salvar.mutate(dataTeste)
+    salvar.mutate(data)
   }
 
   return (
@@ -119,14 +102,11 @@ export default function RegistrarPr() {
           )}
         </View>
 
-        <Campo
+        <CampoData
           rotulo="Data do teste de carga"
-          value={data}
-          onChangeText={(t) => setData(mascaraData(t))}
-          keyboardType="number-pad"
-          placeholder="DD/MM/AAAA"
-          maxLength={10}
-          erro={erroData ?? erro?.doCampo('dataTeste')}
+          valor={data}
+          aoMudar={setData}
+          erro={erro?.doCampo('dataTeste')}
         />
         <Campo
           rotulo="Carga máxima (PR) em kg"

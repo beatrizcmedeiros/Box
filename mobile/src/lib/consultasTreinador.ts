@@ -93,7 +93,7 @@ export const useAlunosParaLancar = (
 }
 
 export const usePercentuaisAlunos = (
-  filtros: { busca?: string; exercicioId?: number | null } & FiltroGrupo,
+  filtros: { busca?: string; exercicioId?: number | null; base?: 'ultimo' | 'maior' } & FiltroGrupo,
 ) => {
   const ctx = useIdContexto()
   const consulta = parametros(filtros)

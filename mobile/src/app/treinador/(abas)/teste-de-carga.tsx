@@ -2,7 +2,8 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { Alert, Text, TextInput, View } from 'react-native'
 import { Busca, Chips, Etiqueta, opcoesTurma } from '../../../components/seletores'
-import { Alerta, Botao, Campo, Cartao, Carregando, Tela } from '../../../components/ui'
+import { CampoData } from '../../../components/CampoData'
+import { Alerta, Botao, Cartao, Carregando, Tela } from '../../../components/ui'
 import { api, ErroApi, gestao } from '../../../lib/api'
 import {
   useAlunosParaLancar,
@@ -10,14 +11,7 @@ import {
   useExercicios,
   useTurmas,
 } from '../../../lib/consultasTreinador'
-import {
-  formatarData,
-  formatarKg,
-  hojeIso,
-  lerData,
-  lerNumero,
-  mascaraData,
-} from '../../../lib/formato'
+import { formatarData, formatarKg, hojeIso, lerNumero } from '../../../lib/formato'
 import { cores } from '../../../lib/tema'
 import type { AlunoParaLancar, ResultadoLancamento } from '../../../lib/tipos'
 
@@ -43,20 +37,12 @@ export default function TesteDeCarga() {
   const turmas = useTurmas()
   const ativos = (exercicios.data ?? []).filter((e) => e.ativo)
 
-  const [dataTexto, setDataTexto] = useState(formatarData(hojeIso()))
+  const [dataIso, setDataIso] = useState(hojeIso())
   const [exercicioId, setExercicioId] = useState<number | null>(null)
   const [turmaId, setTurmaId] = useState<number | null>(null)
   const [busca, setBusca] = useState('')
   const [mensagem, setMensagem] = useState<string | null>(null)
 
-  const dataIso = lerData(dataTexto)
-  const erroData = !dataIso
-    ? dataTexto.length === 10
-      ? 'Data inválida'
-      : undefined
-    : dataIso > hojeIso()
-      ? 'A data do teste não pode ser no futuro'
-      : undefined
   const exercicioEscolhido = exercicioId ?? ativos[0]?.id ?? null
   const nomeExercicio = ativos.find((e) => e.id === exercicioEscolhido)?.nome ?? ''
 
@@ -72,17 +58,13 @@ export default function TesteDeCarga() {
   return (
     <Tela>
       <Cartao estilo={{ gap: 14 }}>
-        <Campo
+        <CampoData
           rotulo="Data do teste"
-          value={dataTexto}
-          onChangeText={(t) => {
-            setDataTexto(mascaraData(t))
+          valor={dataIso}
+          aoMudar={(iso) => {
+            setDataIso(iso)
             setMensagem(null)
           }}
-          keyboardType="number-pad"
-          placeholder="DD/MM/AAAA"
-          maxLength={10}
-          erro={erroData}
         />
         {ativos.length === 0 ? (
           <Alerta tipo="info">Cadastre um exercício primeiro (Mais → Exercícios).</Alerta>
@@ -108,7 +90,7 @@ export default function TesteDeCarga() {
 
       {mensagem && <Alerta tipo="sucesso">{mensagem}</Alerta>}
 
-      {exercicioEscolhido && dataIso && !erroData && (
+      {exercicioEscolhido && (
         <ListaLancamento
           // Trocar data ou exercício recomeça a digitação
           key={`${dataIso}-${exercicioEscolhido}`}

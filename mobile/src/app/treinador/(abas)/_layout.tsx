@@ -1,6 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons'
-import { Tabs } from 'expo-router'
+import { router, Tabs } from 'expo-router'
 import type { ComponentProps } from 'react'
+import { useUsuario } from '../../../lib/sessao'
 import { cores } from '../../../lib/tema'
 
 type Icone = ComponentProps<typeof Ionicons>['name']
@@ -14,6 +15,8 @@ const icone =
 
 /** As telas mais usadas no box ficam nas abas; as demais, em "Mais". */
 export default function AbasTreinador() {
+  // A academia não tem PRs próprios; o professor tem "Meus PRs" como as outras abas
+  const professor = useUsuario().data?.tipo === 'PESSOA'
   return (
     <Tabs
       screenOptions={{
@@ -48,6 +51,21 @@ export default function AbasTreinador() {
       <Tabs.Screen
         name="alunos"
         options={{ title: 'Alunos', tabBarIcon: icone('people-outline') }}
+      />
+      <Tabs.Screen
+        name="meus-prs"
+        options={{
+          title: 'Meus PRs',
+          tabBarIcon: icone('trophy-outline'),
+          href: professor ? undefined : null,
+        }}
+        listeners={{
+          tabPress: (evento) => {
+            // Abre a área do aluno (os PRs do próprio professor), por cima da gestão
+            evento.preventDefault()
+            router.push('/')
+          },
+        }}
       />
       <Tabs.Screen name="mais" options={{ title: 'Mais', tabBarIcon: icone('menu-outline') }} />
     </Tabs>

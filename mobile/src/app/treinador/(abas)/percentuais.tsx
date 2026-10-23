@@ -1,7 +1,9 @@
 import { useState } from 'react'
 import { Text, View } from 'react-native'
 import { Busca, Chips, opcoesTurma } from '../../../components/seletores'
+import { SeletorBasePr } from '../../../components/SeletorBasePr'
 import { Alerta, Cartao, Carregando, Tela } from '../../../components/ui'
+import { useBasePr } from '../../../lib/basePr'
 import {
   useAtrasado,
   useExercicios,
@@ -23,7 +25,13 @@ export default function PercentuaisAlunos() {
   const [busca, setBusca] = useState('')
   const buscaAtrasada = useAtrasado(busca.trim())
 
-  const consulta = usePercentuaisAlunos({ busca: buscaAtrasada, exercicioId, turmaId })
+  const [base] = useBasePr()
+  const consulta = usePercentuaisAlunos({
+    busca: buscaAtrasada,
+    exercicioId,
+    turmaId,
+    base: base === 'maior' ? base : undefined,
+  })
   const temFiltro = !!(buscaAtrasada || exercicioId || turmaId)
 
   return (
@@ -47,6 +55,7 @@ export default function PercentuaisAlunos() {
           aoEscolher={setTurmaId}
         />
         <Busca valor={busca} aoMudar={setBusca} />
+        <SeletorBasePr />
       </Cartao>
 
       {!temFiltro ? (

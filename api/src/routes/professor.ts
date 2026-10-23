@@ -10,28 +10,18 @@ import {
 } from '../middlewares/autenticacao.ts'
 import { codigoAtual, gerarCodigo, revogarCodigo, validadeSchema } from '../services/codigos.ts'
 import { parseId } from './admin/comum.ts'
-import { usuarioPublico } from './auth.ts'
 
 const localSchema = z.object({ nome: z.string().trim().min(1, 'Informe o nome').max(60) })
 
 /**
- * Área do professor fora de um contexto: ativar o perfil de professor, o código para os
- * alunos se vincularem a ele e os locais em que ele agrupa os alunos próprios.
+ * Área do professor fora de um contexto: o código para os alunos se vincularem a ele e os
+ * locais em que ele agrupa os alunos próprios.
  */
 export function professorRouter() {
   const router = Router()
   router.use(autenticar, exigirCadastroCompleto, exigirPessoa)
 
-  /** Liga ou desliga a área do professor na conta da pessoa. */
-  router.put('/perfil', async (req, res) => {
-    const { ativo } = z.object({ ativo: z.boolean() }).parse(req.body)
-    const usuario = await prisma.usuario.update({
-      where: { id: req.usuario!.id },
-      data: { ehProfessor: ativo },
-    })
-    res.json({ usuario: await usuarioPublico(usuario) })
-  })
-
+  // Ser professor se escolhe só no cadastro: o aluno não muda o perfil para professor
   router.use(exigirProfessor)
 
   // ---- Código para os alunos se vincularem ao professor ----

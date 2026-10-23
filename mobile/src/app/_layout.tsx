@@ -111,12 +111,12 @@ function Navegacao() {
       <Stack.Protected guard={!!u && u.consentimentoPendente}>
         <Stack.Screen name="primeiro-acesso/termo" options={{ headerShown: false }} />
       </Stack.Protected>
-      {/* O professor tem as duas áreas: Meus PRs (aluno) e a gestão */}
-      <Stack.Protected guard={pronto && u.tipo === 'PESSOA'}>
-        <Stack.Screen name="(aluno)" options={{ headerShown: false }} />
-      </Stack.Protected>
+      {/* O professor tem as duas áreas e abre primeiro na dele; Meus PRs fica no menu de baixo */}
       <Stack.Protected guard={pronto && fazGestao(u)}>
         <Stack.Screen name="treinador" options={{ headerShown: false }} />
+      </Stack.Protected>
+      <Stack.Protected guard={pronto && u.tipo === 'PESSOA'}>
+        <Stack.Screen name="(aluno)" options={{ headerShown: false }} />
       </Stack.Protected>
     </Stack>
   )

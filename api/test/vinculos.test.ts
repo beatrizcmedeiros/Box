@@ -102,13 +102,12 @@ describe('códigos de vínculo', () => {
     expect(await nomes(carlos.agente, '/api/c/pessoal/alunos')).toEqual(['Ana'])
   })
 
-  it('código inválido e área do professor só para quem ativou "sou professor"', async () => {
+  it('código inválido e área do professor só para quem se cadastrou como professor', async () => {
     const ana = await pessoa('Ana', 'ana@t.com')
     expect((await usar(ana.agente, '000000')).status).toBe(404)
     expect((await ana.agente.get('/api/professor/codigo')).status).toBe(403)
 
-    const ativar = await ana.agente.put('/api/professor/perfil').send({ ativo: true })
-    expect(ativar.body.usuario.ehProfessor).toBe(true)
+    await prisma.usuario.update({ where: { email: 'ana@t.com' }, data: { ehProfessor: true } })
     expect((await ana.agente.get('/api/professor/codigo')).body).toEqual({ codigo: null })
   })
 

@@ -3,8 +3,11 @@ import { Stack, useLocalSearchParams } from 'expo-router'
 import { useState } from 'react'
 import { Alert, Text, View } from 'react-native'
 import { BotaoRegistrar } from '../../../components/aluno'
+import { EditarPr } from '../../../components/EditarPr'
+import { SeletorBasePr } from '../../../components/SeletorBasePr'
 import { Alerta, Botao, Cartao, Carregando, Tela, Titulo } from '../../../components/ui'
 import { api, ErroApi } from '../../../lib/api'
+import { rotuloBase, useBasePr } from '../../../lib/basePr'
 import { useDetalhePr } from '../../../lib/consultas'
 import { formatarData, formatarKg } from '../../../lib/formato'
 import { cores } from '../../../lib/tema'
@@ -14,9 +17,11 @@ import type { Lancamento } from '../../../lib/tipos'
 export default function DetalheExercicio() {
   const params = useLocalSearchParams<{ id: string; salvo?: string }>()
   const exercicioId = Number(params.id)
-  const detalhe = useDetalhePr(exercicioId)
+  const [base] = useBasePr()
+  const detalhe = useDetalhePr(exercicioId, base)
   const cliente = useQueryClient()
   const [mostrarSalvo, setMostrarSalvo] = useState(params.salvo === '1')
+  const [editando, setEditando] = useState<Lancamento | null>(null)
 
   const excluir = useMutation({
     mutationFn: (lancamento: Lancamento) =>
@@ -59,9 +64,10 @@ export default function DetalheExercicio() {
     <Tela atualizar={{ atualizando: detalhe.isRefetching, aoPuxar: () => detalhe.refetch() }}>
       <Stack.Screen options={{ title: exercicio.nome }} />
       {mostrarSalvo && <Alerta tipo="sucesso">PR registrado!</Alerta>}
+      <SeletorBasePr />
 
       <Cartao estilo={{ alignItems: 'center', gap: 4, padding: 20 }}>
-        <Titulo>PR atual</Titulo>
+        <Titulo>{rotuloBase(base)}</Titulo>
         <Text style={{ fontSize: 44, fontWeight: '800', color: cores.texto }}>
           {formatarKg(pr.cargaKg)} <Text style={{ fontSize: 20, color: cores.textoSuave }}>kg</Text>
         </Text>
@@ -148,6 +154,13 @@ export default function DetalheExercicio() {
               <Text style={{ fontWeight: '700', color: cores.texto }}>
                 {formatarKg(lancamento.cargaKg)} kg
               </Text>
+              <Botao
+                variante="link"
+                aoPressionar={() => setEditando(lancamento)}
+                estilo={{ minHeight: 36, paddingVertical: 4, paddingHorizontal: 8 }}
+              >
+                Editar
+              </Botao>
               {lancamento.origem === 'ALUNO' && (
                 <Botao
                   variante="link"
@@ -163,6 +176,21 @@ export default function DetalheExercicio() {
       </Cartao>
 
       <BotaoRegistrar exercicioId={exercicio.id} />
+
+      {editando && (
+        <EditarPr
+          titulo={`Editar PR de ${exercicio.nome}`}
+          pr={editando}
+          caminho={`/me/prs/lancamentos/${editando.id}`}
+          aoFechar={() => setEditando(null)}
+          aoSalvar={() => {
+            setEditando(null)
+            setMostrarSalvo(false)
+            cliente.invalidateQueries({ queryKey: ['prs'] })
+            cliente.invalidateQueries({ queryKey: ['evolucao'] })
+          }}
+        />
+      )}
     </Tela>
   )
 }

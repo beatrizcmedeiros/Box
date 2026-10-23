@@ -96,6 +96,8 @@ export type CargaPercentual = { percentual: number; cargaKg: number }
 
 export type ResumoPr = {
   exercicio: ExercicioResumo
+  /** De onde vem o PR das porcentagens: o último teste ou o maior PR */
+  base?: 'ultimo' | 'maior'
   pr: Lancamento
   percentuais: CargaPercentual[]
   novoRecorde: boolean
@@ -103,6 +105,9 @@ export type ResumoPr = {
 }
 
 export type DetalhePr = ResumoPr & { historico: Lancamento[] }
+
+/** PR de um aluno visto pela gestão (todos os exercícios). */
+export type PrDoAluno = Lancamento & { exercicio: { id: number; nome: string } }
 
 // Importação da lista do treinador (Fase 4)
 
