@@ -1,3 +1,4 @@
+import type { BasePr } from './basePr'
 import { useQuery } from '@tanstack/react-query'
 import { api } from './api'
 import type { DetalhePr, ExercicioDoAluno, ResumoPr, SerieExercicio } from './tipos'
@@ -8,17 +9,18 @@ import type { DetalhePr, ExercicioDoAluno, ResumoPr, SerieExercicio } from './ti
  */
 const ATUALIZAR_A_CADA = 30_000
 
-export const usePrs = () =>
+/** PR de cada exercício: o último teste (padrão) ou o maior PR, conforme a base. */
+export const usePrs = (base: BasePr = 'ultimo') =>
   useQuery({
-    queryKey: ['prs'],
-    queryFn: () => api<ResumoPr[]>('/me/prs'),
+    queryKey: ['prs', base],
+    queryFn: () => api<ResumoPr[]>(`/me/prs?base=${base}`),
     refetchInterval: ATUALIZAR_A_CADA,
   })
 
-export const useDetalhePr = (exercicioId: number) =>
+export const useDetalhePr = (exercicioId: number, base: BasePr = 'ultimo') =>
   useQuery({
-    queryKey: ['prs', exercicioId],
-    queryFn: () => api<DetalhePr>(`/me/prs/${exercicioId}`),
+    queryKey: ['prs', exercicioId, base],
+    queryFn: () => api<DetalhePr>(`/me/prs/${exercicioId}?base=${base}`),
     refetchInterval: ATUALIZAR_A_CADA,
   })
 

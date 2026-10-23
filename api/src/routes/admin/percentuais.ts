@@ -2,6 +2,7 @@ import { Router } from 'express'
 import { z } from 'zod'
 import { cargaDoPercentual, PERCENTUAIS } from '../../domain/percentuais.ts'
 import { ErroHttp } from '../../lib/erros.ts'
+import { baseDoPrSchema } from '../../lib/validacao.ts'
 import { consultarCargas } from '../../services/consultaCargas.ts'
 import { idSchema } from './comum.ts'
 
@@ -18,6 +19,7 @@ const filtrosSchema = z.object({
   exercicioId: idSchema.optional(),
   turmaId: idSchema.optional(),
   localId: idSchema.optional(),
+  base: baseDoPrSchema,
   // Ex.: "35,45". Sem o parâmetro, vêm todos os percentuais padrão.
   percentuais: z
     .string()
@@ -55,6 +57,7 @@ export function percentuaisRouter() {
     })
 
     res.json({
+      base: filtros.base,
       percentuais,
       resultados: consulta.resultados.map((r) => ({
         aluno: r.aluno,

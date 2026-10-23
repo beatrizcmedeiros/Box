@@ -1,7 +1,11 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useState } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router'
+import { EditarPr } from '../../components/EditarPr.tsx'
+import { SeletorBasePr } from '../../components/SeletorBasePr.tsx'
 import { Alerta, Botao, Carregando } from '../../components/ui.tsx'
 import { api, ErroApi } from '../../lib/api.ts'
+import { rotuloBase, useBasePr } from '../../lib/basePr.ts'
 import { useDetalhePr } from '../../lib/consultasAluno.ts'
 import { formatarData, formatarKg } from '../../lib/formato.ts'
 import type { Lancamento } from '../../lib/tipos.ts'
@@ -12,8 +16,10 @@ export function DetalheExercicio() {
   const exercicioId = Number(useParams().id)
   const { state, pathname } = useLocation()
   const navegar = useNavigate()
-  const detalhe = useDetalhePr(exercicioId)
+  const [base] = useBasePr()
+  const detalhe = useDetalhePr(exercicioId, base)
   const cliente = useQueryClient()
+  const [editando, setEditando] = useState<Lancamento | null>(null)
 
   const excluir = useMutation({
     mutationFn: (lancamento: Lancamento) =>
@@ -58,8 +64,12 @@ export function DetalheExercicio() {
           <Alerta tipo="sucesso">PR registrado!</Alerta>
         )}
 
+        <SeletorBasePr />
+
         <div className="rounded-2xl bg-white p-5 text-center shadow-sm">
-          <p className="text-xs font-semibold tracking-wide text-slate-500 uppercase">PR atual</p>
+          <p className="text-xs font-semibold tracking-wide text-slate-500 uppercase">
+            {rotuloBase(base)}
+          </p>
           <p className="mt-1 text-5xl font-extrabold tabular-nums">
             {formatarKg(pr.cargaKg)} <span className="text-xl text-slate-500">kg</span>
           </p>
@@ -124,6 +134,13 @@ export function DetalheExercicio() {
                 </span>
                 <span className="flex items-center gap-3">
                   <strong className="tabular-nums">{formatarKg(lancamento.cargaKg)} kg</strong>
+                  <Botao
+                    variante="link"
+                    aria-label={`Editar lançamento de ${formatarData(lancamento.dataTeste)}`}
+                    onClick={() => setEditando(lancamento)}
+                  >
+                    Editar
+                  </Botao>
                   {lancamento.origem === 'ALUNO' && (
                     <Botao
                       variante="link"
@@ -143,6 +160,21 @@ export function DetalheExercicio() {
             ))}
           </ul>
         </div>
+
+        {editando && (
+          <EditarPr
+            titulo={`Editar PR de ${exercicio.nome}`}
+            pr={editando}
+            caminho={`/me/prs/lancamentos/${editando.id}`}
+            aoFechar={() => setEditando(null)}
+            aoSalvar={() => {
+              setEditando(null)
+              navegar(pathname, { replace: true, state: null })
+              cliente.invalidateQueries({ queryKey: ['prs'] })
+              cliente.invalidateQueries({ queryKey: ['evolucao'] })
+            }}
+          />
+        )}
 
         <BotaoFlutuante para={`/aluno/prs/novo?exercicio=${exercicio.id}`}>
           + Registrar novo PR

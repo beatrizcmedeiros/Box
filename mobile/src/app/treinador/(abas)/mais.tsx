@@ -67,14 +67,7 @@ export default function Mais() {
             icone: 'people-circle-outline' as const,
           },
         ]
-      : [
-          {
-            para: '/' as Href,
-            rotulo: 'Meus PRs',
-            descricao: 'Os seus próprios PRs e cargas',
-            icone: 'trophy-outline' as const,
-          },
-        ]),
+      : []),
   ]
 
   return (

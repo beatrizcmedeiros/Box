@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { router, Stack, useLocalSearchParams } from 'expo-router'
 import { useState } from 'react'
 import { Alert, Text } from 'react-native'
+import { PrsDoAluno } from '../../components/PrsDoAluno'
 import { Chips } from '../../components/seletores'
 import { Alerta, Botao, Campo, Cartao, Carregando, Tela } from '../../components/ui'
 import { api, ErroApi, gestao } from '../../lib/api'
@@ -10,7 +11,7 @@ import { useContexto } from '../../lib/contexto'
 import { cores } from '../../lib/tema'
 import type { Aluno } from '../../lib/tipos'
 
-/** Organizar um aluno vinculado: turma, local e apelidos neste contexto, ou desvincular. */
+/** Aluno vinculado: turma, local e apelidos neste contexto, os PRs dele (com edição) ou desvincular. */
 export default function OrganizarAluno() {
   const { id } = useLocalSearchParams<{ id: string }>()
   const alunos = useAlunos({})
@@ -119,6 +120,8 @@ function Formulario({ aluno }: { aluno: Aluno }) {
           Salvar
         </Botao>
       </Cartao>
+
+      <PrsDoAluno alunoId={aluno.id} />
 
       <Cartao estilo={{ gap: 8 }}>
         <Text style={{ fontSize: 13, color: cores.textoSuave }}>

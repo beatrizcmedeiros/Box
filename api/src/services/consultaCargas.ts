@@ -15,6 +15,8 @@ export type FiltrosConsulta = {
   localId?: number
   ordenar: Ordenacao
   direcao: 'asc' | 'desc'
+  /** PR de cada aluno: o teste mais recente (padrão) ou a maior carga já registrada. */
+  base?: 'ultimo' | 'maior'
   pagina: number
   porPagina: number
 }
@@ -64,13 +66,19 @@ export async function consultarCargas(ctx: Contexto, filtros: FiltrosConsulta) {
     )`)
   }
 
+  // A linha 1 de cada aluno/exercício é o PR usado: o último teste ou o de maior carga
+  const ordemDoPr =
+    filtros.base === 'maior'
+      ? Prisma.sql`t.carga_kg DESC, t.data_teste DESC, t.criado_em DESC, t.id DESC`
+      : Prisma.sql`t.data_teste DESC, t.criado_em DESC, t.id DESC`
+
   const testesNumerados = Prisma.sql`
     WITH numerados AS (
       SELECT t.usuario_id, va.turma_id, t.exercicio_id, t.data_teste,
              t.carga_kg::float8 AS carga_kg, t.origem,
              ROW_NUMBER() OVER (
                PARTITION BY t.usuario_id, t.exercicio_id
-               ORDER BY t.data_teste DESC, t.criado_em DESC, t.id DESC
+               ORDER BY ${ordemDoPr}
              ) AS ordem
       FROM testes_carga t
       JOIN usuarios u ON u.id = t.usuario_id

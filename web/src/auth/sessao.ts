@@ -119,20 +119,6 @@ export const fazGestao = (usuario: Usuario) => usuario.tipo === 'ACADEMIA' || us
 export const rotaInicial = (usuario: Usuario) =>
   fazGestao(usuario) ? '/treinador/visao-geral' : '/aluno'
 
-/** Liga ou desliga a área do professor na conta da pessoa. */
-export function useSouProfessor() {
-  const atualizar = useAtualizarUsuario()
-  const cliente = useQueryClient()
-  return useMutation({
-    mutationFn: (ativo: boolean) =>
-      api<RespostaUsuario>('/professor/perfil', { method: 'PUT', body: { ativo } }),
-    onSuccess: (resposta) => {
-      atualizar(resposta)
-      cliente.invalidateQueries({ queryKey: ['contextos'] })
-    },
-  })
-}
-
 /** Exclusão definitiva da própria conta. */
 export function useExcluirConta() {
   const cliente = useQueryClient()

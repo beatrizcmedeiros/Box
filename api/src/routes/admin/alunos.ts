@@ -1,8 +1,10 @@
 import { Router } from 'express'
 import { z } from 'zod'
+import { dataDoTesteSchema, formatarData, paraData } from '../../lib/datas.ts'
 import { ErroHttp, naoEncontrado } from '../../lib/erros.ts'
 import { prisma } from '../../lib/prisma.ts'
 import { normalizarTexto } from '../../lib/texto.ts'
+import { cargaKgSchema } from '../../lib/validacao.ts'
 import { type Contexto, vinculoDoAluno, vinculoDoContexto } from '../../services/contexto.ts'
 import { idSchema, parseId } from './comum.ts'
 import { buscarTurma } from './turmas.ts'
@@ -12,6 +14,8 @@ const filtrosSchema = z.object({
   turmaId: idSchema.optional(),
   localId: idSchema.optional(),
 })
+
+const edicaoPrSchema = z.object({ dataTeste: dataDoTesteSchema, cargaKg: cargaKgSchema })
 
 // O que o professor ou a academia pode mudar no vínculo do aluno (não nos dados da conta dele)
 const vinculoSchema = z.object({
@@ -102,6 +106,47 @@ export function alunosRouter() {
     })
     const [atualizado] = await buscarVinculos({ where: { id: vinculo.id } })
     res.json(formatar(atualizado))
+  })
+
+  /** Todos os PRs do aluno (do mais recente ao mais antigo), para o professor corrigir. */
+  router.get('/:id/prs', async (req, res) => {
+    const vinculo = await vinculoDoAluno(req.contexto!, parseId(req.params.id))
+    const testes = await prisma.testeCarga.findMany({
+      where: { usuarioId: vinculo.alunoId },
+      include: { exercicio: { select: { id: true, nome: true } } },
+      orderBy: [{ dataTeste: 'desc' }, { criadoEm: 'desc' }, { id: 'desc' }],
+    })
+    res.json(
+      testes.map((t) => ({
+        id: t.id,
+        exercicio: t.exercicio,
+        dataTeste: formatarData(t.dataTeste),
+        cargaKg: t.cargaKg.toNumber(),
+        origem: t.origem,
+      })),
+    )
+  })
+
+  /** O professor ou a academia corrige a data ou a carga de qualquer PR do aluno vinculado. */
+  router.put('/:id/prs/:prId', async (req, res) => {
+    const vinculo = await vinculoDoAluno(req.contexto!, parseId(req.params.id))
+    const { dataTeste, cargaKg } = edicaoPrSchema.parse(req.body)
+    const teste = await prisma.testeCarga.findFirst({
+      where: { id: parseId(req.params.prId), usuarioId: vinculo.alunoId },
+      include: { exercicio: { select: { id: true, nome: true } } },
+    })
+    if (!teste) throw naoEncontrado('PR')
+    const atualizado = await prisma.testeCarga.update({
+      where: { id: teste.id },
+      data: { dataTeste: paraData(dataTeste), cargaKg },
+    })
+    res.json({
+      id: atualizado.id,
+      exercicio: teste.exercicio,
+      dataTeste: formatarData(atualizado.dataTeste),
+      cargaKg: atualizado.cargaKg.toNumber(),
+      origem: atualizado.origem,
+    })
   })
 
   /** Desfaz o vínculo: o aluno continua com a conta e os PRs; o contexto deixa de vê-los. */

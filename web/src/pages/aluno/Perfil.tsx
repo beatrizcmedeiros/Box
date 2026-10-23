@@ -1,12 +1,6 @@
 import { type FormEvent, useState } from 'react'
 import { Link } from 'react-router'
-import {
-  useExcluirConta,
-  useLogout,
-  useSouProfessor,
-  useTrocarSenha,
-  useUsuario,
-} from '../../auth/sessao.ts'
+import { useExcluirConta, useLogout, useTrocarSenha, useUsuario } from '../../auth/sessao.ts'
 import { SecaoInstalacao } from '../../components/Instalacao.tsx'
 import { Alerta, Botao, Campo, Modal } from '../../components/ui.tsx'
 import { ErroApi } from '../../lib/api.ts'
@@ -30,7 +24,7 @@ export function Perfil() {
             <dd>{usuario?.email}</dd>
           </div>
         </dl>
-        <SouProfessor />
+        <AreaDoProfessor />
         <SecaoInstalacao />
         <TrocarSenha />
         <p className="px-1 text-xs text-slate-500">
@@ -60,36 +54,17 @@ export function Perfil() {
   )
 }
 
-/** "Sou professor": ativa a área de gestão (alunos, turmas, códigos) na mesma conta. */
-function SouProfessor() {
+/** Atalho de volta para a área do professor (ser professor se escolhe só no cadastro). */
+function AreaDoProfessor() {
   const { data: usuario } = useUsuario()
-  const alterar = useSouProfessor()
-  if (!usuario) return null
+  if (!usuario?.ehProfessor) return null
   return (
-    <div className="space-y-2 rounded-2xl bg-white p-4 text-sm shadow-sm">
-      <label className="flex items-center justify-between gap-3">
-        <span>
-          <span className="block font-semibold">Sou professor</span>
-          <span className="text-slate-500">Acompanhe os seus alunos com a mesma conta</span>
-        </span>
-        <input
-          type="checkbox"
-          className="size-5 accent-marca"
-          checked={usuario.ehProfessor}
-          disabled={alterar.isPending}
-          onChange={(e) => alterar.mutate(e.target.checked)}
-        />
-      </label>
-      {usuario.ehProfessor && (
-        <Link
-          to="/treinador/visao-geral"
-          className="block font-semibold text-marca-escura hover:underline"
-        >
-          Ir para a área do professor →
-        </Link>
-      )}
-      {alterar.error && <Alerta>{alterar.error.message}</Alerta>}
-    </div>
+    <Link
+      to="/treinador/visao-geral"
+      className="block rounded-2xl bg-white p-4 text-sm font-semibold text-marca-escura shadow-sm hover:underline"
+    >
+      Ir para a área do professor →
+    </Link>
   )
 }
 

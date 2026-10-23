@@ -1,7 +1,9 @@
 import { useState } from 'react'
 import { Pressable, ScrollView, Text } from 'react-native'
 import { BotaoRegistrar, CartaoPercentuais } from '../../../components/aluno'
+import { SeletorBasePr } from '../../../components/SeletorBasePr'
 import { Alerta, Cartao, Carregando, Tela } from '../../../components/ui'
+import { useBasePr } from '../../../lib/basePr'
 import { usePrs } from '../../../lib/consultas'
 import { useUsuario } from '../../../lib/sessao'
 import { cores } from '../../../lib/tema'
@@ -16,7 +18,8 @@ const filtros: { valor: CategoriaExercicio | null; rotulo: string }[] = [
 /** Tela inicial do aluno: cargas de 35% a 55% do PR de cada exercício. */
 export default function Percentuais() {
   const { data: usuario } = useUsuario()
-  const prs = usePrs()
+  const [base] = useBasePr()
+  const prs = usePrs(base)
   const [categoria, setCategoria] = useState<CategoriaExercicio | null>(null)
 
   const visiveis = prs.data?.filter((r) => !categoria || r.exercicio.categoria === categoria) ?? []
@@ -44,6 +47,7 @@ export default function Percentuais() {
         </Cartao>
       ) : (
         <>
+          <SeletorBasePr />
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
             {filtros
               .filter((f) => !f.valor || categoriasComPr.has(f.valor))

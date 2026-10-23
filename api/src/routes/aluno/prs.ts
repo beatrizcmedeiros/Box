@@ -6,7 +6,7 @@ import { dataDoTesteSchema, formatarData, paraData } from '../../lib/datas.ts'
 import { ErroHttp, naoEncontrado } from '../../lib/erros.ts'
 import { prisma } from '../../lib/prisma.ts'
 import { exerciciosDoAluno } from '../../services/contexto.ts'
-import { cargaKgSchema } from '../../lib/validacao.ts'
+import { type BaseDoPr, baseDoPrSchema, cargaKgSchema } from '../../lib/validacao.ts'
 import { parseId } from '../admin/comum.ts'
 
 const novoPrSchema = z.object({
@@ -14,6 +14,9 @@ const novoPrSchema = z.object({
   dataTeste: dataDoTesteSchema,
   cargaKg: cargaKgSchema,
 })
+
+const edicaoSchema = z.object({ dataTeste: dataDoTesteSchema, cargaKg: cargaKgSchema })
+const consultaSchema = z.object({ base: baseDoPrSchema })
 
 type TesteComExercicio = TesteCarga & { exercicio: Exercicio }
 
@@ -29,31 +32,40 @@ function formatarTeste(teste: TesteCarga) {
 // O PR vigente é o teste mais recente; em caso de mesma data, o último lançado
 const ordemVigente = [{ dataTeste: 'desc' }, { criadoEm: 'desc' }, { id: 'desc' }] as const
 
+/** Maior carga já registrada; no empate, o teste mais recente (a lista vem do mais novo). */
+function maiorTeste(testes: TesteComExercicio[]) {
+  return testes.reduce((maior, t) => (t.cargaKg.greaterThan(maior.cargaKg) ? t : maior))
+}
+
 /**
- * Resumo de um exercício: PR vigente, cargas por percentual e se o vigente é um
- * novo recorde (maior que todos os testes anteriores).
+ * Resumo de um exercício: o PR usado nas porcentagens (o último teste ou o maior, conforme
+ * a base escolhida), as cargas por percentual e se o último teste é um novo recorde.
  */
-function resumir([vigente, ...anteriores]: TesteComExercicio[]) {
-  const cargaKg = vigente.cargaKg.toNumber()
+function resumir(testes: TesteComExercicio[], base: BaseDoPr) {
+  const [ultimo, ...anteriores] = testes
+  const pr = base === 'maior' ? maiorTeste(testes) : ultimo
+  const ultimoKg = ultimo.cargaKg.toNumber()
   const melhorAnterior = Math.max(...anteriores.map((t) => t.cargaKg.toNumber()))
   return {
     exercicio: {
-      id: vigente.exercicio.id,
-      nome: vigente.exercicio.nome,
-      categoria: vigente.exercicio.categoria,
+      id: ultimo.exercicio.id,
+      nome: ultimo.exercicio.nome,
+      categoria: ultimo.exercicio.categoria,
     },
-    pr: formatarTeste(vigente),
-    percentuais: calcularPercentuais(cargaKg),
-    novoRecorde: anteriores.length > 0 && cargaKg > melhorAnterior,
-    diferencaKg: anteriores.length > 0 ? cargaKg - anteriores[0].cargaKg.toNumber() : null,
+    base,
+    pr: formatarTeste(pr),
+    percentuais: calcularPercentuais(pr.cargaKg.toNumber()),
+    novoRecorde: anteriores.length > 0 && ultimoKg > melhorAnterior,
+    diferencaKg: anteriores.length > 0 ? ultimoKg - anteriores[0].cargaKg.toNumber() : null,
   }
 }
 
 export function prsRouter() {
   const router = Router()
 
-  /** PR vigente de cada exercício, com as cargas de 35% a 55% já calculadas. */
+  /** PR de cada exercício (último ou maior), com as cargas de 35% a 55% já calculadas. */
   router.get('/', async (req, res) => {
+    const { base } = consultaSchema.parse(req.query)
     const testes = await prisma.testeCarga.findMany({
       where: { usuarioId: req.usuario!.id },
       include: { exercicio: true },
@@ -68,7 +80,7 @@ export function prsRouter() {
     }
 
     const resumos = [...porExercicio.values()]
-      .map(resumir)
+      .map((lista) => resumir(lista, base))
       .sort((a, b) => a.exercicio.nome.localeCompare(b.exercicio.nome, 'pt-BR'))
     res.json(resumos)
   })
@@ -76,6 +88,7 @@ export function prsRouter() {
   /** Detalhe de um exercício: resumo + histórico completo de testes. */
   router.get('/:exercicioId', async (req, res) => {
     const exercicioId = parseId(req.params.exercicioId)
+    const { base } = consultaSchema.parse(req.query)
     const testes = await prisma.testeCarga.findMany({
       where: { usuarioId: req.usuario!.id, exercicioId },
       include: { exercicio: true },
@@ -83,7 +96,7 @@ export function prsRouter() {
     })
     if (testes.length === 0) throw naoEncontrado('PR deste exercício')
 
-    res.json({ ...resumir(testes), historico: testes.map(formatarTeste) })
+    res.json({ ...resumir(testes, base), historico: testes.map(formatarTeste) })
   })
 
   router.post('/', async (req, res) => {
@@ -105,6 +118,19 @@ export function prsRouter() {
       },
     })
     res.status(201).json(formatarTeste(teste))
+  })
+
+  /** O aluno corrige a data ou a carga de qualquer PR dele, inclusive os lançados pelo professor. */
+  router.put('/lancamentos/:id', async (req, res) => {
+    const id = parseId(req.params.id)
+    const { dataTeste, cargaKg } = edicaoSchema.parse(req.body)
+    const teste = await prisma.testeCarga.findFirst({ where: { id, usuarioId: req.usuario!.id } })
+    if (!teste) throw naoEncontrado('Lançamento')
+    const atualizado = await prisma.testeCarga.update({
+      where: { id },
+      data: { dataTeste: paraData(dataTeste), cargaKg },
+    })
+    res.json(formatarTeste(atualizado))
   })
 
   /** O aluno pode apagar um lançamento próprio feito por engano (não os importados pelo treinador). */

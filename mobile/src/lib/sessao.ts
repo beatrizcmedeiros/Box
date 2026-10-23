@@ -81,18 +81,6 @@ export const useRedefinirSenha = () =>
   })
 
 /** Liga ou desliga a área do professor na conta da pessoa. */
-export function useSouProfessor() {
-  const cliente = useQueryClient()
-  return useMutation({
-    mutationFn: (ativo: boolean) =>
-      api<{ usuario: Usuario }>('/professor/perfil', { method: 'PUT', body: { ativo } }),
-    onSuccess: ({ usuario }) => {
-      cliente.setQueryData(CHAVE_USUARIO, usuario)
-      cliente.invalidateQueries({ queryKey: ['contextos'] })
-    },
-  })
-}
-
 /** Pode usar a área de gestão: academia ou professor. */
 export const fazGestao = (u: Usuario) => u.tipo === 'ACADEMIA' || u.ehProfessor
 

@@ -1,7 +1,9 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
+import { SeletorBasePr } from '../../components/SeletorBasePr.tsx'
 import { Alerta, Botao, Campo, Carregando, Selecao } from '../../components/ui.tsx'
 import { api, gestao } from '../../lib/api.ts'
+import { useBasePr } from '../../lib/basePr.ts'
 import { useExercicios, useTurmas } from '../../lib/consultas.ts'
 import { formatarData, formatarKg } from '../../lib/formato.ts'
 import type { ConsultaPercentuais, LinhaPercentuais } from '../../lib/tipos.ts'
@@ -24,6 +26,7 @@ export function PercentuaisAlunos() {
   const exercicioId = params.get('exercicioId') ?? ''
   const turmaId = params.get('turmaId') ?? ''
   const escolhidos = lerPercentuais(params.get('p'))
+  const [base] = useBasePr()
 
   // O texto digitado só vira filtro após uma pausa, para não consultar a cada tecla
   const [textoBusca, setTextoBusca] = useState(busca)
@@ -62,6 +65,7 @@ export function PercentuaisAlunos() {
   if (busca) consultaParams.set('busca', busca)
   if (exercicioId) consultaParams.set('exercicioId', exercicioId)
   if (turmaId) consultaParams.set('turmaId', turmaId)
+  if (base === 'maior') consultaParams.set('base', base)
 
   const consulta = useQuery({
     queryKey: ['percentuais', consultaParams.toString()],
@@ -124,6 +128,8 @@ export function PercentuaisAlunos() {
             ))}
           </Selecao>
         </div>
+
+        <SeletorBasePr className="mt-4" />
 
         <fieldset className="mt-4">
           <legend className="text-xs font-semibold tracking-wide text-slate-500 uppercase">

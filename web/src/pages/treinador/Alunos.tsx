@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { type FormEvent, useState } from 'react'
 import { Link } from 'react-router'
+import { PrsDoAluno } from './PrsDoAluno.tsx'
 import { Alerta, Botao, Campo, Carregando, Etiqueta, Modal, Selecao } from '../../components/ui.tsx'
 import { api, ErroApi, gestao } from '../../lib/api.ts'
 import { useLocais, useTurmas } from '../../lib/consultas.ts'
@@ -21,6 +22,7 @@ export function Alunos() {
   const pessoal = contexto.tipo === 'professor'
   const [filtros, setFiltros] = useState<Filtros>({ busca: '', turmaId: '', localId: '' })
   const [editando, setEditando] = useState<Aluno | null>(null)
+  const [vendoPrs, setVendoPrs] = useState<Aluno | null>(null)
 
   const params = new URLSearchParams(Object.entries(filtros).filter(([, v]) => v !== ''))
   const alunos = useQuery({
@@ -144,6 +146,9 @@ export function Alunos() {
                     )}
                   </td>
                   <td className="space-x-3 px-4 py-3 text-right whitespace-nowrap">
+                    <Botao variante="link" onClick={() => setVendoPrs(aluno)}>
+                      PRs
+                    </Botao>
                     <Botao variante="link" onClick={() => setEditando(aluno)}>
                       Organizar
                     </Botao>
@@ -165,6 +170,8 @@ export function Alunos() {
           </table>
         )}
       </div>
+
+      {vendoPrs && <PrsDoAluno aluno={vendoPrs} aoFechar={() => setVendoPrs(null)} />}
 
       {editando && (
         <OrganizarAluno

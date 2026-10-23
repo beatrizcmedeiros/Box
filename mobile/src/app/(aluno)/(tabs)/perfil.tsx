@@ -1,16 +1,10 @@
 import { useState } from 'react'
 import { router } from 'expo-router'
-import { Modal, Switch, Text, View } from 'react-native'
+import { Modal, Text, View } from 'react-native'
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller'
 import { Alerta, Botao, Campo, Cartao, Tela, Titulo } from '../../../components/ui'
 import { ErroApi } from '../../../lib/api'
-import {
-  useExcluirConta,
-  useLogout,
-  useSouProfessor,
-  useTrocarSenha,
-  useUsuario,
-} from '../../../lib/sessao'
+import { useExcluirConta, useLogout, useTrocarSenha, useUsuario } from '../../../lib/sessao'
 import { cores } from '../../../lib/tema'
 import { LinkPrivacidade } from '../../../components/LinkPrivacidade'
 
@@ -24,7 +18,7 @@ export default function Perfil() {
         <Dado rotulo="Nome" valor={usuario?.nome} />
         <Dado rotulo="E-mail" valor={usuario?.email} />
       </Cartao>
-      <SouProfessor />
+      <AreaDoProfessor />
       <TrocarSenha />
       {logout.error && <Alerta>Sem conexão: para sair da conta, conecte-se à internet.</Alerta>}
       <Botao
@@ -195,34 +189,13 @@ function ExcluirConta() {
   )
 }
 
-/** "Sou professor": ativa a área de gestão (alunos, turmas, códigos) na mesma conta. */
-function SouProfessor() {
+/** Atalho de volta para a área do professor (ser professor se escolhe só no cadastro). */
+function AreaDoProfessor() {
   const { data: usuario } = useUsuario()
-  const alterar = useSouProfessor()
-  if (!usuario) return null
+  if (!usuario?.ehProfessor) return null
   return (
-    <Cartao estilo={{ gap: 10 }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-        <View style={{ flex: 1 }}>
-          <Text style={{ fontWeight: '700', color: cores.texto }}>Sou professor</Text>
-          <Text style={{ fontSize: 13, color: cores.textoSuave }}>
-            Acompanhe os seus alunos com a mesma conta
-          </Text>
-        </View>
-        <Switch
-          accessibilityLabel="Sou professor"
-          value={usuario.ehProfessor}
-          disabled={alterar.isPending}
-          onValueChange={(v) => alterar.mutate(v)}
-          trackColor={{ true: cores.marca }}
-        />
-      </View>
-      {usuario.ehProfessor && (
-        <Botao variante="secundario" aoPressionar={() => router.push('/treinador')}>
-          Ir para a área do professor
-        </Botao>
-      )}
-      {alterar.error && <Alerta>{alterar.error.message}</Alerta>}
-    </Cartao>
+    <Botao variante="secundario" aoPressionar={() => router.push('/treinador')}>
+      Ir para a área do professor
+    </Botao>
   )
 }
