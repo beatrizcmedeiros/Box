@@ -1,4 +1,5 @@
-import type { ReactNode } from 'react'
+import Ionicons from '@expo/vector-icons/Ionicons'
+import { type ReactNode, useState } from 'react'
 import {
   ActivityIndicator,
   Pressable,
@@ -139,21 +140,45 @@ export function Campo({
   erro,
   dica,
   grande,
+  secureTextEntry,
   ...props
 }: TextInputProps & { rotulo: string; erro?: string; dica?: string; grande?: boolean }) {
+  // Campo de senha: o "olhinho" mostra ou oculta o que foi digitado
+  const [senhaVisivel, setSenhaVisivel] = useState(false)
+  const ehSenha = !!secureTextEntry
+
   return (
     <View style={{ gap: 6 }}>
       <Text style={estilos.rotulo}>{rotulo}</Text>
-      <TextInput
-        accessibilityLabel={rotulo}
-        placeholderTextColor="#94a3b8"
-        style={[
-          estilos.campo,
-          grande && estilos.campoGrande,
-          !!erro && { borderColor: cores.erro },
-        ]}
-        {...props}
-      />
+      <View style={{ justifyContent: 'center' }}>
+        <TextInput
+          accessibilityLabel={rotulo}
+          placeholderTextColor="#94a3b8"
+          secureTextEntry={ehSenha && !senhaVisivel}
+          style={[
+            estilos.campo,
+            grande && estilos.campoGrande,
+            ehSenha && { paddingRight: 48 },
+            !!erro && { borderColor: cores.erro },
+          ]}
+          {...props}
+        />
+        {ehSenha && (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={senhaVisivel ? 'Ocultar senha' : 'Mostrar senha'}
+            onPress={() => setSenhaVisivel((v) => !v)}
+            hitSlop={8}
+            style={{ position: 'absolute', right: 12, padding: 4 }}
+          >
+            <Ionicons
+              name={senhaVisivel ? 'eye-off-outline' : 'eye-outline'}
+              size={22}
+              color={cores.textoSuave}
+            />
+          </Pressable>
+        )}
+      </View>
       {erro ? (
         <Text style={{ color: cores.erro, fontSize: 13 }}>{erro}</Text>
       ) : dica ? (
