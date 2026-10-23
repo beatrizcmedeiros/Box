@@ -11,7 +11,7 @@ import { RegistrarPr } from './pages/aluno/RegistrarPr.tsx'
 import { Login } from './pages/Login.tsx'
 import { Cadastro } from './pages/Cadastro.tsx'
 import { EsqueciSenha } from './pages/EsqueciSenha.tsx'
-import { ConfirmarEmail, Termo } from './pages/PrimeiroAcesso.tsx'
+import { Termo } from './pages/PrimeiroAcesso.tsx'
 import { InstrucoesExcluirConta, Privacidade } from './pages/Privacidade.tsx'
 import { Alunos } from './pages/treinador/Alunos.tsx'
 import { ConsultarCargas } from './pages/treinador/ConsultarCargas.tsx'
@@ -34,14 +34,6 @@ export const rotas: RouteObject[] = [
   // Páginas públicas exigidas pela Google Play (abertas sem login)
   { path: '/privacidade', element: <Privacidade /> },
   { path: '/excluir-conta', element: <InstrucoesExcluirConta /> },
-  {
-    path: '/primeiro-acesso/email',
-    element: (
-      <RotaProtegida etapa="email">
-        <ConfirmarEmail />
-      </RotaProtegida>
-    ),
-  },
   {
     path: '/primeiro-acesso/termo',
     element: (

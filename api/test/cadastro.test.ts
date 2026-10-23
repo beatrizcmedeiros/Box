@@ -17,10 +17,6 @@ function ultimoCodigo(email: string) {
   return enviado?.texto.match(/\b(\d{6})\b/)?.[1]
 }
 
-/** Permite pedir outro código sem esperar 1 minuto. */
-const liberarReenvio = () =>
-  prisma.codigoEmail.updateMany({ data: { criadoEm: new Date(Date.now() - 2 * 60_000) } })
-
 async function cadastrar(dados: Record<string, unknown>) {
   const agente = request.agent(app)
   const res = await agente.post('/api/auth/cadastro').send(dados)
@@ -28,7 +24,7 @@ async function cadastrar(dados: Record<string, unknown>) {
 }
 
 describe('POST /api/auth/cadastro', () => {
-  it('cria a conta, já entra logado e envia o código de confirmação', async () => {
+  it('cria a conta e já entra logado, sem código de confirmação por e-mail', async () => {
     const { agente, res } = await cadastrar({
       nome: 'Ana Souza',
       email: 'Ana@Teste.com',
@@ -41,15 +37,16 @@ describe('POST /api/auth/cadastro', () => {
       email: 'ana@teste.com',
       tipo: 'PESSOA',
       ehProfessor: false,
-      emailConfirmado: false,
       consentimentoPendente: true,
     })
-    expect(ultimoCodigo('ana@teste.com')).toMatch(/^\d{6}$/)
+    expect(caixaDeSaida).toHaveLength(0)
 
-    // Logado, mas só usa o sistema depois de confirmar o e-mail
+    // Logado; só falta aceitar o termo para usar o sistema
     expect((await agente.get('/api/auth/me')).status).toBe(200)
     const bloqueado = await agente.get('/api/me/prs')
-    expect(bloqueado.body.codigo).toBe('EMAIL_NAO_CONFIRMADO')
+    expect(bloqueado.body.codigo).toBe('CONSENTIMENTO_PENDENTE')
+    await agente.post('/api/auth/consentimento')
+    expect((await agente.get('/api/me/prs')).status).toBe(200)
   })
 
   it('cadastra professor e academia', async () => {
@@ -75,19 +72,15 @@ describe('POST /api/auth/cadastro', () => {
     })
   })
 
-  it('avisa quando o código não pôde ser enviado (envio de e-mail não configurado)', async () => {
+  it('cadastra mesmo sem envio de e-mail configurado', async () => {
     const anterior = process.env.NODE_ENV
     process.env.NODE_ENV = 'production'
     try {
       const { res } = await cadastrar({ nome: 'Ana', email: 'ana@t.com', senha: 'senha-forte-123' })
       expect(res.status).toBe(201)
-      expect(res.body.emailEnviado).toBe(false)
     } finally {
       process.env.NODE_ENV = anterior
     }
-    // Em desenvolvimento e testes, o código vai para a caixa de saída
-    const outro = await cadastrar({ nome: 'Bia', email: 'bia@t.com', senha: 'senha-forte-123' })
-    expect(outro.res.body.emailEnviado).toBe(true)
   })
 
   it('recusa e-mail já cadastrado e senha curta', async () => {
@@ -102,66 +95,6 @@ describe('POST /api/auth/cadastro', () => {
 
     const curta = await cadastrar({ nome: 'Bia', email: 'bia@teste.com', senha: 'curta' })
     expect(curta.res.status).toBe(400)
-  })
-})
-
-describe('confirmação do e-mail', () => {
-  it('libera o uso depois do código certo e do termo', async () => {
-    const { agente } = await cadastrar({
-      nome: 'Ana',
-      email: 'ana@t.com',
-      senha: 'senha-forte-123',
-    })
-
-    const errado = await agente.post('/api/auth/confirmar-email').send({ codigo: '000000' })
-    expect(errado.body.codigo).toBe('CODIGO_INVALIDO')
-
-    const certo = await agente
-      .post('/api/auth/confirmar-email')
-      .send({ codigo: ultimoCodigo('ana@t.com') })
-    expect(certo.body.usuario.emailConfirmado).toBe(true)
-
-    await agente.post('/api/auth/consentimento')
-    expect((await agente.get('/api/me/prs')).status).toBe(200)
-  })
-
-  it('o código vale só 5 tentativas; um código novo invalida o anterior', async () => {
-    const { agente } = await cadastrar({
-      nome: 'Ana',
-      email: 'ana@t.com',
-      senha: 'senha-forte-123',
-    })
-    const primeiro = ultimoCodigo('ana@t.com')!
-
-    for (let i = 0; i < 5; i++) {
-      await agente.post('/api/auth/confirmar-email').send({ codigo: '999999' })
-    }
-    const esgotado = await agente.post('/api/auth/confirmar-email').send({ codigo: primeiro })
-    expect(esgotado.body.codigo).toBe('CODIGO_INVALIDO')
-
-    // Reenviar logo em seguida é recusado; depois de 1 minuto, chega um código novo
-    expect((await agente.post('/api/auth/reenviar-confirmacao')).body.codigo).toBe(
-      'AGUARDE_REENVIO',
-    )
-    await liberarReenvio()
-    expect((await agente.post('/api/auth/reenviar-confirmacao')).status).toBe(204)
-    const novo = ultimoCodigo('ana@t.com')!
-
-    const res = await agente.post('/api/auth/confirmar-email').send({ codigo: novo })
-    expect(res.body.usuario.emailConfirmado).toBe(true)
-  })
-
-  it('código expirado não vale', async () => {
-    const { agente } = await cadastrar({
-      nome: 'Ana',
-      email: 'ana@t.com',
-      senha: 'senha-forte-123',
-    })
-    await prisma.codigoEmail.updateMany({ data: { expiraEm: new Date(Date.now() - 1000) } })
-    const res = await agente
-      .post('/api/auth/confirmar-email')
-      .send({ codigo: ultimoCodigo('ana@t.com') })
-    expect(res.body.codigo).toBe('CODIGO_INVALIDO')
   })
 })
 

@@ -13,7 +13,6 @@ export type Usuario = {
   ehProfessor: boolean
   /** Preenchido na conta da academia */
   academia: TurmaResumo | null
-  emailConfirmado: boolean
   consentimentoPendente: boolean
 }
 
@@ -76,7 +75,7 @@ export type SerieExercicio = {
 /** Tokens que a API entrega ao app (cabeçalho X-Prbox-Cliente: app). */
 export type Tokens = { acesso: string; refresh: string; acessoExpiraEm: string }
 
-export type RespostaSessao = { usuario: Usuario; tokens: Tokens; emailEnviado?: boolean }
+export type RespostaSessao = { usuario: Usuario; tokens: Tokens }
 
 // ---- Área do treinador (espelha web/src/lib/tipos.ts) ----
 

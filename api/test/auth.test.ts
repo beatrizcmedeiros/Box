@@ -118,7 +118,7 @@ describe('refresh e logout', () => {
 })
 
 describe('primeiro acesso e senha', () => {
-  it('exige confirmar o e-mail e aceitar o termo antes de usar o sistema', async () => {
+  it('exige aceitar o termo antes de usar o sistema', async () => {
     await criarUsuario({
       email: 'treinador@teste.com',
       perfil: 'TREINADOR',
@@ -127,15 +127,8 @@ describe('primeiro acesso e senha', () => {
     })
     const agente = await logar(app, 'treinador@teste.com')
 
+    // E-mail não confirmado não bloqueia mais: só o termo
     let res = await agente.get(admin('/turmas'))
-    expect(res.status).toBe(403)
-    expect(res.body.codigo).toBe('EMAIL_NAO_CONFIRMADO')
-
-    await prisma.usuario.update({
-      where: { email: 'treinador@teste.com' },
-      data: { emailVerificadoEm: new Date() },
-    })
-    res = await agente.get(admin('/turmas'))
     expect(res.status).toBe(403)
     expect(res.body.codigo).toBe('CONSENTIMENTO_PENDENTE')
 

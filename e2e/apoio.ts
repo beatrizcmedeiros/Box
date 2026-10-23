@@ -1,6 +1,5 @@
 import { type Browser, devices, expect, type Page } from '@playwright/test'
-import pg from 'pg'
-import { bancoE2e, E2E } from '../playwright.config.ts'
+import { E2E } from '../playwright.config.ts'
 
 export { E2E }
 
@@ -32,17 +31,3 @@ export async function abrirCelular(browser: Browser) {
 /** Data de hoje no fuso do box, no formato AAAA-MM-DD. */
 export const hoje = () =>
   new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(new Date())
-
-/**
- * O código de confirmação vai por e-mail (nos testes não há envio). Marca o e-mail como
- * confirmado direto no banco de testes; o fluxo da tela de código é testado no front e na API.
- */
-export async function confirmarEmailNoBanco(email: string) {
-  const cliente = new pg.Client({ connectionString: bancoE2e.replace(/\?.*$/, '') })
-  await cliente.connect()
-  try {
-    await cliente.query('UPDATE usuarios SET email_verificado_em = now() WHERE email = $1', [email])
-  } finally {
-    await cliente.end()
-  }
-}

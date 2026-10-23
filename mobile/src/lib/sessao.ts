@@ -58,37 +58,13 @@ export type DadosCadastro = {
   ehProfessor: boolean
 }
 
-/** false quando a API não conseguiu enviar o código de confirmação no cadastro. */
-export const CHAVE_EMAIL_ENVIADO = ['email-enviado'] as const
-
-/** Cria a conta e já entra; o próximo passo é confirmar o e-mail. */
+/** Cria a conta e já entra; o próximo passo é aceitar o termo. */
 export function useCadastro() {
   const aplicar = useAplicarSessao()
-  const cliente = useQueryClient()
   return useMutation({
     mutationFn: (dados: DadosCadastro) =>
       api<RespostaSessao>('/auth/cadastro', { method: 'POST', body: dados }),
-    onSuccess: async (resposta) => {
-      cliente.setQueryData(CHAVE_EMAIL_ENVIADO, resposta.emailEnviado !== false)
-      await aplicar(resposta)
-    },
-  })
-}
-
-export function useConfirmarEmail() {
-  const cliente = useQueryClient()
-  return useMutation({
-    mutationFn: (codigo: string) =>
-      api<{ usuario: Usuario }>('/auth/confirmar-email', { method: 'POST', body: { codigo } }),
-    onSuccess: ({ usuario }) => cliente.setQueryData(CHAVE_USUARIO, usuario),
-  })
-}
-
-export function useReenviarConfirmacao() {
-  const cliente = useQueryClient()
-  return useMutation({
-    mutationFn: () => api<void>('/auth/reenviar-confirmacao', { method: 'POST' }),
-    onSuccess: () => cliente.setQueryData(CHAVE_EMAIL_ENVIADO, true),
+    onSuccess: (resposta) => aplicar(resposta),
   })
 }
 

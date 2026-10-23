@@ -94,28 +94,20 @@ describe('acesso', () => {
 })
 
 describe('cadastro e primeiro acesso', () => {
-  it('cria a conta de professor, confirma o e-mail, aceita o termo e entra na gestão', async () => {
+  it('cria a conta de professor, aceita o termo e entra na gestão (sem código por e-mail)', async () => {
     const novo = usuario({
       id: 7,
       nome: 'Carla',
       email: 'carla@t.com',
       ehProfessor: true,
-      emailConfirmado: false,
       consentimentoPendente: true,
     })
     const chamadas = simularApi({
       'GET /api/auth/me': semSessao,
       'POST /api/auth/refresh': semSessao,
       'POST /api/auth/cadastro': { status: 201, body: { usuario: novo } },
-      'POST /api/auth/confirmar-email': (corpo) =>
-        (corpo as { codigo: string }).codigo === '123456'
-          ? { body: { usuario: { ...novo, emailConfirmado: true } } }
-          : {
-              status: 400,
-              body: { erro: 'Código inválido ou expirado.', codigo: 'CODIGO_INVALIDO' },
-            },
       'POST /api/auth/consentimento': {
-        body: { usuario: { ...novo, emailConfirmado: true, consentimentoPendente: false } },
+        body: { usuario: { ...novo, consentimentoPendente: false } },
       },
       'GET /api/c/1/visao-geral': {
         body: {
@@ -141,15 +133,7 @@ describe('cadastro e primeiro acesso', () => {
     await pessoa.type(screen.getByLabelText('Confirme a senha'), 'senha-forte-1')
     await pessoa.click(screen.getByRole('button', { name: 'Criar conta' }))
 
-    // Confirmação do e-mail
-    const campo = await screen.findByLabelText('Código')
-    await pessoa.type(campo, '000000')
-    await pessoa.click(screen.getByRole('button', { name: 'Confirmar e-mail' }))
-    expect(await screen.findByText(/Código inválido/)).toBeInTheDocument()
-    await pessoa.clear(campo)
-    await pessoa.type(campo, '123456')
-    await pessoa.click(screen.getByRole('button', { name: 'Confirmar e-mail' }))
-
+    // Vai direto para o termo, sem pedir código
     await pessoa.click(await screen.findByRole('button', { name: 'Li e aceito' }))
     expect(await screen.findByRole('heading', { name: 'Olá, Carla' })).toBeInTheDocument()
     expect(router.state.location.pathname).toBe('/treinador/visao-geral')
