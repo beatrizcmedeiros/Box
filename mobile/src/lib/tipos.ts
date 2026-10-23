@@ -76,7 +76,7 @@ export type SerieExercicio = {
 /** Tokens que a API entrega ao app (cabeçalho X-Prbox-Cliente: app). */
 export type Tokens = { acesso: string; refresh: string; acessoExpiraEm: string }
 
-export type RespostaSessao = { usuario: Usuario; tokens: Tokens }
+export type RespostaSessao = { usuario: Usuario; tokens: Tokens; emailEnviado?: boolean }
 
 // ---- Área do treinador (espelha web/src/lib/tipos.ts) ----
 

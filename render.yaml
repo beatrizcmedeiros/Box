@@ -36,3 +36,8 @@ services:
       # Ex.: PR Box <nao-responda@seudominio.com.br> (domínio verificado no Resend)
       - key: EMAIL_REMETENTE
         sync: false
+      # Alternativa ao Resend: SMTP (ex.: Gmail com senha de app) — ver docs/deploy.md
+      - key: EMAIL_SMTP_USUARIO
+        sync: false
+      - key: EMAIL_SMTP_SENHA
+        sync: false

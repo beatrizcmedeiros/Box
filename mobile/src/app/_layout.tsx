@@ -6,6 +6,7 @@ import * as SplashScreen from 'expo-splash-screen'
 import { StatusBar } from 'expo-status-bar'
 import { useEffect } from 'react'
 import { AppState, Platform } from 'react-native'
+import { KeyboardProvider } from 'react-native-keyboard-controller'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { Alerta, Botao, TelaPublica } from '../components/ui'
 import { definirAoPerderSessao, ErroApi } from '../lib/api'
@@ -49,10 +50,13 @@ export default function LayoutRaiz() {
       persistOptions={{ persister: persistidor, maxAge: VALIDADE_CACHE, buster: VERSAO_CACHE }}
       onSuccess={() => cliente.resumePausedMutations()}
     >
-      <SafeAreaProvider>
-        <StatusBar style="light" />
-        <Navegacao />
-      </SafeAreaProvider>
+      {/* Mantém os campos visíveis acima do teclado (telas de rolagem e modais) */}
+      <KeyboardProvider>
+        <SafeAreaProvider>
+          <StatusBar style="light" />
+          <Navegacao />
+        </SafeAreaProvider>
+      </KeyboardProvider>
     </PersistQueryClientProvider>
   )
 }

@@ -1,6 +1,8 @@
 import { type FormEvent, useState } from 'react'
 import { Link, useNavigate } from 'react-router'
+import { useQueryClient } from '@tanstack/react-query'
 import {
+  CHAVE_EMAIL_ENVIADO,
   rotaInicial,
   useAceitarTermo,
   useConfirmarEmail,
@@ -20,6 +22,8 @@ export function ConfirmarEmail() {
   const logout = useLogout()
   const [codigo, setCodigo] = useState('')
   const erro = confirmar.error instanceof ErroApi ? confirmar.error : null
+  // false: no cadastro, a API não conseguiu enviar o código (ex.: envio de e-mail fora do ar)
+  const emailEnviado = useQueryClient().getQueryData<boolean>(CHAVE_EMAIL_ENVIADO)
 
   function enviar(e: FormEvent) {
     e.preventDefault()
@@ -29,6 +33,12 @@ export function ConfirmarEmail() {
   return (
     <LayoutPublico subtitulo="Confirme o seu e-mail para continuar">
       <form onSubmit={enviar} className="space-y-4" noValidate>
+        {emailEnviado === false && !reenviar.isSuccess && (
+          <Alerta>
+            Não conseguimos enviar o código agora. Clique em Reenviar o código daqui a pouco. Se o
+            problema continuar, avise o responsável pelo PR Box.
+          </Alerta>
+        )}
         <Alerta tipo="info">
           Enviamos um código de 6 dígitos para <strong>{usuario?.email}</strong>. Ele vale por 15
           minutos. Confira também a caixa de spam.

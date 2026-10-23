@@ -1,3 +1,4 @@
+import { createTransport, type Transporter } from 'nodemailer'
 import { ErroHttp } from '../lib/erros.ts'
 
 export type Email = { para: string; assunto: string; texto: string; html: string }
@@ -8,22 +9,84 @@ export type Email = { para: string; assunto: string; texto: string; html: string
  */
 export const caixaDeSaida: Email[] = []
 
-const configurado = () => !!process.env.RESEND_API_KEY
+/**
+ * Serviço de envio configurado:
+ *  - "resend": RESEND_API_KEY (https://resend.com). Sem domínio verificado, o Resend só
+ *    entrega para o e-mail do dono da conta Resend.
+ *  - "smtp": EMAIL_SMTP_USUARIO e EMAIL_SMTP_SENHA (ex.: Gmail com "senha de app"),
+ *    com EMAIL_SMTP_HOST (padrão smtp.gmail.com) e EMAIL_SMTP_PORTA (padrão 465).
+ *    Entrega para qualquer endereço, sem precisar de domínio próprio.
+ */
+export function provedorEmail(): 'resend' | 'smtp' | null {
+  if (process.env.RESEND_API_KEY) return 'resend'
+  if (process.env.EMAIL_SMTP_USUARIO && process.env.EMAIL_SMTP_SENHA) return 'smtp'
+  return null
+}
+
+const remetente = () =>
+  process.env.EMAIL_REMETENTE ??
+  (provedorEmail() === 'smtp'
+    ? `PR Box <${process.env.EMAIL_SMTP_USUARIO}>`
+    : 'PR Box <onboarding@resend.dev>')
+
+let transporteSmtp: Transporter | null = null
+const smtp = () => {
+  const porta = Number(process.env.EMAIL_SMTP_PORTA ?? 465)
+  transporteSmtp ??= createTransport({
+    host: process.env.EMAIL_SMTP_HOST ?? 'smtp.gmail.com',
+    port: porta,
+    secure: porta === 465,
+    auth: { user: process.env.EMAIL_SMTP_USUARIO, pass: process.env.EMAIL_SMTP_SENHA },
+  })
+  return transporteSmtp
+}
+
+const falhaNoEnvio = () =>
+  new ErroHttp(
+    503,
+    'Não foi possível enviar o e-mail agora. Tente de novo em instantes.',
+    'EMAIL_FALHOU',
+  )
 
 /**
- * Envia um e-mail pelo Resend (https://resend.com). Sem RESEND_API_KEY:
+ * Envia um e-mail pelo serviço configurado. Sem serviço:
  *  - em desenvolvimento e testes, guarda na caixa de saída e mostra no terminal da API;
  *  - em produção, recusa (o cadastro não funciona sem envio de e-mail).
  */
 export async function enviarEmail(email: Email) {
-  if (!configurado()) {
+  const provedor = provedorEmail()
+
+  if (!provedor) {
     if (process.env.NODE_ENV === 'production') {
-      console.error('RESEND_API_KEY não definida: não é possível enviar e-mails.')
-      throw new ErroHttp(503, 'O envio de e-mails não está disponível no momento.')
+      console.error('Envio de e-mails não configurado (RESEND_API_KEY ou EMAIL_SMTP_*).')
+      throw new ErroHttp(
+        503,
+        'O envio de e-mails não está disponível no momento.',
+        'EMAIL_INDISPONIVEL',
+      )
     }
     caixaDeSaida.push(email)
     if (process.env.NODE_ENV !== 'test') {
-      console.log(`\n[e-mail para ${email.para}] ${email.assunto}\n${email.texto}\n`)
+      console.log(`
+[e-mail para ${email.para}] ${email.assunto}
+${email.texto}
+`)
+    }
+    return
+  }
+
+  if (provedor === 'smtp') {
+    try {
+      await smtp().sendMail({
+        from: remetente(),
+        to: email.para,
+        subject: email.assunto,
+        text: email.texto,
+        html: email.html,
+      })
+    } catch (erro) {
+      console.error(`Falha ao enviar e-mail por SMTP: ${(erro as Error).message}`)
+      throw falhaNoEnvio()
     }
     return
   }
@@ -35,7 +98,7 @@ export async function enviarEmail(email: Email) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      from: process.env.EMAIL_REMETENTE ?? 'PR Box <onboarding@resend.dev>',
+      from: remetente(),
       to: [email.para],
       subject: email.assunto,
       text: email.texto,
@@ -44,8 +107,10 @@ export async function enviarEmail(email: Email) {
   }).catch(() => null)
 
   if (!resposta?.ok) {
-    console.error(`Falha ao enviar e-mail (${resposta?.status ?? 'sem resposta'})`)
-    throw new ErroHttp(503, 'Não foi possível enviar o e-mail agora. Tente de novo em instantes.')
+    // O corpo da resposta do Resend explica o motivo (ex.: domínio não verificado)
+    const motivo = resposta ? await resposta.text().catch(() => '') : 'sem resposta'
+    console.error(`Falha ao enviar e-mail pelo Resend (${resposta?.status ?? '-'}): ${motivo}`)
+    throw falhaNoEnvio()
   }
 }
 

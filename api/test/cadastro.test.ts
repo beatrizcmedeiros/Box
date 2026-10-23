@@ -75,6 +75,21 @@ describe('POST /api/auth/cadastro', () => {
     })
   })
 
+  it('avisa quando o código não pôde ser enviado (envio de e-mail não configurado)', async () => {
+    const anterior = process.env.NODE_ENV
+    process.env.NODE_ENV = 'production'
+    try {
+      const { res } = await cadastrar({ nome: 'Ana', email: 'ana@t.com', senha: 'senha-forte-123' })
+      expect(res.status).toBe(201)
+      expect(res.body.emailEnviado).toBe(false)
+    } finally {
+      process.env.NODE_ENV = anterior
+    }
+    // Em desenvolvimento e testes, o código vai para a caixa de saída
+    const outro = await cadastrar({ nome: 'Bia', email: 'bia@t.com', senha: 'senha-forte-123' })
+    expect(outro.res.body.emailEnviado).toBe(true)
+  })
+
   it('recusa e-mail já cadastrado e senha curta', async () => {
     await criarUsuario({ email: 'ana@teste.com', vinculado: false })
     const repetido = await cadastrar({
