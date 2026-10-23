@@ -26,7 +26,7 @@ const vinculoSchema = z.object({
 
 const incluir = {
   aluno: {
-    select: { id: true, nome: true, email: true, emailVerificadoEm: true, consentimentoEm: true },
+    select: { id: true, nome: true, email: true, consentimentoEm: true },
   },
   turma: { select: { id: true, nome: true } },
   local: { select: { id: true, nome: true } },
@@ -48,7 +48,7 @@ const formatar = (v: VinculoCompleto) => ({
   apelidos: v.apelidos.map((a) => a.apelido),
   desde: v.criadoEm,
   // Ainda não concluiu o primeiro acesso (confirmar o e-mail e aceitar o termo)
-  primeiroAcessoPendente: !v.aluno.emailVerificadoEm || !v.aluno.consentimentoEm,
+  primeiroAcessoPendente: !v.aluno.consentimentoEm,
 })
 
 /**

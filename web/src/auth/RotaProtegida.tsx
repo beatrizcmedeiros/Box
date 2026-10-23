@@ -11,7 +11,7 @@ type Props = {
    */
   area?: 'aluno' | 'gestao'
   /** Etapa de primeiro acesso: permite entrar mesmo com o cadastro incompleto. */
-  etapa?: 'email' | 'termo'
+  etapa?: 'termo'
 }
 
 export function RotaProtegida({ children, area, etapa }: Props) {
@@ -21,12 +21,8 @@ export function RotaProtegida({ children, area, etapa }: Props) {
   if (isPending) return <Carregando />
   if (!usuario) return <Navigate to="/login" replace state={{ voltarPara: pathname }} />
 
-  // Ordem do primeiro acesso: 1) confirmar o e-mail, 2) aceitar o termo
-  const etapaPendente = !usuario.emailConfirmado
-    ? 'email'
-    : usuario.consentimentoPendente
-      ? 'termo'
-      : null
+  // Primeiro acesso: aceitar o termo de consentimento
+  const etapaPendente = usuario.consentimentoPendente ? 'termo' : null
   if (etapaPendente !== (etapa ?? null)) {
     return (
       <Navigate

@@ -46,40 +46,13 @@ export type DadosCadastro = {
   ehProfessor: boolean
 }
 
-/** false quando a API não conseguiu enviar o código de confirmação no cadastro. */
-export const CHAVE_EMAIL_ENVIADO = ['email-enviado'] as const
-
-/** Cria a conta e já entra; o próximo passo é confirmar o e-mail. */
+/** Cria a conta e já entra; o próximo passo é aceitar o termo. */
 export function useCadastro() {
   const atualizar = useAtualizarUsuario()
-  const cliente = useQueryClient()
   return useMutation({
     mutationFn: (dados: DadosCadastro) =>
-      api<RespostaUsuario & { emailEnviado?: boolean }>('/auth/cadastro', {
-        method: 'POST',
-        body: dados,
-      }),
-    onSuccess: (resposta) => {
-      cliente.setQueryData(CHAVE_EMAIL_ENVIADO, resposta.emailEnviado !== false)
-      atualizar(resposta)
-    },
-  })
-}
-
-export function useConfirmarEmail() {
-  const atualizar = useAtualizarUsuario()
-  return useMutation({
-    mutationFn: (codigo: string) =>
-      api<RespostaUsuario>('/auth/confirmar-email', { method: 'POST', body: { codigo } }),
+      api<RespostaUsuario>('/auth/cadastro', { method: 'POST', body: dados }),
     onSuccess: atualizar,
-  })
-}
-
-export function useReenviarConfirmacao() {
-  const cliente = useQueryClient()
-  return useMutation({
-    mutationFn: () => api<void>('/auth/reenviar-confirmacao', { method: 'POST' }),
-    onSuccess: () => cliente.setQueryData(CHAVE_EMAIL_ENVIADO, true),
   })
 }
 

@@ -92,7 +92,7 @@ function Navegacao() {
   }
 
   const u = usuario.data
-  const pronto = !!u && u.emailConfirmado && !u.consentimentoPendente
+  const pronto = !!u && !u.consentimentoPendente
 
   return (
     <Stack
@@ -108,10 +108,7 @@ function Navegacao() {
         <Stack.Screen name="cadastro" options={{ title: 'Criar conta' }} />
         <Stack.Screen name="esqueci-senha" options={{ title: 'Recuperar a senha' }} />
       </Stack.Protected>
-      <Stack.Protected guard={!!u && !u.emailConfirmado}>
-        <Stack.Screen name="primeiro-acesso/email" options={{ headerShown: false }} />
-      </Stack.Protected>
-      <Stack.Protected guard={!!u && u.emailConfirmado && u.consentimentoPendente}>
+      <Stack.Protected guard={!!u && u.consentimentoPendente}>
         <Stack.Screen name="primeiro-acesso/termo" options={{ headerShown: false }} />
       </Stack.Protected>
       {/* O professor tem as duas áreas: Meus PRs (aluno) e a gestão */}

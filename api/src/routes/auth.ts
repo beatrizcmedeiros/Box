@@ -37,8 +37,6 @@ const cadastroSchema = z.object({
   ehProfessor: z.boolean().default(false),
 })
 
-const codigoSchema = z.object({ codigo: z.string().trim().min(1, 'Digite o código') })
-
 const redefinirSchema = z.object({
   email: emailSchema,
   codigo: z.string().trim().min(1, 'Digite o código'),
@@ -73,7 +71,6 @@ export async function usuarioPublico(usuario: Usuario) {
     tipo: usuario.tipo,
     ehProfessor: usuario.ehProfessor,
     academia,
-    emailConfirmado: !!usuario.emailVerificadoEm,
     consentimentoPendente: !usuario.consentimentoEm,
   }
 }
@@ -108,7 +105,7 @@ export function authRouter({ limitarLogin }: { limitarLogin: RequestHandler }) {
 
   /**
    * Cadastro aberto: a pessoa (aluno, e opcionalmente professor) ou a academia cria a conta
-   * com e-mail e senha. Já entra logada e recebe um código para confirmar o e-mail.
+   * com e-mail e senha. Já entra logada; o passo seguinte é aceitar o termo.
    */
   router.post('/cadastro', limitarCadastro, async (req, res) => {
     const { nome, email, senha, tipo, ehProfessor } = cadastroSchema.parse(req.body)
@@ -131,14 +128,8 @@ export function authRouter({ limitarLogin }: { limitarLogin: RequestHandler }) {
       },
     })
 
-    // Se o envio falhar, a conta continua criada: o app avisa e a pessoa pede o código de novo
-    const emailEnviado = await enviarCodigoEmail(usuario, 'CONFIRMAR_EMAIL').then(
-      () => true,
-      () => false,
-    )
-
     const tokens = await abrirSessao(req, res, usuario)
-    res.status(201).json({ usuario: await usuarioPublico(usuario), tokens, emailEnviado })
+    res.status(201).json({ usuario: await usuarioPublico(usuario), tokens })
   })
 
   router.post('/login', limitarLogin, async (req, res) => {
@@ -152,27 +143,6 @@ export function authRouter({ limitarLogin }: { limitarLogin: RequestHandler }) {
 
     const tokens = await abrirSessao(req, res, usuario)
     res.json({ usuario: await usuarioPublico(usuario), tokens })
-  })
-
-  /** Confirma o e-mail com o código enviado no cadastro. */
-  router.post('/confirmar-email', autenticar, async (req, res) => {
-    const { codigo } = codigoSchema.parse(req.body)
-    const usuario = req.usuario!
-    if (!usuario.emailVerificadoEm) {
-      await validarCodigoEmail(usuario.id, 'CONFIRMAR_EMAIL', codigo)
-    }
-    const atualizado = await prisma.usuario.update({
-      where: { id: usuario.id },
-      data: { emailVerificadoEm: usuario.emailVerificadoEm ?? new Date() },
-    })
-    res.json({ usuario: await usuarioPublico(atualizado) })
-  })
-
-  router.post('/reenviar-confirmacao', autenticar, async (req, res) => {
-    const usuario = req.usuario!
-    if (usuario.emailVerificadoEm) throw new ErroHttp(400, 'Seu e-mail já está confirmado')
-    await enviarCodigoEmail(usuario, 'CONFIRMAR_EMAIL')
-    res.status(204).end()
   })
 
   /**

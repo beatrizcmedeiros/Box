@@ -6,7 +6,7 @@ O app Android é gerado pelo **EAS Build** (nuvem da Expo), a partir de `mobile/
 
 | Item                          | Onde / como                                                                                                                                                                                                                                                                                                                                     |
 | ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Envio de e-mails (Resend)** | No Render, serviço `prbox-api` → _Environment_: `RESEND_API_KEY` e `EMAIL_REMETENTE`. Sem isso, ninguém consegue confirmar o e-mail no cadastro. Para enviar a qualquer pessoa, verifique um domínio seu no Resend (ver [deploy.md](deploy.md)).                                                                                                |
+| **Envio de e-mails (Resend)** | No Render, serviço `prbox-api` → _Environment_: `RESEND_API_KEY` e `EMAIL_REMETENTE`. Sem isso, ninguém consegue recuperar a senha. Para enviar a qualquer pessoa, verifique um domínio seu no Resend (ver [deploy.md](deploy.md)).                                                                                                             |
 | **Web pública**               | A política de privacidade (`/privacidade`) e as instruções de exclusão (`/excluir-conta`) ficam na versão web e **precisam abrir sem login**. Na Vercel: _Project → Settings → Deployment Protection_ → desligue a proteção (Vercel Authentication) do domínio de produção. Confira abrindo `https://SEU_DOMINIO/privacidade` numa aba anônima. |
 | **Contato na política**       | Na Vercel, variável `VITE_CONTATO_PRIVACIDADE` (o seu e-mail de contato) e um novo deploy.                                                                                                                                                                                                                                                      |
 | **Endereço da web no app**    | Em `mobile/eas.json`, acrescente `"EXPO_PUBLIC_WEB_URL": "https://SEU_DOMINIO"` em `env` dos perfis `preview` e `production`. Com ele, o app mostra o link "Política de privacidade".                                                                                                                                                           |
@@ -74,7 +74,7 @@ Os vínculos com academias e professores **não** contam como compartilhamento c
 
 ### Conta para a revisão da Google
 
-1. Crie, pelo próprio app, uma conta de **professor** com um e-mail seu (ex.: `voce+revisao@gmail.com`), confirme o e-mail e aceite o termo.
+1. Crie, pelo próprio app, uma conta de **professor** com um e-mail seu (ex.: `voce+revisao@gmail.com`) e aceite o termo.
 2. Registre 2 ou 3 PRs fictícios e gere um código de vínculo.
 3. Informe e-mail e senha em **Acesso ao app**, explicando: _"A conta é de professor e também registra os próprios PRs. Para ver a área de aluno vinculado, crie outra conta e digite o código mostrado em Mais → Códigos de vínculo."_
 

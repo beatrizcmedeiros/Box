@@ -28,15 +28,9 @@ export async function autenticar(req: Request, _res: Response, next: NextFunctio
   next()
 }
 
-/**
- * Bloqueia o uso do sistema enquanto a pessoa não confirmar o e-mail
- * e não aceitar o termo de consentimento (LGPD).
- */
+/** Bloqueia o uso do sistema enquanto a pessoa não aceitar o termo de consentimento (LGPD). */
 export function exigirCadastroCompleto(req: Request, _res: Response, next: NextFunction) {
   const usuario = req.usuario!
-  if (!usuario.emailVerificadoEm) {
-    throw new ErroHttp(403, 'Confirme o seu e-mail com o código enviado', 'EMAIL_NAO_CONFIRMADO')
-  }
   if (!usuario.consentimentoEm) {
     throw new ErroHttp(
       403,

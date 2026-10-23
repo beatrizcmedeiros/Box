@@ -11,7 +11,6 @@ export type Usuario = {
   ehProfessor: boolean
   /** Preenchido na conta da academia */
   academia: { id: number; nome: string } | null
-  emailConfirmado: boolean
   consentimentoPendente: boolean
 }
 

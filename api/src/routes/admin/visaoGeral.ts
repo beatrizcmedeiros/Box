@@ -24,7 +24,6 @@ export function visaoGeralRouter() {
         prisma.usuario.count({
           where: {
             ...doContexto,
-            emailVerificadoEm: { not: null },
             consentimentoEm: { not: null },
           },
         }),
@@ -80,7 +79,7 @@ export function visaoGeralRouter() {
         id: a.id,
         nome: a.nome,
         turma: a.vinculosComoAluno[0]?.turma?.nome ?? null,
-        aguardandoPrimeiroAcesso: !a.emailVerificadoEm || !a.consentimentoEm,
+        aguardandoPrimeiroAcesso: !a.consentimentoEm,
       })),
     })
   })

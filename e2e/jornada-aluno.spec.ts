@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { abrirCelular, confirmarEmailNoBanco, E2E, entrar } from './apoio.ts'
+import { abrirCelular, E2E, entrar } from './apoio.ts'
 
 test('a academia gera o código; o aluno cria a conta, se vincula, registra o PR e a academia vê', async ({
   page,
@@ -25,10 +25,8 @@ test('a academia gera o código; o aluno cria a conta, se vincula, registra o PR
   await celular.getByLabel('Confirme a senha').fill('bruno-senha-forte')
   await celular.getByRole('button', { name: 'Criar conta' }).click()
 
-  // Confirmação do e-mail (o código chegaria por e-mail) e termo
-  await expect(celular).toHaveURL(/primeiro-acesso\/email/)
-  await confirmarEmailNoBanco('bruno@e2e.local')
-  await celular.reload()
+  // Sem código por e-mail: vai direto para o termo
+  await expect(celular).toHaveURL(/primeiro-acesso\/termo/)
   await celular.getByRole('button', { name: 'Li e aceito' }).click()
   await expect(celular.getByRole('heading', { name: 'Percentuais de carga' })).toBeVisible()
   await expect(celular.getByText('Nenhum PR registrado ainda')).toBeVisible()

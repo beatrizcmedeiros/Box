@@ -55,7 +55,6 @@ export const usuario = (dados: Partial<Usuario> = {}): Usuario => ({
   tipo: 'PESSOA',
   ehProfessor: false,
   academia: null,
-  emailConfirmado: true,
   consentimentoPendente: false,
   ...dados,
 })
