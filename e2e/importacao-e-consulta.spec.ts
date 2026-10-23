@@ -46,8 +46,13 @@ test('consulta combina filtros e mantém o estado na URL', async ({ page }) => {
 
   await page.getByLabel('Exercício').selectOption({ label: 'Deadlift' })
   await page.getByLabel('Turma').selectOption({ label: 'Turma 18h' })
-  await expect(page.getByRole('row', { name: /Ana Souza/ })).toContainText('120 kg')
   await expect(page).toHaveURL(/exercicioId=\d+.*turmaId=\d+|turmaId=\d+.*exercicioId=\d+/)
+  // Enquanto a consulta filtrada carrega, a tabela ainda mostra o resultado anterior:
+  // espera sobrar só a linha do Deadlift antes de conferir a carga
+  const linhasDaAna = page.getByRole('row', { name: /Ana Souza/ })
+  await expect(linhasDaAna).toHaveCount(1)
+  await expect(linhasDaAna).toContainText('Deadlift')
+  await expect(linhasDaAna).toContainText('120 kg')
 
   // Recarregar mantém os filtros
   await page.reload()
