@@ -1,9 +1,9 @@
-import type { ReactNode } from 'react'
+import Ionicons from '@expo/vector-icons/Ionicons'
+import { type ReactNode, useState } from 'react'
 import {
   ActivityIndicator,
   Pressable,
   RefreshControl,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -11,12 +11,19 @@ import {
   View,
   type ViewStyle,
 } from 'react-native'
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useOnline } from '../lib/cacheOffline'
 import { Logo } from './Logo'
 import { cores } from '../lib/tema'
 
-/** Tela com rolagem e fundo padrão; com `atualizar`, puxar para baixo busca os dados de novo. */
+// Espaço entre o campo em foco e o teclado (o teclado nunca cobre o que se está digitando)
+const DISTANCIA_DO_TECLADO = 24
+
+/**
+ * Tela com rolagem e fundo padrão; com `atualizar`, puxar para baixo busca os dados de novo.
+ * Ao digitar, a tela rola até o campo em foco ficar acima do teclado.
+ */
 export function Tela({
   children,
   atualizar,
@@ -25,7 +32,8 @@ export function Tela({
   atualizar?: { atualizando: boolean; aoPuxar: () => void }
 }) {
   return (
-    <ScrollView
+    <KeyboardAwareScrollView
+      bottomOffset={DISTANCIA_DO_TECLADO}
       style={{ backgroundColor: cores.fundo }}
       contentContainerStyle={estilos.tela}
       keyboardShouldPersistTaps="handled"
@@ -41,7 +49,7 @@ export function Tela({
     >
       <AvisoOffline />
       {children}
-    </ScrollView>
+    </KeyboardAwareScrollView>
   )
 }
 
@@ -61,7 +69,8 @@ export function AvisoOffline() {
 /** Cabeçalho escuro com a marca, usado no login e no primeiro acesso. */
 export function TelaPublica({ subtitulo, children }: { subtitulo: string; children: ReactNode }) {
   return (
-    <ScrollView
+    <KeyboardAwareScrollView
+      bottomOffset={DISTANCIA_DO_TECLADO}
       style={{ backgroundColor: cores.fundo }}
       contentContainerStyle={{ flexGrow: 1 }}
       keyboardShouldPersistTaps="handled"
@@ -75,7 +84,7 @@ export function TelaPublica({ subtitulo, children }: { subtitulo: string; childr
         <AvisoOffline />
         {children}
       </View>
-    </ScrollView>
+    </KeyboardAwareScrollView>
   )
 }
 
@@ -131,21 +140,45 @@ export function Campo({
   erro,
   dica,
   grande,
+  secureTextEntry,
   ...props
 }: TextInputProps & { rotulo: string; erro?: string; dica?: string; grande?: boolean }) {
+  // Campo de senha: o "olhinho" mostra ou oculta o que foi digitado
+  const [senhaVisivel, setSenhaVisivel] = useState(false)
+  const ehSenha = !!secureTextEntry
+
   return (
     <View style={{ gap: 6 }}>
       <Text style={estilos.rotulo}>{rotulo}</Text>
-      <TextInput
-        accessibilityLabel={rotulo}
-        placeholderTextColor="#94a3b8"
-        style={[
-          estilos.campo,
-          grande && estilos.campoGrande,
-          !!erro && { borderColor: cores.erro },
-        ]}
-        {...props}
-      />
+      <View style={{ justifyContent: 'center' }}>
+        <TextInput
+          accessibilityLabel={rotulo}
+          placeholderTextColor="#94a3b8"
+          secureTextEntry={ehSenha && !senhaVisivel}
+          style={[
+            estilos.campo,
+            grande && estilos.campoGrande,
+            ehSenha && { paddingRight: 48 },
+            !!erro && { borderColor: cores.erro },
+          ]}
+          {...props}
+        />
+        {ehSenha && (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={senhaVisivel ? 'Ocultar senha' : 'Mostrar senha'}
+            onPress={() => setSenhaVisivel((v) => !v)}
+            hitSlop={8}
+            style={{ position: 'absolute', right: 12, padding: 4 }}
+          >
+            <Ionicons
+              name={senhaVisivel ? 'eye-off-outline' : 'eye-outline'}
+              size={22}
+              color={cores.textoSuave}
+            />
+          </Pressable>
+        )}
+      </View>
       {erro ? (
         <Text style={{ color: cores.erro, fontSize: 13 }}>{erro}</Text>
       ) : dica ? (

@@ -1,4 +1,4 @@
-import { type ComponentProps, type ReactNode, useEffect, useId } from 'react'
+import { type ComponentProps, type ReactNode, useEffect, useId, useState } from 'react'
 
 export function Carregando({ texto = 'Carregando…' }: { texto?: string }) {
   return (
@@ -40,22 +40,52 @@ export function Botao({
 
 type PropsCampo = ComponentProps<'input'> & { rotulo: string; erro?: string; dica?: string }
 
-export function Campo({ rotulo, erro, dica, className = '', ...props }: PropsCampo) {
+export function Campo({ rotulo, erro, dica, className = '', type, ...props }: PropsCampo) {
   const id = useId()
+  // Campo de senha: o "olhinho" mostra ou oculta o que foi digitado
+  const [senhaVisivel, setSenhaVisivel] = useState(false)
+  const ehSenha = type === 'password'
   return (
     <div className={className}>
       <label htmlFor={id} className="text-xs font-semibold tracking-wide text-slate-500 uppercase">
         {rotulo}
       </label>
-      <input
-        id={id}
-        aria-invalid={erro ? true : undefined}
-        aria-describedby={erro || dica ? `${id}-ajuda` : undefined}
-        className={`mt-1.5 w-full rounded-xl border bg-white px-3 py-2.5 text-base outline-none focus:ring-2 focus:ring-marca/40 ${
-          erro ? 'border-red-500' : 'border-slate-300'
-        }`}
-        {...props}
-      />
+      <div className="relative mt-1.5">
+        <input
+          id={id}
+          type={ehSenha && senhaVisivel ? 'text' : type}
+          aria-invalid={erro ? true : undefined}
+          aria-describedby={erro || dica ? `${id}-ajuda` : undefined}
+          className={`w-full rounded-xl border bg-white px-3 py-2.5 text-base outline-none focus:ring-2 focus:ring-marca/40 ${
+            erro ? 'border-red-500' : 'border-slate-300'
+          } ${ehSenha ? 'pr-11' : ''}`}
+          {...props}
+        />
+        {ehSenha && (
+          <button
+            type="button"
+            onClick={() => setSenhaVisivel((v) => !v)}
+            aria-label={senhaVisivel ? 'Ocultar senha' : 'Mostrar senha'}
+            aria-pressed={senhaVisivel}
+            className="absolute inset-y-0 right-0 flex w-11 items-center justify-center rounded-r-xl text-slate-500 hover:text-slate-800"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              className="size-5"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" />
+              <circle cx="12" cy="12" r="3" />
+              {senhaVisivel && <path d="M3 3l18 18" />}
+            </svg>
+          </button>
+        )}
+      </div>
       {(erro || dica) && (
         <p
           id={`${id}-ajuda`}

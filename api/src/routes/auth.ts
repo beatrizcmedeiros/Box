@@ -131,11 +131,14 @@ export function authRouter({ limitarLogin }: { limitarLogin: RequestHandler }) {
       },
     })
 
-    // Se o envio falhar, a conta continua criada e a pessoa pede o código de novo
-    await enviarCodigoEmail(usuario, 'CONFIRMAR_EMAIL').catch(() => undefined)
+    // Se o envio falhar, a conta continua criada: o app avisa e a pessoa pede o código de novo
+    const emailEnviado = await enviarCodigoEmail(usuario, 'CONFIRMAR_EMAIL').then(
+      () => true,
+      () => false,
+    )
 
     const tokens = await abrirSessao(req, res, usuario)
-    res.status(201).json({ usuario: await usuarioPublico(usuario), tokens })
+    res.status(201).json({ usuario: await usuarioPublico(usuario), tokens, emailEnviado })
   })
 
   router.post('/login', limitarLogin, async (req, res) => {

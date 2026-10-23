@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { router } from 'expo-router'
 import { Modal, Switch, Text, View } from 'react-native'
+import { KeyboardAvoidingView } from 'react-native-keyboard-controller'
 import { Alerta, Botao, Campo, Cartao, Tela, Titulo } from '../../../components/ui'
 import { ErroApi } from '../../../lib/api'
 import {
@@ -142,7 +143,11 @@ function ExcluirConta() {
         Excluir minha conta
       </Botao>
       <Modal visible={aberto} transparent animationType="slide" onRequestClose={fechar}>
-        <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.4)' }}>
+        {/* A folha sobe junto com o teclado: o campo de senha fica visível */}
+        <KeyboardAvoidingView
+          behavior="padding"
+          style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.4)' }}
+        >
           <View
             style={{
               backgroundColor: cores.branco,
@@ -184,7 +189,7 @@ function ExcluirConta() {
               </Botao>
             </View>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
     </>
   )

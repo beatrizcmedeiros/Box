@@ -26,9 +26,10 @@ O front encaminha `/api` para a API. Para o navegador tudo é um único site, en
    - `WEB_ORIGIN`: a URL do front na Vercel (passo 3; pode voltar e ajustar depois).
    - `JWT_SECRET` é gerado automaticamente.
 4. Após o deploy, teste `https://prbox-api.onrender.com/api/health` → `{"status":"ok","banco":"ok",...}`.
-5. Configure o envio de e-mails (cadastro e recuperação de senha usam códigos por e-mail):
-   - Crie uma conta no [Resend](https://resend.com) e uma chave de API: variável `RESEND_API_KEY`.
-   - Verifique um domínio seu no Resend e defina `EMAIL_REMETENTE` (ex.: `PR Box <nao-responda@seudominio.com.br>`). Sem domínio verificado, o Resend só entrega e-mails para o endereço da própria conta Resend.
+5. Configure o envio de e-mails (o cadastro e a recuperação de senha usam códigos por e-mail). Escolha **uma** opção:
+   - **Gmail (mais simples, sem domínio próprio):** numa conta Google com verificação em duas etapas, crie uma senha de app em https://myaccount.google.com/apppasswords. No Render, preencha `EMAIL_SMTP_USUARIO` (o endereço Gmail) e `EMAIL_SMTP_SENHA` (a senha de app, sem espaços). O limite do Gmail é de cerca de 500 e-mails por dia, suficiente para um box.
+   - **Resend:** crie uma chave de API em https://resend.com (`RESEND_API_KEY`) e verifique um domínio seu para definir `EMAIL_REMETENTE` (ex.: `PR Box <nao-responda@seudominio.com.br>`). Sem domínio verificado, o Resend só entrega e-mails para o endereço da própria conta Resend.
+   - Para conferir, abra `https://prbox-api.onrender.com/api/health`: o campo `email` deve mostrar `smtp` ou `resend` (nunca a chave). `nao_configurado` significa que os códigos não estão sendo enviados.
 6. As contas são criadas pelo próprio app ou pela web: a academia, os professores e os alunos se cadastram e se vinculam pelos códigos.
 
 > Se o nome do serviço no Render for diferente de `prbox-api`, ajuste a URL em `web/vercel.json`.
