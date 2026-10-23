@@ -1,12 +1,12 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
-import { useSearchParams } from 'react-router'
 import { Alerta, Botao, Campo, Carregando, Selecao } from '../../components/ui.tsx'
 import { api, gestao } from '../../lib/api.ts'
 import { useExercicios, useTurmas } from '../../lib/consultas.ts'
 import { formatarData, formatarKg } from '../../lib/formato.ts'
 import type { ConsultaPercentuais, LinhaPercentuais } from '../../lib/tipos.ts'
 import { CabecalhoPagina } from './LayoutTreinador.tsx'
+import { useParametrosUrl } from '../../lib/parametrosUrl.ts'
 
 /** Mesmos percentuais do dashboard do aluno. */
 const PERCENTUAIS = [35, 40, 45, 50, 55]
@@ -16,7 +16,7 @@ const PERCENTUAIS = [35, 40, 45, 50, 55]
  * está sem o celular e o treinador precisa consultar rápido, sem abrir um por um.
  */
 export function PercentuaisAlunos() {
-  const [params, setParams] = useSearchParams()
+  const [params, setParams] = useParametrosUrl()
   const exercicios = useExercicios()
   const turmas = useTurmas()
 
@@ -39,17 +39,14 @@ export function PercentuaisAlunos() {
   })
 
   function alterar(mudancas: Record<string, string>) {
-    setParams(
-      (atual) => {
-        const novos = new URLSearchParams(atual)
-        for (const [chave, valor] of Object.entries(mudancas)) {
-          if (valor) novos.set(chave, valor)
-          else novos.delete(chave)
-        }
-        return novos
-      },
-      { replace: true },
-    )
+    setParams((atual) => {
+      const novos = new URLSearchParams(atual)
+      for (const [chave, valor] of Object.entries(mudancas)) {
+        if (valor) novos.set(chave, valor)
+        else novos.delete(chave)
+      }
+      return novos
+    })
   }
 
   function alternarPercentual(percentual: number) {

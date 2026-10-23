@@ -13,6 +13,7 @@ import {
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useOnline } from '../lib/cacheOffline'
+import { Logo } from './Logo'
 import { cores } from '../lib/tema'
 
 /** Tela com rolagem e fundo padrão; com `atualizar`, puxar para baixo busca os dados de novo. */
@@ -66,9 +67,7 @@ export function TelaPublica({ subtitulo, children }: { subtitulo: string; childr
       keyboardShouldPersistTaps="handled"
     >
       <SafeAreaView edges={['top']} style={estilos.cabecalhoPublico}>
-        <View style={estilos.logo}>
-          <Text style={estilos.logoTexto}>PR</Text>
-        </View>
+        <Logo />
         <Text style={estilos.tituloPublico}>PR Box</Text>
         <Text style={estilos.subtituloPublico}>{subtitulo}</Text>
       </SafeAreaView>
@@ -218,16 +217,6 @@ export const estilos = StyleSheet.create({
     paddingBottom: 32,
     paddingHorizontal: 24,
   },
-  logo: {
-    width: 64,
-    height: 64,
-    borderRadius: 16,
-    backgroundColor: cores.marcaForte,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 12,
-  },
-  logoTexto: { color: cores.branco, fontSize: 24, fontWeight: '800' },
   tituloPublico: { color: cores.branco, fontSize: 24, fontWeight: '700' },
   subtituloPublico: { color: '#94a3b8', fontSize: 14, marginTop: 4, textAlign: 'center' },
   botao: {

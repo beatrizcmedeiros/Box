@@ -1,6 +1,5 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
-import { useSearchParams } from 'react-router'
 import { corCategorica, COR_OUTROS } from '../../components/graficos/cores.ts'
 import { Delta, GraficoHalteres } from '../../components/graficos/GraficoHalteres.tsx'
 import { GraficoLinha, LegendaLinhas, type Serie } from '../../components/graficos/GraficoLinha.tsx'
@@ -12,6 +11,7 @@ import { useTurmas } from '../../lib/consultas.ts'
 import { formatarData, formatarKg, formatarPct } from '../../lib/formato.ts'
 import type { Ciclo, EvolucaoTurmas, SerieExercicio, TurmaResumo } from '../../lib/tipos.ts'
 import { CabecalhoPagina } from './LayoutTreinador.tsx'
+import { useParametrosUrl } from '../../lib/parametrosUrl.ts'
 
 const kg = (v: number) => `${formatarKg(v)} kg`
 const semanaCurta = (c: Ciclo) => formatarData(c.semana).replace(/\/(\d{2})(\d{2})$/, '/$2')
@@ -19,7 +19,7 @@ const semanaLonga = (c: Ciclo) => `Semana de ${formatarData(c.semana)} · ${c.ro
 
 /** Evolução por semana de teste de carga: por turma e por aluno. */
 export function EvolucaoTurmas() {
-  const [params, setParams] = useSearchParams()
+  const [params, setParams] = useParametrosUrl()
   const turmasCadastradas = useTurmas()
   const exercicioId = params.get('exercicioId') ?? ''
   const turmaId = params.get('turmaId') ?? ''
@@ -35,15 +35,12 @@ export function EvolucaoTurmas() {
   })
 
   function alterar(chave: string, valor: string) {
-    setParams(
-      (atual) => {
-        const novos = new URLSearchParams(atual)
-        if (valor) novos.set(chave, valor)
-        else novos.delete(chave)
-        return novos
-      },
-      { replace: true },
-    )
+    setParams((atual) => {
+      const novos = new URLSearchParams(atual)
+      if (valor) novos.set(chave, valor)
+      else novos.delete(chave)
+      return novos
+    })
   }
 
   // A cor segue a turma (ordem fixa do cadastro), não a posição no filtro

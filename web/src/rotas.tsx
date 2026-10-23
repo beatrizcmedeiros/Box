@@ -12,6 +12,7 @@ import { Login } from './pages/Login.tsx'
 import { Cadastro } from './pages/Cadastro.tsx'
 import { EsqueciSenha } from './pages/EsqueciSenha.tsx'
 import { ConfirmarEmail, Termo } from './pages/PrimeiroAcesso.tsx'
+import { InstrucoesExcluirConta, Privacidade } from './pages/Privacidade.tsx'
 import { Alunos } from './pages/treinador/Alunos.tsx'
 import { ConsultarCargas } from './pages/treinador/ConsultarCargas.tsx'
 import { EvolucaoTurmas } from './pages/treinador/EvolucaoTurmas.tsx'
@@ -30,6 +31,9 @@ export const rotas: RouteObject[] = [
   { path: '/login', element: <Login /> },
   { path: '/cadastro', element: <Cadastro /> },
   { path: '/esqueci-senha', element: <EsqueciSenha /> },
+  // Páginas públicas exigidas pela Google Play (abertas sem login)
+  { path: '/privacidade', element: <Privacidade /> },
+  { path: '/excluir-conta', element: <InstrucoesExcluirConta /> },
   {
     path: '/primeiro-acesso/email',
     element: (

@@ -4,6 +4,7 @@ import { Alerta, Botao, Campo, Tela } from '../components/ui'
 import { ErroApi } from '../lib/api'
 import { useCadastro } from '../lib/sessao'
 import { cores } from '../lib/tema'
+import { LinkPrivacidade } from '../components/LinkPrivacidade'
 
 type TipoCadastro = 'aluno' | 'professor' | 'academia'
 
@@ -114,6 +115,7 @@ export default function Cadastro() {
       <Botao aoPressionar={criar} carregando={cadastro.isPending} precisaInternet>
         Criar conta
       </Botao>
+      <LinkPrivacidade />
     </Tela>
   )
 }

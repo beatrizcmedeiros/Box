@@ -5,6 +5,7 @@ import { Alerta, Botao, Campo, TelaPublica } from '../components/ui'
 import { ErroApi } from '../lib/api'
 import { useLogin } from '../lib/sessao'
 import { cores } from '../lib/tema'
+import { LinkPrivacidade } from '../components/LinkPrivacidade'
 
 export default function Login() {
   const login = useLogin()
@@ -52,6 +53,7 @@ export default function Login() {
       <Botao variante="secundario" aoPressionar={() => router.push('/cadastro')}>
         Criar conta
       </Botao>
+      <LinkPrivacidade />
     </TelaPublica>
   )
 }

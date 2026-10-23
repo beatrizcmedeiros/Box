@@ -1,18 +1,18 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
-import { useSearchParams } from 'react-router'
 import { Alerta, Botao, Campo, Carregando, Etiqueta, Selecao } from '../../components/ui.tsx'
 import { api, gestao } from '../../lib/api.ts'
 import { useExercicios, useTurmas } from '../../lib/consultas.ts'
 import { formatarData, formatarKg } from '../../lib/formato.ts'
 import type { ConsultaCargas, OrdenacaoCargas } from '../../lib/tipos.ts'
 import { CabecalhoPagina } from './LayoutTreinador.tsx'
+import { useParametrosUrl } from '../../lib/parametrosUrl.ts'
 
 const POR_PAGINA = 25
 
 /** Consulta das cargas máximas vigentes com filtros combináveis (Figura 4). */
 export function ConsultarCargas() {
-  const [params, setParams] = useSearchParams()
+  const [params, setParams] = useParametrosUrl()
   const exercicios = useExercicios()
   const turmas = useTurmas()
 
@@ -39,18 +39,15 @@ export function ConsultarCargas() {
 
   /** Atualiza os filtros na URL; qualquer mudança de filtro volta para a página 1. */
   function alterar(mudancas: Record<string, string>) {
-    setParams(
-      (atual) => {
-        const novos = new URLSearchParams(atual)
-        for (const [chave, valor] of Object.entries(mudancas)) {
-          if (valor) novos.set(chave, valor)
-          else novos.delete(chave)
-        }
-        if (!('pagina' in mudancas)) novos.delete('pagina')
-        return novos
-      },
-      { replace: true },
-    )
+    setParams((atual) => {
+      const novos = new URLSearchParams(atual)
+      for (const [chave, valor] of Object.entries(mudancas)) {
+        if (valor) novos.set(chave, valor)
+        else novos.delete(chave)
+      }
+      if (!('pagina' in mudancas)) novos.delete('pagina')
+      return novos
+    })
   }
 
   const consultaParams = new URLSearchParams({
