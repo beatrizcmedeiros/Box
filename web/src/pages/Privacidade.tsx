@@ -65,14 +65,33 @@ export function Privacidade() {
             vinculou e, dentro de cada vínculo, a turma e os apelidos usados nas listas de teste.
           </li>
           <li>
-            <strong>Acesso:</strong> sessões de login e códigos de confirmação enviados por e-mail.
+            <strong>Acesso:</strong> sessões de login e os códigos de nova senha enviados por
+            e-mail.
           </li>
         </ul>
         <p>
-          O aplicativo <strong>não</strong> coleta localização, contatos, fotos, identificadores de
-          publicidade nem dados de pagamento, e não usa ferramentas de análise ou anúncios. O PDF do
-          teste de força importado pelo professor é lido no próprio aparelho e não é enviado ao
-          servidor.
+          O PR Box <strong>não</strong> coleta localização, contatos, fotos nem dados de pagamento.
+          O PDF do teste de força importado pelo professor é lido no próprio aparelho e não é
+          enviado ao servidor.
+        </p>
+
+        <h2>Anúncios</h2>
+        <p>
+          O aplicativo para Android é gratuito e mostra um banner de anúncio no rodapé de algumas
+          telas, fornecido pelo <strong>Google AdMob</strong>. Para escolher e medir os anúncios, o
+          Google pode usar o identificador de publicidade do aparelho, o endereço IP e informações
+          técnicas do aparelho e do aplicativo, conforme a{' '}
+          <a
+            href="https://policies.google.com/technologies/ads?hl=pt-BR"
+            className="font-semibold text-marca-escura underline"
+            target="_blank"
+            rel="noreferrer"
+          >
+            política de anúncios do Google
+          </a>
+          . Os seus PRs, o seu nome e o seu e-mail <strong>não</strong> são enviados ao Google. Você
+          pode redefinir o identificador de publicidade ou desativar a personalização de anúncios
+          nas configurações do Android (Google → Anúncios). A versão web não tem anúncios.
         </p>
 
         <h2>Quem vê os seus dados</h2>
@@ -85,16 +104,17 @@ export function Privacidade() {
 
         <h2>Como os dados são usados</h2>
         <p>
-          Exclusivamente para o funcionamento do aplicativo: calcular as cargas de treino, mostrar a
-          evolução, enviar os códigos de confirmação e de nova senha e permitir que as academias e
-          professores vinculados acompanhem os seus alunos.
+          Para o funcionamento do aplicativo: calcular as cargas de treino, mostrar a evolução,
+          enviar os códigos de nova senha e permitir que as academias e professores vinculados
+          acompanhem os seus alunos. Os dados de treino e da conta não são usados para anúncios.
         </p>
 
         <h2>Compartilhamento</h2>
         <p>
-          Os dados não são vendidos nem compartilhados com terceiros. Eles ficam em provedores
-          contratados para hospedar o serviço (servidor da aplicação, banco de dados e envio de
-          e-mails), sempre com conexão criptografada (HTTPS/TLS).
+          Os dados da conta e de treino não são vendidos nem compartilhados com terceiros. Eles
+          ficam em provedores contratados para hospedar o serviço (servidor da aplicação, banco de
+          dados e envio de e-mails), sempre com conexão criptografada (HTTPS/TLS). No aplicativo
+          para Android, o Google AdMob recebe os dados técnicos descritos em Anúncios.
         </p>
 
         <h2>Dados guardados no aparelho</h2>

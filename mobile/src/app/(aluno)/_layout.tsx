@@ -1,8 +1,20 @@
-import { Stack } from 'expo-router'
+import { Redirect, Stack } from 'expo-router'
+import { fazGestao, useUsuario } from '../../lib/sessao'
 import { cores } from '../../lib/tema'
+
+// O app sempre abre em "/" (área do aluno). O professor deve começar na área dele: na primeira
+// vez que cada conta chega aqui, ela é levada para a gestão. Depois, a aba "Meus PRs" da
+// gestão volta para cá normalmente.
+let jaLevouParaGestao: number | null = null
 
 /** Abas do aluno + telas que abrem por cima delas (registrar PR e detalhe do exercício). */
 export default function LayoutAluno() {
+  const { data: usuario } = useUsuario()
+  if (usuario && fazGestao(usuario) && jaLevouParaGestao !== usuario.id) {
+    jaLevouParaGestao = usuario.id
+    return <Redirect href="/treinador" />
+  }
+
   return (
     <Stack
       screenOptions={{
