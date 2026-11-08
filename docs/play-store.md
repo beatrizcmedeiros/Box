@@ -50,7 +50,7 @@ npm run build:play
 | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------ |
 | Política de privacidade        | `https://SEU_DOMINIO/privacidade`                                                                                        |
 | Acesso ao app                  | "Todas ou algumas funcionalidades são restritas": informe uma **conta de teste já confirmada** (veja abaixo).            |
-| Anúncios                       | Não contém anúncios                                                                                                      |
+| Anúncios                       | **Sim, contém anúncios** (banner do Google AdMob no rodapé das abas; só no app Android)                                  |
 | Classificação de conteúdo      | Questionário: categoria "Utilitário/Produtividade/Outro"; nenhum conteúdo sensível → **Livre**.                          |
 | Público-alvo                   | **18 anos ou mais** (marque 13–17 só se houver alunos menores). Não marque menores de 13 (ativa a política de Famílias). |
 | Apps de saúde                  | **Fitness / atividade física**. Não é dispositivo médico.                                                                |
@@ -59,18 +59,31 @@ npm run build:play
 
 ### Segurança dos dados
 
-- Coleta ou compartilha dados? **Sim, coleta. Não compartilha.**
+- Coleta ou compartilha dados? **Sim, coleta e compartilha** (o compartilhamento é só o do SDK de anúncios do Google AdMob).
 - Criptografados em trânsito? **Sim** (HTTPS).
 - O usuário pode pedir a exclusão? **Sim** (no app e pela página de exclusão).
 
-| Tipo de dado                                                | Coletado | Compartilhado | Obrigatório | Finalidade                                    |
-| ----------------------------------------------------------- | -------- | ------------- | ----------- | --------------------------------------------- |
-| Informações pessoais → **Nome**                             | Sim      | Não           | Sim         | Funcionalidade do app, Gerenciamento da conta |
-| Informações pessoais → **Endereço de e-mail**               | Sim      | Não           | Sim         | Funcionalidade do app, Gerenciamento da conta |
-| Informações pessoais → **IDs do usuário**                   | Sim      | Não           | Sim         | Funcionalidade do app, Gerenciamento da conta |
-| Saúde e fitness → **Informações de condicionamento físico** | Sim      | Não           | Sim         | Funcionalidade do app                         |
+| Tipo de dado                                                                        | Coletado | Compartilhado | Obrigatório | Finalidade                                              |
+| ----------------------------------------------------------------------------------- | -------- | ------------- | ----------- | ------------------------------------------------------- |
+| Informações pessoais → **Nome**                                                     | Sim      | Não           | Sim         | Funcionalidade do app, Gerenciamento da conta           |
+| Informações pessoais → **Endereço de e-mail**                                       | Sim      | Não           | Sim         | Funcionalidade do app, Gerenciamento da conta           |
+| Informações pessoais → **IDs do usuário**                                           | Sim      | Não           | Sim         | Funcionalidade do app, Gerenciamento da conta           |
+| Saúde e fitness → **Informações de condicionamento físico**                         | Sim      | Não           | Sim         | Funcionalidade do app                                   |
+| Local → **Local aproximado** (IP, pelo AdMob)                                       | Sim      | Sim           | Sim         | Publicidade ou marketing, Análise                       |
+| Atividade no app → **Interações com o app** (AdMob)                                 | Sim      | Sim           | Sim         | Publicidade ou marketing, Análise                       |
+| Informações e desempenho do app → **Registros de falhas** e **Diagnóstico** (AdMob) | Sim      | Sim           | Sim         | Publicidade ou marketing, Análise                       |
+| Dispositivo ou outros IDs → **IDs do dispositivo** (ID de publicidade, AdMob)       | Sim      | Sim           | Sim         | Publicidade ou marketing, Análise, Prevenção de fraudes |
 
-Os vínculos com academias e professores **não** contam como compartilhamento com terceiros: é a própria pessoa que escolhe, dentro do app, quem vê os seus PRs. Não marque localização, contatos, fotos, arquivos, identificadores do dispositivo nem dados de uso ou diagnóstico.
+Os vínculos com academias e professores **não** contam como compartilhamento com terceiros: é a própria pessoa que escolhe, dentro do app, quem vê os seus PRs. As linhas do AdMob seguem o guia do Google (https://developers.google.com/admob/android/privacy/play-data-disclosure); confira lá se algo mudou. Não marque localização precisa, contatos, fotos nem arquivos.
+
+### Anúncios (AdMob)
+
+- **Contas:** app `ca-app-pub-8454054957597972~9617158578`, bloco de banner `ca-app-pub-8454054957597972/5516317370` (em `mobile/app.json` e `mobile/eas.json`).
+- **app-ads.txt:** publicado em `https://prbox.vercel.app/app-ads.txt` (arquivo `web/public/app-ads.txt`). Na ficha da loja, o **site do desenvolvedor** precisa ser `https://prbox.vercel.app`, senão o AdMob não encontra o arquivo.
+- **Países:** publique **só no Brasil** (_Produção → Países/regiões_). Fora daí (ex.: Europa), o Google exige uma tela de consentimento de anúncios (CMP), que o app não tem.
+- **ID de publicidade:** em _Conteúdo do app → ID de publicidade_, responda **Sim, usa** (para publicidade). O app já declara a permissão `AD_ID`.
+- **Depois de publicar:** no AdMob, vincule o app à ficha da Play Store (_Apps → Configurações do app → Adicionar loja_). Até lá, o AdMob mostra poucos anúncios.
+- **Nunca toque nos seus próprios anúncios** no celular: o AdMob pode bloquear a conta. Para testar, os builds de desenvolvimento usam anúncios de teste.
 
 ### Conta para a revisão da Google
 

@@ -15,13 +15,16 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://prbox-api.onrender.com/api"
+        "EXPO_PUBLIC_API_URL": "https://prbox-api.onrender.com/api",
+        "EXPO_PUBLIC_WEB_URL": "https://prbox.vercel.app"
       }
     },
     "production": {
       "autoIncrement": true,
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://prbox-api.onrender.com/api"
+        "EXPO_PUBLIC_API_URL": "https://prbox-api.onrender.com/api",
+        "EXPO_PUBLIC_WEB_URL": "https://prbox.vercel.app",
+        "EXPO_PUBLIC_ADMOB_BANNER_ID": "ca-app-pub-8454054957597972/5516317370"
       }
     }
   },

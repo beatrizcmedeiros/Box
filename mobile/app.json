@@ -20,7 +20,7 @@
         "foregroundImage": "./assets/android-icon-foreground.png"
       },
       "predictiveBackGestureEnabled": false,
-      "permissions": []
+      "permissions": ["com.google.android.gms.permission.AD_ID"]
     },
     "plugins": [
       "expo-router",
@@ -35,7 +35,11 @@
         }
       ],
       "expo-font",
-      "@react-native-community/datetimepicker"
+      "@react-native-community/datetimepicker",
+      [
+        "react-native-google-mobile-ads",
+        { "androidAppId": "ca-app-pub-8454054957597972~9617158578" }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

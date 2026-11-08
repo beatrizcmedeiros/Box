@@ -1,6 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons'
 import { Tabs } from 'expo-router'
 import type { ComponentProps } from 'react'
+import { ComBannerNoRodape } from '../../../components/Anuncio'
 import { cores } from '../../../lib/tema'
 
 type Icone = ComponentProps<typeof Ionicons>['name']
@@ -15,6 +16,8 @@ const icone =
 export default function AbasAluno() {
   return (
     <Tabs
+      // Banner de anúncio fixo no rodapé, logo acima do menu de abas
+      screenLayout={({ children }) => <ComBannerNoRodape>{children}</ComBannerNoRodape>}
       screenOptions={{
         headerStyle: { backgroundColor: cores.fundoEscuro },
         headerTintColor: cores.branco,

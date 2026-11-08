@@ -6,6 +6,7 @@ import * as SplashScreen from 'expo-splash-screen'
 import { StatusBar } from 'expo-status-bar'
 import { useEffect } from 'react'
 import { AppState, Platform } from 'react-native'
+import mobileAds from 'react-native-google-mobile-ads'
 import { KeyboardProvider } from 'react-native-keyboard-controller'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { Alerta, Botao, TelaPublica } from '../components/ui'
@@ -15,6 +16,11 @@ import { CHAVE_USUARIO, fazGestao, useUsuario } from '../lib/sessao'
 import { cores } from '../lib/tema'
 
 SplashScreen.preventAutoHideAsync()
+
+// Anúncios (banner no rodapé das abas): inicia o AdMob uma vez, ao abrir o app
+mobileAds()
+  .initialize()
+  .catch(() => undefined)
 
 // Ao voltar para o app, as telas abertas buscam os dados de novo: o que o aluno ou o
 // treinador mudou em outro aparelho aparece aqui sem precisar sair e entrar na tela
